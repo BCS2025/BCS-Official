@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://github.com/my-user/CustomizedProductWebsite",
+  "homepage": "https://github.com/my-user/BCS-Official",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
