@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getImageUrl } from '../../lib/imageUtils';
 import { cn } from './Button';
 import { ChevronDown, Check } from 'lucide-react';
 
@@ -76,7 +77,7 @@ export function ImageSelect({ label, options, value, onChange, id, error, classN
                             >
                                 <div className="aspect-square w-full relative overflow-hidden rounded-md bg-wood-50">
                                     <img
-                                        src={hoveredOption.image}
+                                        src={getImageUrl(hoveredOption.image)}
                                         alt={hoveredOption.label}
                                         className="object-contain w-full h-full"
                                     />
