@@ -118,8 +118,11 @@ function App() {
             <header className="bg-white shadow-sm sticky top-0 z-10">
                 <div className="container mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <img src="/WebsiteLogoIcon.png" alt="比創空間 Logo" className="w-10 h-10 object-contain" />
-                        <h1 className="text-xl font-bold font-serif text-wood-900 tracking-tight">比創空間</h1>
+                        <img
+                            src={`${import.meta.env.BASE_URL}WebsiteLogoIcon.png`}
+                            alt="比創空間 Logo"
+                            className="h-14 w-auto object-contain"
+                        />
                     </div>
                     <div className="flex items-center gap-2 text-wood-600">
                         <ShoppingCart size={20} />
