@@ -191,6 +191,14 @@ function App() {
                 <section className="text-center space-y-2 mb-8">
                     <h2 className="text-3xl font-serif font-bold text-wood-900">客製化木質鑰匙圈</h2>
                     <p className="text-wood-600">為您的生活增添一份溫暖的手作質感</p>
+
+                    {/* Free Shipping Banner */}
+                    <div className="inline-block mt-4 bg-red-100 border border-red-200 rounded-full px-4 py-1.5 animate-bounce-slow">
+                        <span className="flex items-center gap-2 text-red-700 font-bold text-sm">
+                            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">HOT</span>
+                            全館滿 $599 免運活動開跑中！
+                        </span>
+                    </div>
                 </section>
 
                 <div className="grid md:grid-cols-3 gap-8 items-start">

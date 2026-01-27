@@ -41,8 +41,8 @@ function doPost(e) {
 
     sheet.appendRow(rowData);
 
-    // --- LINE Notification Logic ---
-    sendLineNotify(rowData);
+    // --- LINE Notification Logic (Messaging API) ---
+    sendLinePushMessage(rowData);
 
     return ContentService.createTextOutput(JSON.stringify({ 'result': 'success', 'row': sheet.getLastRow() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -69,28 +69,28 @@ function getShippingMethodName(method) {
 function getShippingDetail(c) {
   switch(c.shippingMethod) {
     case 'store': return c.storeName;
-    case 'post': return c.address; // Address already includes city/district from frontend
+    case 'post': return c.address;
     case 'pickup': return `${c.pickupLocation} (${c.pickupTime})`;
     case 'friend': return `代領人: ${c.friendName}`;
     default: return c.address;
   }
 }
 
-// --- LINE Notification Function ---
-function sendLineNotify(rowData) {
-  // 1. Get Token from Script Properties (Security Best Practice)
-  // You must set this in: Project Settings > Script Properties > Property: LINE_CHANNEL_ACCESS_TOKEN
+// --- LINE Messaging API (Push Message) ---
+function sendLinePushMessage(rowData) {
   const scriptProperties = PropertiesService.getScriptProperties();
+  
+  // 1. Get Token and User ID from Script Properties
   const token = scriptProperties.getProperty('LINE_CHANNEL_ACCESS_TOKEN');
+  const userId = scriptProperties.getProperty('LINE_USER_ID'); // Add this property in GAS
 
-  if (!token) {
-    console.log("LINE_CHANNEL_ACCESS_TOKEN not set.");
+  if (!token || !userId) {
+    console.log("LINE credentials (Token or User ID) not set.");
     return;
   }
 
   // 2. Construct Message
-  // rowData mapping: 0:Time, 1:Name, 2:Phone, 3:Email, 4:Method, 5:Detail, 6:Cost, 7:Total, 8:Items
-  const message = `
+  const messageText = `Note
 📦 新訂單通知！
 ----------
 👤 姓名: ${rowData[1]}
@@ -100,37 +100,34 @@ function sendLineNotify(rowData) {
 💰 總額: $${rowData[7]} (含運費 $${rowData[6]})
 ----------
 📝 商品:
-${rowData[8]}
-  `.trim();
+${rowData[8]}`;
 
-  // 3. Send Request to LINE Notify API (Simpler than Messaging API for just notifications)
-  // If user has Messaging API Channel Access Token, we use Push Message used below.
-  // Assuming User meant Messaging API (Push specific user) or Notify (Broadcast to group).
-  // "LINE權杖" usually implies LINE Notify Token.
-  // "Messaging API" implies Channel Access Token + User ID.
+  // 3. Send Push Message Request
+  // Messaging API requires JSON payload and correct headers
+  const url = "https://api.line.me/v2/bot/message/push";
   
-  // NOTE: If using LINE Notify (Token): content-type: application/x-www-form-urlencoded
-  // NOTE: If using Messaging API (Channel Token): content-type: application/json
-  
-  // Let's assume standard LINE Notify as it's easiest for "Token".
-  // PROMPT UPDATE in logic: User said "Messaging API/已取得LINE權杖". 
-  // If Messaging API, we need a USER ID to push TO. 
-  // LINE Notify is easier because the token IS the destination.
-  // Let's try LINE Notify endpoint first as it works with a simple token.
-  
+  const payload = {
+    "to": userId,
+    "messages": [
+      {
+        "type": "text",
+        "text": messageText
+      }
+    ]
+  };
+
   const options = {
     "method": "post",
     "headers": {
-      "Authorization": "Bearer " + token
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json"
     },
-    "payload": {
-      "message": message
-    }
+    "payload": JSON.stringify(payload)
   };
 
   try {
-    UrlFetchApp.fetch("https://notify-api.line.me/api/notify", options);
+    UrlFetchApp.fetch(url, options);
   } catch (e) {
-    console.log("Error sending LINE: " + e);
+    console.log("Error sending LINE Push Message: " + e);
   }
 }
