@@ -14,23 +14,37 @@ function App() {
         name: '',
         phone: '',
         email: '',
-        address: ''
+        address: '',
+        shippingMethod: 'store', // Default
+        storeName: '',
+        city: '',
+        district: '',
+        pickupLocation: '',
+        pickupTime: '',
+        friendName: ''
     });
+    const [shippingCost, setShippingCost] = useState(60); // Default store shipping
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // We currently only have one product, but structure handles more
     const activeProduct = PRODUCTS[0];
 
+    // Calculate totals
+    const itemsTotal = cart.reduce((sum, i) => sum + i.price, 0);
+    const totalAmount = itemsTotal + shippingCost;
+
     const handleAddToCart = (item) => {
+        // ... (keep existing)
         if (editingItem) {
             setCart(cart.map(i => i._id === item._id ? item : i));
             setEditingItem(null);
         } else {
             setCart([...cart, item]);
         }
-        // Scroll to cart
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };
+
+    // ... (keep handleEdit, handleDelete)
 
     const handleEdit = (item) => {
         setEditingItem(item);
@@ -48,11 +62,39 @@ function App() {
         setCustomer(prev => ({ ...prev, [friend]: value }));
     };
 
-    const isValid = cart.length > 0 && customer.name && customer.phone && customer.address;
+    const handleShippingCostChange = (cost) => {
+        setShippingCost(cost);
+    };
+
+    // Validation Logic
+    const isCustomerValid = () => {
+        const basic = customer.name && customer.phone;
+        if (!basic) return false;
+
+        switch (customer.shippingMethod) {
+            case 'store':
+                return !!customer.storeName;
+            case 'post':
+                return customer.city && customer.district && customer.address;
+            case 'pickup':
+                return customer.pickupLocation && customer.pickupTime;
+            case 'friend':
+                return !!customer.friendName;
+            default:
+                return false;
+        }
+    };
+
+    const isValid = cart.length > 0 && isCustomerValid();
 
     const handleSubmit = async () => {
         if (!isValid) return;
-        if (!confirm(`確定要送出訂單嗎？\n總計: ${formatCurrency(cart.reduce((sum, i) => sum + i.price, 0))}`)) return;
+
+        let confirmMsg = `確定要送出訂單嗎？\n\n商品總計: ${formatCurrency(itemsTotal)}`;
+        if (shippingCost > 0) confirmMsg += `\n運費: ${formatCurrency(shippingCost)}`;
+        confirmMsg += `\n----------------\n總金額: ${formatCurrency(totalAmount)}`;
+
+        if (!confirm(confirmMsg)) return;
 
         setIsSubmitting(true);
 
@@ -71,10 +113,18 @@ function App() {
 
         const orderData = {
             timestamp: new Date().toISOString(),
-            customer,
+            customer: {
+                ...customer,
+                shippingCost, // Add shipping cost to data
+                address: customer.shippingMethod === 'post'
+                    ? `${customer.city}${customer.district}${customer.address}`
+                    : customer.address // Normalize address for Google Sheet
+            },
             items: formattedItems,
-            totalAmount: cart.reduce((sum, i) => sum + i.price, 0),
+            totalAmount: totalAmount, // Use final total
         };
+        // ... (keep fetch logic)
+
 
         console.log("Submitting Order:", orderData);
 
@@ -159,7 +209,11 @@ function App() {
                             <OrderList items={cart} onEdit={handleEdit} onDelete={handleDelete} />
                         </div>
 
-                        <CustomerInfo data={customer} onChange={handleCustomerChange} />
+                        <CustomerInfo
+                            data={customer}
+                            onChange={handleCustomerChange}
+                            onShippingCostChange={handleShippingCostChange}
+                        />
 
                         <Button
                             size="lg"

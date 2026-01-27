@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
-import { ImageSelect } from './ui/ImageSelect';
+import { VisualOptionSelector } from './ui/VisualOptionSelector';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/Card';
 import { formatCurrency } from '../lib/pricing';
 
 export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit }) {
-    // Initialize state with default values from product config or initialData
+    // ... (keep logic same)
+
     const [formData, setFormData] = useState(() => {
         if (initialData) return { ...initialData };
 
@@ -88,7 +89,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
                             if (hasImages) {
                                 return (
-                                    <ImageSelect
+                                    <VisualOptionSelector
                                         key={field.name}
                                         id={field.name}
                                         label={field.label}
