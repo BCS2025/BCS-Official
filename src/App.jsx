@@ -87,6 +87,13 @@ function App() {
 
     const isValid = cart.length > 0 && isCustomerValid();
 
+    // Helper to find label (for UI and Submit)
+    const getProductLabel = (fieldName, value) => {
+        const field = activeProduct.fields.find(f => f.name === fieldName);
+        const option = field?.options?.find(o => o.value === value);
+        return option ? option.label : value;
+    };
+
     const handleSubmit = async () => {
         if (!isValid) return;
 
@@ -98,17 +105,10 @@ function App() {
 
         setIsSubmitting(true);
 
-        // Helper to find label
-        const getLabel = (fieldName, value) => {
-            const field = activeProduct.fields.find(f => f.name === fieldName);
-            const option = field?.options?.find(o => o.value === value);
-            return option ? option.label : value;
-        };
-
         const formattedItems = cart.map(item => ({
             ...item,
-            shape: getLabel('shape', item.shape),
-            font: getLabel('font', item.font)
+            shape: getProductLabel('shape', item.shape),
+            font: getProductLabel('font', item.font)
         }));
 
         const orderData = {
@@ -206,7 +206,12 @@ function App() {
                                 <ShoppingCart size={20} className="text-wood-500" />
                                 購物清單
                             </h3>
-                            <OrderList items={cart} onEdit={handleEdit} onDelete={handleDelete} />
+                            <OrderList
+                                items={cart}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                                getLabel={getProductLabel}
+                            />
                         </div>
 
                         <CustomerInfo

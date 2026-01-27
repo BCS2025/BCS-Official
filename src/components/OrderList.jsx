@@ -2,7 +2,7 @@ import { Trash2, Edit2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
 
-export default function OrderList({ items, onEdit, onDelete }) {
+export default function OrderList({ items, onEdit, onDelete, getLabel }) {
     if (items.length === 0) {
         return (
             <div className="text-center py-10 bg-wood-50 rounded-lg border border-dashed border-wood-200 text-wood-500">
@@ -39,7 +39,11 @@ export default function OrderList({ items, onEdit, onDelete }) {
                                     </td>
                                     <td className="px-4 py-3 text-center text-wood-600">
                                         <div>{item.siding === 'double' ? '雙面' : '單面'}</div>
-                                        <div className="text-xs">{item.shape} / {item.font}</div>
+                                        <div className="text-xs">
+                                            {getLabel ? getLabel('shape', item.shape) : item.shape}
+                                            {' / '}
+                                            {getLabel ? getLabel('font', item.font) : item.font}
+                                        </div>
                                     </td>
                                     <td className="px-4 py-3 text-center font-medium">{item.quantity}</td>
                                     <td className="px-4 py-3 text-right font-medium text-wood-800">{formatCurrency(item.price)}</td>

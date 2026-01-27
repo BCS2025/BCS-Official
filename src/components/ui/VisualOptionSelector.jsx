@@ -1,10 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { getImageUrl } from '../../lib/imageUtils';
 import { cn } from './Button';
 import { X, Check, ChevronRight } from 'lucide-react';
 
 export function VisualOptionSelector({ label, options, value, onChange, id, error, className }) {
     const [isOpen, setIsOpen] = useState(false);
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
 
     // Find selected option object
     const selectedOption = options.find(opt => opt.value === value) || options[0];
@@ -53,15 +66,15 @@ export function VisualOptionSelector({ label, options, value, onChange, id, erro
 
             {error && <p className="text-xs text-red-500">{error}</p>}
 
-            {/* Modal / Drawer Overlay */}
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            {/* Modal / Drawer Overlay - Using Portal to escape z-index hell */}
+            {isOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div
                         className="bg-white w-full max-w-2xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-wood-100">
+                        <div className="flex items-center justify-between p-4 border-b border-wood-100 bg-white shrink-0">
                             <h3 className="font-serif font-bold text-lg text-wood-900">選擇{label}</h3>
                             <button
                                 onClick={() => setIsOpen(false)}
@@ -115,7 +128,8 @@ export function VisualOptionSelector({ label, options, value, onChange, id, erro
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
