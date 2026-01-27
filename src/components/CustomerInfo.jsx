@@ -27,7 +27,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         if (data.needProof === undefined) {
             onChange('needProof', 'yes'); // Default to yes
         }
-    }, []);
+    }, [data.needProof, onChange]);
 
     // Reset district when city changes
     useEffect(() => {
@@ -35,7 +35,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
             setCity(data.city);
             setDistrict(data.district || '');
         }
-    }, [data.city, data.district]);
+    }, [data.city, data.district, city]);
 
     const handleMethodChange = (methodId) => {
         const method = SHIPPING_METHODS.find(m => m.id === methodId);
@@ -80,6 +80,11 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         {SHIPPING_METHODS.map((method) => {
                             const Icon = method.icon;
                             const isSelected = data.shippingMethod === method.id;
+
+                            // Determine display price
+                            const originalPrice = method.price;
+                            const isFree = isFreeShipping && originalPrice > 0;
+
                             return (
                                 <div
                                     key={method.id}
@@ -97,15 +102,66 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-bold text-wood-900">{method.name}</span>
-                                            <span className={`text-sm font-bold ${method.price > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                                                {method.price > 0 ? `+${formatCurrency(method.price)}` : '免運'}
-                                            </span>
+                                            <div className="text-right">
+                                                {isFree ? (
+                                                    <>
+                                                        <span className="text-xs text-wood-400 line-through mr-1">${originalPrice}</span>
+                                                        <span className="text-sm font-bold text-red-500">免運</span>
+                                                    </>
+                                                ) : (
+                                                    <span className={`text-sm font-bold ${originalPrice > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                                        {originalPrice > 0 ? `+${formatCurrency(originalPrice)}` : '免運'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <p className="text-xs text-wood-500 mt-1">{method.description}</p>
                                     </div>
                                 </div>
                             );
                         })}
+                    </div>
+                </div>
+
+                {/* Design Proof Selection */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-wood-800">製作前是否需要對稿 (確認排版圖片)</label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div
+                            onClick={() => onChange('needProof', 'yes')}
+                            className={`
+                                relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
+                                ${data.needProof === 'yes'
+                                    ? 'border-wood-600 bg-wood-50 ring-1 ring-wood-600'
+                                    : 'border-wood-200 hover:border-wood-300 bg-white'}
+                            `}
+                        >
+                            <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${data.needProof === 'yes' ? 'border-wood-600' : 'border-gray-400'}`}>
+                                {data.needProof === 'yes' && <div className="w-2 h-2 rounded-full bg-wood-600" />}
+                            </div>
+                            <div>
+                                <span className="font-bold text-wood-900 block text-sm">需要對稿</span>
+                                <span className="text-xs text-wood-500">我們會先製作示意圖給您確認，安心有保障</span>
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => onChange('needProof', 'no')}
+                            className={`
+                                relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
+                                ${data.needProof === 'no'
+                                    ? 'border-wood-600 bg-wood-50 ring-1 ring-wood-600'
+                                    : 'border-wood-200 hover:border-wood-300 bg-white'}
+                            `}
+                        >
+                            <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${data.needProof === 'no' ? 'border-wood-600' : 'border-gray-400'}`}>
+                                {data.needProof === 'no' && <div className="w-2 h-2 rounded-full bg-wood-600" />}
+                            </div>
+                            <div>
+                                <span className="font-bold text-wood-900 block text-sm">直接製作 (不需對稿)</span>
+                                <span className="text-xs text-wood-500">相信專業，請先確認文字無誤，加快出貨速度</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

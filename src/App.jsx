@@ -22,7 +22,8 @@ function App() {
         district: '',
         pickupLocation: '',
         pickupTime: '',
-        friendName: ''
+        friendName: '',
+        needProof: 'yes' // Default proof preference
     });
     const [shippingCost, setShippingCost] = useState(60); // Default store shipping
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,8 +52,6 @@ function App() {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };
 
-    // ... (keep handleEdit, handleDelete)
-
     const handleEdit = (item) => {
         setEditingItem(item);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -75,6 +74,7 @@ function App() {
 
     // Validation Logic
     const isCustomerValid = () => {
+        // Basic fields
         const basic = customer.name && customer.phone;
         if (!basic) return false;
 
@@ -105,7 +105,11 @@ function App() {
         if (!isValid) return;
 
         let confirmMsg = `確定要送出訂單嗎？\n\n商品總計: ${formatCurrency(itemsTotal)}`;
-        if (shippingCost > 0) confirmMsg += `\n運費: ${formatCurrency(shippingCost)}`;
+        if (finalShippingCost > 0) {
+            confirmMsg += `\n運費: ${formatCurrency(finalShippingCost)}`;
+        } else if (isFreeShipping && shippingCost > 0) {
+            confirmMsg += `\n運費: 免運 (滿$${FREE_SHIPPING_THRESHOLD}活動)`;
+        }
         confirmMsg += `\n----------------\n總金額: ${formatCurrency(totalAmount)}`;
 
         if (!confirm(confirmMsg)) return;
@@ -118,48 +122,58 @@ function App() {
             font: getProductLabel('font', item.font)
         }));
 
+        // Generate Order ID (Simple Timestamp based)
+        const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+        const needProof = customer.needProof || 'yes'; // Ensure value
+
         const orderData = {
+            orderId, // Add ID
             timestamp: new Date().toISOString(),
             customer: {
                 ...customer,
-                shippingCost, // Add shipping cost to data
+                needProof, // Add proof preference
+                shippingCost: finalShippingCost,
                 address: customer.shippingMethod === 'post'
                     ? `${customer.city}${customer.district}${customer.address}`
-                    : customer.address // Normalize address for Google Sheet
+                    : customer.address
             },
             items: formattedItems,
-            totalAmount: totalAmount, // Use final total
+            totalAmount: totalAmount,
         };
-        // ... (keep fetch logic)
 
-
-        console.log("Submitting Order:", orderData);
-
-        // REPLACE with your actual Web App URL
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
 
         try {
-            // For demo purposes, we'll just alert if the URL is not replaced
             if (GAS_URL.includes('REPLACE')) {
                 alert("請先設定 Google Apps Script URL (見程式碼)");
                 setIsSubmitting(false);
                 return;
             }
 
-            const response = await fetch(GAS_URL, {
+            await fetch(GAS_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Important for GAS
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
             });
 
-            // Since mode is no-cors, we can't read the response properly to check success/fail status code
-            // We assume it worked if no network error.
-            alert('訂單已送出！我們會盡快與您聯繫。');
+            // Success: Switch to Thank You View
+            setSuccessData({
+                orderId,
+                needProof
+            });
+
+            // Clear cart
             setCart([]);
-            setCustomer({ name: '', phone: '', email: '', address: '' });
+            // Reset customer (keep proof preference?)
+            setCustomer(prev => ({
+                ...prev,
+                name: '',
+                phone: '',
+                email: '',
+                address: ''
+            }));
+            window.scrollTo({ top: 0, behavior: 'instant' });
 
         } catch (error) {
             console.error("Error submitting order:", error);
@@ -168,6 +182,17 @@ function App() {
             setIsSubmitting(false);
         }
     };
+
+    // Render Success Page if done
+    if (successData) {
+        return (
+            <ThankYouPage
+                orderId={successData.orderId}
+                needProof={successData.needProof}
+                onHome={() => setSuccessData(null)}
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen bg-wood-50 pb-20 font-sans">
@@ -248,6 +273,7 @@ function App() {
                             data={customer}
                             onChange={handleCustomerChange}
                             onShippingCostChange={handleShippingCostChange}
+                            isFreeShipping={isFreeShipping}
                         />
 
                         <Button
