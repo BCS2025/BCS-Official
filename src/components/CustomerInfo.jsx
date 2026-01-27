@@ -18,7 +18,7 @@ const PICKUP_LOCATIONS = [
     { value: '7-11北園門市', label: '7-ELEVEN 北園門市' },
 ];
 
-export default function CustomerInfo({ data, onChange, onShippingCostChange }) {
+export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 

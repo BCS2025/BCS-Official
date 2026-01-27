@@ -31,7 +31,12 @@ function App() {
 
     // Calculate totals
     const itemsTotal = cart.reduce((sum, i) => sum + i.price, 0);
-    const totalAmount = itemsTotal + shippingCost;
+    const FREE_SHIPPING_THRESHOLD = 599;
+    const isFreeShipping = itemsTotal >= FREE_SHIPPING_THRESHOLD;
+
+    // If free shipping, cost is 0, otherwise use selected method cost
+    const finalShippingCost = isFreeShipping ? 0 : shippingCost;
+    const totalAmount = itemsTotal + finalShippingCost;
 
     const handleAddToCart = (item) => {
         // ... (keep existing)
@@ -201,6 +206,21 @@ function App() {
 
                     {/* Right Column: Order List & Customer Info */}
                     <div className="md:col-span-2 space-y-6">
+
+                        {/* Free Shipping Progress */}
+                        {!isFreeShipping && itemsTotal > 0 && (
+                            <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg flex items-center justify-between text-sm text-orange-800 animate-in fade-in slide-in-from-top-2">
+                                <span>再買 <span className="font-bold text-orange-600">${FREE_SHIPPING_THRESHOLD - itemsTotal}</span> 即可享免運優惠！</span>
+                                <span className="text-xs bg-orange-200 px-2 py-1 rounded-full">差一點點</span>
+                            </div>
+                        )}
+                        {isFreeShipping && itemsTotal > 0 && (
+                            <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-center gap-2 text-sm text-green-800 animate-in fade-in slide-in-from-top-2">
+                                <span className="bg-green-100 p-1 rounded-full">🎉</span>
+                                <span className="font-bold">恭喜！您已符合免運資格</span>
+                            </div>
+                        )}
+
                         <div className="bg-white p-6 rounded-lg shadow-sm border border-wood-100">
                             <h3 className="text-lg font-serif font-bold text-wood-900 mb-4 flex items-center gap-2">
                                 <ShoppingCart size={20} className="text-wood-500" />
