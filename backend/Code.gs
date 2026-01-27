@@ -10,7 +10,6 @@ function doPost(e) {
     const rawData = JSON.parse(e.postData.contents);
     
     // Prepare Header Row if needed
-    // Updated Headers: Added '訂單編號', '是否對稿'
     const headers = [
       '訂單編號', '訂單時間', '訂購人', '電話', 'Email', 
       '運送方式', '運送詳情', '運費', '總金額',
@@ -28,27 +27,31 @@ function doPost(e) {
       `${item.productName} (${item.shape}/${item.font}) x${item.quantity}`
     ).join('\n');
     
-    // Handle needProof (Default to 'yes' if missing)
     const needProofText = (customer.needProof === 'no') ? '不需對稿 (直接製作)' : '需要對稿';
 
     const rowData = [
-      rawData.orderId || 'N/A', // New Order ID
+      rawData.orderId || 'N/A',
       rawData.timestamp,
       customer.name,
-      "'"+customer.phone, // Force string for phone
+      "'"+customer.phone,
       customer.email,
       getShippingMethodName(customer.shippingMethod),
       shippingDetail,
       customer.shippingCost,
       rawData.totalAmount,
       itemsDescription,
-      needProofText // New Column
+      needProofText
     ];
 
     sheet.appendRow(rowData);
 
-    // --- LINE Notification Logic (Messaging API) ---
+    // 1. LINE Notification (To Admin)
     sendLinePushMessage(rowData);
+
+    // 2. Email Notification (To Customer)
+    if (customer.email) {
+      sendOrderConfirmationEmail(customer.email, rowData, rawData.items);
+    }
 
     return ContentService.createTextOutput(JSON.stringify({ 'result': 'success', 'row': sheet.getLastRow() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -61,7 +64,75 @@ function doPost(e) {
   }
 }
 
-// Helper: Format Shipping Info
+// --- Email Notification ---
+function sendOrderConfirmationEmail(email, rowData, items) {
+  const orderId = rowData[0];
+  const totalAmount = rowData[8];
+  
+  // HTML Email Template
+  const subject = `【比創空間】訂單確認通知 (${orderId})`;
+  
+  let htmlBody = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #5d4037; color: white; padding: 20px; text-align: center;">
+        <h2 style="margin: 0;">訂單確認通知</h2>
+      </div>
+      <div style="padding: 20px;">
+        <p>親愛的 ${rowData[2]} 您好，</p>
+        <p>感謝您的訂購！我們已收到您的訂單。</p>
+        
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #5d4037;">訂單資訊</h3>
+          <p><strong>訂單編號：</strong>${orderId}</p>
+          <p><strong>對稿需求：</strong>${rowData[10]}</p>
+          <p><strong>總金額：</strong>$${totalAmount}</p>
+        </div>
+
+        <h3 style="color: #5d4037; border-bottom: 2px solid #5d4037; padding-bottom: 5px;">商品明細</h3>
+        <ul style="padding-left: 20px;">
+          ${items.map(item => `
+            <li style="margin-bottom: 10px;">
+              <strong>${item.productName}</strong><br/>
+              規格：${item.shape} / ${item.font}<br/>
+              數量：${item.quantity}
+            </li>
+          `).join('')}
+        </ul>
+
+        <div style="border: 2px dashed #8d6e63; padding: 15px; border-radius: 5px; margin-top: 25px;">
+          <h3 style="margin-top: 0; color: #5d4037; text-align: center;">💰 匯款資訊</h3>
+          <p>為了確保您的客製化權益，<strong>請優先完成匯款</strong>，我們確認款項後將立即開始排版設計/製作。</p>
+          <p style="font-size: 16px;">
+            銀行代碼：<strong>822 (中國信託)</strong><br/>
+            銀行帳號：<strong>1234-5678-9012</strong><br/>
+            戶名：<strong>比創空間設計工作室</strong>
+          </p>
+          <p style="color: #d32f2f; font-size: 14px;">※ 匯款完成後，請務必透過 LINE 告知您的「訂單編號」與「帳號後五碼」。</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <p>如有任何問題，歡迎隨時聯繫我們！</p>
+          <a href="https://line.me/ti/p/@your_line_id" style="background-color: #00c300; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">加入官方 LINE</a>
+        </div>
+      </div>
+      <div style="background-color: #eeeeee; padding: 10px; text-align: center; font-size: 12px; color: #757575;">
+        © 2026 比創空間設計工作室
+      </div>
+    </div>
+  `;
+
+  try {
+    MailApp.sendEmail({
+      to: email,
+      subject: subject,
+      htmlBody: htmlBody
+    });
+  } catch (e) {
+    console.log("Error sending email: " + e);
+  }
+}
+
+// --- Helpers & LINE Logic (Keep Existing) ---
 function getShippingMethodName(method) {
   const map = {
     'store': '超商店到店',
@@ -82,22 +153,19 @@ function getShippingDetail(c) {
   }
 }
 
-// --- LINE Messaging API (Push Message) ---
 function sendLinePushMessage(rowData) {
   const scriptProperties = PropertiesService.getScriptProperties();
   const token = scriptProperties.getProperty('LINE_CHANNEL_ACCESS_TOKEN');
   const userId = scriptProperties.getProperty('LINE_USER_ID'); 
 
   if (!token || !userId) return;
-
-  // rowData mapping: 
-  // 0:ID, 1:Time, 2:Name, 3:Phone, 4:Email, 5:Method, 6:Detail, 7:Cost, 8:Total, 9:Items, 10:Proof
   
   const messageText = `
 📦 新訂單: ${rowData[0]}
 ----------
 👤 姓名: ${rowData[2]}
 📞 電話: ${rowData[3]}
+📧 Email: ${rowData[4]}
 🎨 對稿: ${rowData[10]}
 🚚 方式: ${rowData[5]}
 💰 總額: $${rowData[8]}
@@ -114,13 +182,8 @@ ${rowData[9]}`.trim();
   try {
     UrlFetchApp.fetch(url, {
       "method": "post",
-      "headers": {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json"
-      },
+      "headers": { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
       "payload": JSON.stringify(payload)
     });
-  } catch (e) {
-    // Silent fail
-  }
+  } catch (e) { console.log(e); }
 }

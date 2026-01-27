@@ -34,29 +34,47 @@ export default function ThankYouPage({ orderId, needProof, onHome }) {
                     </h3>
 
                     {needProof === 'yes' ? (
-                        <div className="space-y-3 text-sm text-wood-700">
+                        <div className="space-y-4 text-sm text-wood-700">
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">1</span>
-                                <span>由於您選擇<span className="font-bold text-wood-900">「需要對稿」</span>，請先加入官方 LINE。</span>
+                                <span>由於您選擇<span className="font-bold text-wood-900">「需要對稿」</span>，因為客製化商品需先付款才會開始設計，請先完成匯款。</span>
                             </p>
+
+                            {/* Bank Info Block */}
+                            <div className="bg-wood-100 p-4 rounded-lg border border-wood-200 ml-7 space-y-1">
+                                <p className="font-bold text-wood-800 border-b border-wood-300 pb-1 mb-1">匯款資訊</p>
+                                <p>銀行代碼：<span className="font-mono font-bold">822 (中國信託)</span></p>
+                                <p>銀行帳號：<span className="font-mono font-bold">1234-5678-9012</span></p>
+                                <p>戶名：<span className="font-bold">比創空間設計工作室</span></p>
+                            </div>
+
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
-                                <span>告知您的訂單編號，設計師會製作示意圖與您確認。</span>
+                                <span>加入官方 LINE，告知「訂單編號」與「匯款後五碼」。</span>
                             </p>
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">3</span>
-                                <span>確認沒問題後，再進行付款與製作。</span>
+                                <span>確認款項後，設計師將製作示意圖與您確認，確認無誤即開始製作！</span>
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-3 text-sm text-wood-700">
+                        <div className="space-y-4 text-sm text-wood-700">
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">1</span>
-                                <span>您選擇<span className="font-bold text-wood-900">「直接製作」</span>，請直接加入官方 LINE。</span>
+                                <span>您選擇<span className="font-bold text-wood-900">「直接製作」</span>，請完成匯款。</span>
                             </p>
+
+                            {/* Bank Info Block */}
+                            <div className="bg-wood-100 p-4 rounded-lg border border-wood-200 ml-7 space-y-1">
+                                <p className="font-bold text-wood-800 border-b border-wood-300 pb-1 mb-1">匯款資訊</p>
+                                <p>銀行代碼：<span className="font-mono font-bold">822 (中國信託)</span></p>
+                                <p>銀行帳號：<span className="font-mono font-bold">1234-5678-9012</span></p>
+                                <p>戶名：<span className="font-bold">比創空間設計工作室</span></p>
+                            </div>
+
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
-                                <span>提供訂單編號，並完成匯款 (或提供後五碼)。</span>
+                                <span>加入官方 LINE，告知「訂單編號」與「匯款後五碼」。</span>
                             </p>
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">3</span>

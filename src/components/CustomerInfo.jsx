@@ -308,12 +308,13 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
 
                     <Input
                         id="email"
-                        label="Email (選填)"
+                        label="Email (必填)"
                         type="email"
-                        placeholder="接收訂單確認信"
+                        placeholder="接收訂單確認信與匯款資訊"
                         value={data.email}
                         onChange={handleChange}
                         className="md:col-span-2"
+                        required
                     />
                 </div>
             </CardContent>

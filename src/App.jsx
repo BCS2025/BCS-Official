@@ -75,7 +75,7 @@ function App() {
     // Validation Logic
     const isCustomerValid = () => {
         // Basic fields
-        const basic = customer.name && customer.phone;
+        const basic = customer.name && customer.phone && customer.email;
         if (!basic) return false;
 
         switch (customer.shippingMethod) {
