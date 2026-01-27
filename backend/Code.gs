@@ -82,7 +82,7 @@ function sendLinePushMessage(rowData) {
   
   // 1. Get Token and User ID from Script Properties
   const token = scriptProperties.getProperty('LINE_CHANNEL_ACCESS_TOKEN');
-  const userId = scriptProperties.getProperty('LINE_USER_ID'); // Add this property in GAS
+  const userId = scriptProperties.getProperty('LINE_USER_ID'); 
 
   if (!token || !userId) {
     console.log("LINE credentials (Token or User ID) not set.");
@@ -90,7 +90,7 @@ function sendLinePushMessage(rowData) {
   }
 
   // 2. Construct Message
-  const messageText = `Note
+  const messageText = `
 📦 新訂單通知！
 ----------
 👤 姓名: ${rowData[1]}
@@ -100,10 +100,9 @@ function sendLinePushMessage(rowData) {
 💰 總額: $${rowData[7]} (含運費 $${rowData[6]})
 ----------
 📝 商品:
-${rowData[8]}`;
+${rowData[8]}`.trim();
 
   // 3. Send Push Message Request
-  // Messaging API requires JSON payload and correct headers
   const url = "https://api.line.me/v2/bot/message/push";
   
   const payload = {

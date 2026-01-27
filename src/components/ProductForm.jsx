@@ -55,8 +55,13 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (formData.quantity < 1) return;
+
+        // Force recalculate price to avoid 0/stale state
+        const finalPrice = product.calculatePrice(formData, formData.quantity);
+
         onAddToCart({
             ...formData,
+            price: finalPrice, // Use newly calculated price
             productId: product.id,
             productName: product.name,
             _id: initialData?._id || Date.now().toString() // Preserve ID if editing
