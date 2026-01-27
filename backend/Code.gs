@@ -187,3 +187,10 @@ ${rowData[9]}`.trim();
     });
   } catch (e) { console.log(e); }
 }
+
+// --- Force Email Authorization ---
+// Run this function ONCE to get the 'Approve' popup for MailApp
+function forceEmailAuth() {
+  MailApp.getRemainingDailyQuota(); 
+  console.log("Email Authorization Check: OK");
+}

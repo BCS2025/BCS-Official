@@ -43,9 +43,9 @@ export default function ThankYouPage({ orderId, needProof, onHome }) {
                             {/* Bank Info Block */}
                             <div className="bg-wood-100 p-4 rounded-lg border border-wood-200 ml-7 space-y-1">
                                 <p className="font-bold text-wood-800 border-b border-wood-300 pb-1 mb-1">匯款資訊</p>
-                                <p>銀行代碼：<span className="font-mono font-bold">822 (中國信託)</span></p>
-                                <p>銀行帳號：<span className="font-mono font-bold">1234-5678-9012</span></p>
-                                <p>戶名：<span className="font-bold">比創空間設計工作室</span></p>
+                                <p>銀行代碼：<span className="font-mono font-bold">700 (中華郵政)</span></p>
+                                <p>銀行帳號：<span className="font-mono font-bold">0031421-0318644</span></p>
+                                <p>戶名：<span className="font-bold">黃詣</span></p>
                             </div>
 
                             <p className="flex gap-2">
@@ -67,9 +67,9 @@ export default function ThankYouPage({ orderId, needProof, onHome }) {
                             {/* Bank Info Block */}
                             <div className="bg-wood-100 p-4 rounded-lg border border-wood-200 ml-7 space-y-1">
                                 <p className="font-bold text-wood-800 border-b border-wood-300 pb-1 mb-1">匯款資訊</p>
-                                <p>銀行代碼：<span className="font-mono font-bold">822 (中國信託)</span></p>
-                                <p>銀行帳號：<span className="font-mono font-bold">1234-5678-9012</span></p>
-                                <p>戶名：<span className="font-bold">比創空間設計工作室</span></p>
+                                <p>銀行代碼：<span className="font-mono font-bold">700 (中華郵政)</span></p>
+                                <p>銀行帳號：<span className="font-mono font-bold">0031421-0318644</span></p>
+                                <p>戶名：<span className="font-bold">黃詣</span></p>
                             </div>
 
                             <p className="flex gap-2">
