@@ -126,7 +126,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange }) {
 
                     {/* Store to Store */}
                     {data.shippingMethod === 'store' && (
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-2 space-y-2">
                             <Input
                                 id="storeName"
                                 label="超商門市名稱 / 代號"
@@ -135,8 +135,32 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange }) {
                                 onChange={handleChange}
                                 required
                             />
-                            <p className="text-xs text-wood-500 mt-1 pl-1">
+
+                            {/* Map Links */}
+                            <div className="flex flex-wrap gap-2">
+                                <a
+                                    href="https://emap.pcsc.com.tw/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-wood-700 bg-wood-50 border border-wood-300 rounded hover:bg-wood-100 transition-colors"
+                                >
+                                    <Store size={14} />
+                                    查詢 7-11 門市
+                                </a>
+                                <a
+                                    href="https://www.family.com.tw/marketing/inquiry.aspx"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-wood-700 bg-wood-50 border border-wood-300 rounded hover:bg-wood-100 transition-colors"
+                                >
+                                    <Store size={14} />
+                                    查詢全家門市
+                                </a>
+                            </div>
+
+                            <p className="text-xs text-wood-500 pl-1">
                                 建議填寫完整「門市名稱」與「店號」以避免寄送錯誤。
+                                <br />請點擊上方按鈕查詢門市資訊後複製貼上。
                             </p>
                         </div>
                     )}
