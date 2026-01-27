@@ -103,9 +103,9 @@ function sendOrderConfirmationEmail(email, rowData, items) {
           <h3 style="margin-top: 0; color: #5d4037; text-align: center;">💰 匯款資訊</h3>
           <p>為了確保您的客製化權益，<strong>請優先完成匯款</strong>，我們確認款項後將立即開始排版設計/製作。</p>
           <p style="font-size: 16px;">
-            銀行代碼：<strong>822 (中國信託)</strong><br/>
-            銀行帳號：<strong>1234-5678-9012</strong><br/>
-            戶名：<strong>比創空間設計工作室</strong>
+            銀行代碼：<strong>700 (中華郵政)</strong><br/>
+            銀行帳號：<strong>0031421-0318644</strong><br/>
+            戶名：<strong>黃詣</strong>
           </p>
           <p style="color: #d32f2f; font-size: 14px;">※ 匯款完成後，請務必透過 LINE 告知您的「訂單編號」與「帳號後五碼」。</p>
         </div>
