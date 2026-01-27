@@ -3,6 +3,7 @@ import { PRODUCTS } from './config/products';
 import ProductForm from './components/ProductForm';
 import OrderList from './components/OrderList';
 import CustomerInfo from './components/CustomerInfo';
+import ThankYouPage from './components/ThankYouPage'; // Import
 import { Button } from './components/ui/Button';
 import { ShoppingCart, Send } from 'lucide-react';
 import { formatCurrency } from './lib/pricing';
@@ -25,6 +26,7 @@ function App() {
     });
     const [shippingCost, setShippingCost] = useState(60); // Default store shipping
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successData, setSuccessData] = useState(null); // { orderId, needProof }
 
     // We currently only have one product, but structure handles more
     const activeProduct = PRODUCTS[0];

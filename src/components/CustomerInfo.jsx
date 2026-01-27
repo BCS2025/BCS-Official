@@ -22,6 +22,13 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 
+    // Initialize needProof if not present
+    useEffect(() => {
+        if (data.needProof === undefined) {
+            onChange('needProof', 'yes'); // Default to yes
+        }
+    }, []);
+
     // Reset district when city changes
     useEffect(() => {
         if (data.city !== city) {

@@ -10,10 +10,11 @@ function doPost(e) {
     const rawData = JSON.parse(e.postData.contents);
     
     // Prepare Header Row if needed
+    // Updated Headers: Added '訂單編號', '是否對稿'
     const headers = [
-      '訂單時間', '訂購人', '電話', 'Email', 
+      '訂單編號', '訂單時間', '訂購人', '電話', 'Email', 
       '運送方式', '運送詳情', '運費', '總金額',
-      '商品明細'
+      '商品明細', '對稿需求'
     ];
     
     if (sheet.getLastRow() === 0) {
@@ -26,8 +27,12 @@ function doPost(e) {
     const itemsDescription = rawData.items.map(item => 
       `${item.productName} (${item.shape}/${item.font}) x${item.quantity}`
     ).join('\n');
+    
+    // Handle needProof (Default to 'yes' if missing)
+    const needProofText = (customer.needProof === 'no') ? '不需對稿 (直接製作)' : '需要對稿';
 
     const rowData = [
+      rawData.orderId || 'N/A', // New Order ID
       rawData.timestamp,
       customer.name,
       "'"+customer.phone, // Force string for phone
@@ -36,7 +41,8 @@ function doPost(e) {
       shippingDetail,
       customer.shippingCost,
       rawData.totalAmount,
-      itemsDescription
+      itemsDescription,
+      needProofText // New Column
     ];
 
     sheet.appendRow(rowData);
@@ -79,54 +85,42 @@ function getShippingDetail(c) {
 // --- LINE Messaging API (Push Message) ---
 function sendLinePushMessage(rowData) {
   const scriptProperties = PropertiesService.getScriptProperties();
-  
-  // 1. Get Token and User ID from Script Properties
   const token = scriptProperties.getProperty('LINE_CHANNEL_ACCESS_TOKEN');
   const userId = scriptProperties.getProperty('LINE_USER_ID'); 
 
-  if (!token || !userId) {
-    console.log("LINE credentials (Token or User ID) not set.");
-    return;
-  }
+  if (!token || !userId) return;
 
-  // 2. Construct Message
+  // rowData mapping: 
+  // 0:ID, 1:Time, 2:Name, 3:Phone, 4:Email, 5:Method, 6:Detail, 7:Cost, 8:Total, 9:Items, 10:Proof
+  
   const messageText = `
-📦 新訂單通知！
+📦 新訂單: ${rowData[0]}
 ----------
-👤 姓名: ${rowData[1]}
-📞 電話: ${rowData[2]}
-🚚 方式: ${rowData[4]}
-📍 詳情: ${rowData[5]}
-💰 總額: $${rowData[7]} (含運費 $${rowData[6]})
+👤 姓名: ${rowData[2]}
+📞 電話: ${rowData[3]}
+🎨 對稿: ${rowData[10]}
+🚚 方式: ${rowData[5]}
+💰 總額: $${rowData[8]}
 ----------
 📝 商品:
-${rowData[8]}`.trim();
+${rowData[9]}`.trim();
 
-  // 3. Send Push Message Request
   const url = "https://api.line.me/v2/bot/message/push";
-  
   const payload = {
     "to": userId,
-    "messages": [
-      {
-        "type": "text",
-        "text": messageText
-      }
-    ]
-  };
-
-  const options = {
-    "method": "post",
-    "headers": {
-      "Authorization": "Bearer " + token,
-      "Content-Type": "application/json"
-    },
-    "payload": JSON.stringify(payload)
+    "messages": [{ "type": "text", "text": messageText }]
   };
 
   try {
-    UrlFetchApp.fetch(url, options);
+    UrlFetchApp.fetch(url, {
+      "method": "post",
+      "headers": {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      "payload": JSON.stringify(payload)
+    });
   } catch (e) {
-    console.log("Error sending LINE Push Message: " + e);
+    // Silent fail
   }
 }
