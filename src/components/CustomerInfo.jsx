@@ -102,6 +102,17 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         return generateTimeSlots(isWeekend);
     }, [data.pickupDate]);
 
+    // Fix Default Pickup Time logic
+    useEffect(() => {
+        // If we have slots, checking if current time is valid or empty
+        if (timeSlots.length > 0) {
+            const currentTimeIsValid = timeSlots.some(t => t.value === data.pickupTime);
+            if (!data.pickupTime || !currentTimeIsValid) {
+                onChange('pickupTime', timeSlots[0].value);
+            }
+        }
+    }, [timeSlots, data.pickupTime, onChange]);
+
     // Update pickupTime if it becomes invalid for the new date? 
     // Maybe better to just let user re-select if needed, 
     // but if the range changes drastically (e.g. weekday to weekend) 

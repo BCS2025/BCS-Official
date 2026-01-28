@@ -42,7 +42,7 @@ function App() {
     // If free shipping, cost is 0, otherwise use selected method cost
     const finalShippingCost = isFreeShipping ? 0 : shippingCost;
     const totalAmount = itemsTotal + finalShippingCost;
-    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const totalQuantity = cart.reduce((sum, item) => sum + Number(item.quantity), 0);
 
     const handleAddToCart = (item) => {
         // ... (keep existing)
