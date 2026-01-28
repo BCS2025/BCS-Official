@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { TAIWAN_DATA } from '../lib/taiwanData';
-import { Truck, MapPin, Store, Users, Clock } from 'lucide-react';
+import { Truck, MapPin, Store, Users, Calendar, Clock } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays } from '../lib/utils';
 
@@ -23,6 +23,12 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 
+    // Calculate Estimated Shipping Date
+    const processingDays = getProcessingWorkingDays(totalQuantity);
+    const estimatedShipDateObj = addWorkingDays(new Date(), processingDays);
+    const minDateStr = formatDate(estimatedShipDateObj);
+    const formattedShipDate = `${estimatedShipDateObj.getFullYear()}/${estimatedShipDateObj.getMonth() + 1}/${estimatedShipDateObj.getDate()}`;
+
     // Initialize needProof if not present
     useEffect(() => {
         if (data.needProof === undefined) {
@@ -37,6 +43,13 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
             setDistrict(data.district || '');
         }
     }, [data.city, data.district, city]);
+
+    // Fix Default Pickup Location logic
+    useEffect(() => {
+        if (data.shippingMethod === 'pickup' && !data.pickupLocation) {
+            onChange('pickupLocation', PICKUP_LOCATIONS[0].value);
+        }
+    }, [data.shippingMethod, data.pickupLocation, onChange]);
 
     const handleMethodChange = (methodId) => {
         const method = SHIPPING_METHODS.find(m => m.id === methodId);
@@ -87,12 +100,47 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         setErrors(prev => ({ ...prev, [id]: error }));
     };
 
+    // Calculate time slots based on selected date
+    const timeSlots = useMemo(() => {
+        if (!data.pickupDate) return [];
+        const date = new Date(data.pickupDate);
+        const day = date.getDay();
+        const isWeekend = day === 0 || day === 6; // Sun or Sat
+        return generateTimeSlots(isWeekend);
+    }, [data.pickupDate]);
+
+    // Fix Default Pickup Time logic
+    useEffect(() => {
+        // If we have slots, checking if current time is valid or empty
+        if (timeSlots.length > 0) {
+            const currentTimeIsValid = timeSlots.some(t => t.value === data.pickupTime);
+            if (!data.pickupTime || !currentTimeIsValid) {
+                onChange('pickupTime', timeSlots[0].value);
+            }
+        }
+    }, [timeSlots, data.pickupTime, onChange]);
+
+    // Update pickupTime if it becomes invalid for the new date? 
+    // Maybe better to just let user re-select if needed, 
+    // but if the range changes drastically (e.g. weekday to weekend) 
+    // the previous time might still be valid (e.g. 19:00).
+    // Use effect to clear time if invalid? For simplicity, we keep it, user can change.
+
     const currentMethod = SHIPPING_METHODS.find(m => m.id === data.shippingMethod) || SHIPPING_METHODS[0];
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
                 <CardTitle>運送與訂購資訊</CardTitle>
+                <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-md mt-2 flex items-start gap-2">
+                    <Calendar size={18} className="shrink-0 mt-0.5" />
+                    <div>
+                        <span className="font-bold">預計出貨日期：{formattedShipDate} </span>
+                        <span className="text-xs block text-blue-600 mt-1">
+                            (匯款後約 {processingDays} 個工作天出貨，數量 {totalQuantity} 個)
+                        </span>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="space-y-6">
 
@@ -196,7 +244,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         placeholder="請輸入姓名"
                         value={data.name}
                         onChange={handleChange}
-                        required
+                        error={errors.name}
                     />
                     <Input
                         id="phone"
@@ -206,6 +254,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         value={data.phone}
                         onChange={handleChange}
                         required
+                        error={errors.phone}
                     />
                     {/* Error Message for Phone */}
                     {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
@@ -222,6 +271,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 value={data.storeName || ''}
                                 onChange={handleChange}
                                 required
+                                error={errors.storeName}
                             />
 
                             {/* Map Links */}
@@ -263,6 +313,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 onChange={handleCityChange}
                                 options={Object.keys(TAIWAN_DATA).map(c => ({ value: c, label: c }))}
                                 required
+                                error={errors.city}
                             />
                             <Select
                                 id="district"
@@ -272,6 +323,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 options={city ? TAIWAN_DATA[city].map(d => ({ value: d, label: d })) : []}
                                 disabled={!city}
                                 required
+                                error={errors.district}
                             />
                             <div className="md:col-span-2 space-y-1">
                                 <label htmlFor="address" className="block text-sm font-medium text-wood-800">詳細地址</label>
@@ -283,6 +335,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     onChange={handleChange}
                                     required
                                 />
+                                {errors.address && <span className="text-xs text-red-500">{errors.address}</span>}
                             </div>
                         </>
                     )}
@@ -298,6 +351,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     onChange={handleChange}
                                     options={PICKUP_LOCATIONS}
                                     required
+                                    error={errors.pickupLocation}
                                 />
                             </div>
                             <div className="md:col-span-1">
@@ -385,6 +439,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 value={data.friendName || ''}
                                 onChange={handleChange}
                                 required
+                                error={errors.friendName}
                             />
                         </div>
                     )}
@@ -398,6 +453,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         onChange={handleChange}
                         className="md:col-span-2"
                         required
+                        error={errors.email}
                     />
                     {/* Error Message for Email */}
                     {errors.email && <p className="text-red-500 text-xs mt-1 md:col-span-2">{errors.email}</p>}
@@ -406,3 +462,13 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         </Card>
     );
 }
+
+// Function to help construct cn for classnames if not imported, 
+// but since we are replacing the whole file, we should import utility or define it.
+// The original file didn't import 'cn'. But we used it in the snippet above.
+// Checking previous file content, 'cn' was NOT used in CustomerInfo.
+// I should remove 'cn' usage or duplicate it.
+function cn(...classes) {
+    return classes.filter(Boolean).join(" ");
+}
+

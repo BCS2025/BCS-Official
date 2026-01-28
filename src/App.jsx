@@ -46,6 +46,7 @@ function App() {
     const isFreeShipping = itemsTotal >= FREE_SHIPPING_THRESHOLD;
     const finalShippingCost = isFreeShipping ? 0 : shippingCost;
     const totalAmount = itemsTotal + finalShippingCost;
+    const totalQuantity = cart.reduce((sum, item) => sum + Number(item.quantity), 0);
 
     const handleAddToCart = (item) => {
         // item should contain productId, _id, etc.
@@ -142,6 +143,7 @@ function App() {
             },
             items: formattedItems,
             totalAmount: totalAmount,
+            totalQuantity: totalQuantity, // Pass to backend for email logic if needed
         };
 
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
@@ -162,7 +164,10 @@ function App() {
                 name: '',
                 phone: '',
                 email: '',
-                address: ''
+                address: '',
+                pickupLocation: '',
+                pickupTime: '',
+                pickupDate: '' // Ensure reset
             }));
 
             // Navigate to Thank You (we'll just render it conditionally or use a route)
