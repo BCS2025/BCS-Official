@@ -102,6 +102,22 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         setErrors(prev => ({ ...prev, [id]: error }));
     };
 
+    // Generate time slots logic
+    const generateTimeSlots = (isWeekend) => {
+        const startHour = isWeekend ? 9 : 19;
+        const endHour = 22;
+        const slots = [];
+        for (let h = startHour; h <= endHour; h++) {
+            const time = `${h.toString().padStart(2, '0')}:00`;
+            slots.push({ value: time, label: time });
+            if (h !== endHour) {
+                const time30 = `${h.toString().padStart(2, '0')}:30`;
+                slots.push({ value: time30, label: time30 });
+            }
+        }
+        return slots;
+    };
+
     // Calculate time slots based on selected date
     const timeSlots = useMemo(() => {
         if (!data.pickupDate) return [];
@@ -399,30 +415,9 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     disabled={!data.pickupDate}
                                 >
                                     <option value="" disabled>請選擇時間</option>
-                                    {(() => {
-                                        if (!data.pickupDate) return null;
-                                        const dayOfWeek = new Date(data.pickupDate).getDay(); // 0=Sun, 6=Sat
-                                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-                                        // Time Slots
-                                        // Weekday: 19:00 - 22:00
-                                        // Weekend: 09:00 - 22:00
-                                        const startHour = isWeekend ? 9 : 19;
-                                        const endHour = 22;
-                                        const slots = [];
-
-                                        for (let h = startHour; h <= endHour; h++) {
-                                            const time = `${h.toString().padStart(2, '0')}:00`;
-                                            slots.push(<option key={time} value={time}>{time}</option>);
-                                            // Optional: half-hour slots? User said "19:00~22:00", implies range or slots. 
-                                            // Let's stick to hour slots for simplicity unless asked.
-                                            if (h !== endHour) {
-                                                const time30 = `${h.toString().padStart(2, '0')}:30`;
-                                                slots.push(<option key={time30} value={time30}>{time30}</option>);
-                                            }
-                                        }
-                                        return slots;
-                                    })()}
+                                    {timeSlots.map(slot => (
+                                        <option key={slot.value} value={slot.value}>{slot.label}</option>
+                                    ))}
                                 </select>
                                 <p className="text-xs text-wood-500 mt-1">
                                     平日 19:00-22:00 / 假日 09:00-22:00
