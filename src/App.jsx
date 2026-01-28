@@ -7,6 +7,7 @@ import ThankYouPage from './components/ThankYouPage'; // Import
 import { Button } from './components/ui/Button';
 import { ShoppingCart, Send } from 'lucide-react';
 import { formatCurrency } from './lib/pricing';
+import { getProcessingWorkingDays, addWorkingDays, formatDate } from './lib/dates';
 
 function App() {
     const [cart, setCart] = useState([]);
@@ -41,6 +42,7 @@ function App() {
     // If free shipping, cost is 0, otherwise use selected method cost
     const finalShippingCost = isFreeShipping ? 0 : shippingCost;
     const totalAmount = itemsTotal + finalShippingCost;
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleAddToCart = (item) => {
         // ... (keep existing)
@@ -107,7 +109,8 @@ function App() {
                 break;
             case 'pickup':
                 if (!customer.pickupLocation) errors.pickupLocation = "請選擇取貨地點";
-                if (!customer.pickupTime) errors.pickupTime = "請填寫預計取貨時間";
+                if (!customer.pickupDate) errors.pickupDate = "請選擇預計取貨日期";
+                if (!customer.pickupTime) errors.pickupTime = "請選擇預計取貨時間";
                 break;
             case 'friend':
                 if (!customer.friendName) errors.friendName = "請填寫代領人姓名";
@@ -182,6 +185,7 @@ function App() {
             },
             items: formattedItems,
             totalAmount: totalAmount,
+            totalQuantity: totalQuantity, // Pass to backend for email logic if needed
         };
 
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
@@ -200,12 +204,20 @@ function App() {
                 body: JSON.stringify(orderData)
             });
 
+            // Calculate Date
+            const processingDays = getProcessingWorkingDays(totalQuantity);
+            const estimatedShipDateObj = addWorkingDays(new Date(), processingDays);
+
             // Success: Switch to Thank You View
             setSuccessData({
                 orderId,
-                needProof
+                needProof,
+                totalAmount, // Pass for Thank You Page
+                estimatedShipDate: formatDate(estimatedShipDateObj), // YYYY-MM-DD
+                processingDays
             });
 
+            // Clear cart
             // Clear cart
             setCart([]);
             // Reset customer (keep proof preference?)
@@ -214,7 +226,10 @@ function App() {
                 name: '',
                 phone: '',
                 email: '',
-                address: ''
+                address: '',
+                pickupLocation: '',
+                pickupTime: '',
+                pickupDate: '' // Ensure reset
             }));
             window.scrollTo({ top: 0, behavior: 'instant' });
 
@@ -232,6 +247,8 @@ function App() {
             <ThankYouPage
                 orderId={successData.orderId}
                 needProof={successData.needProof}
+                totalAmount={successData.totalAmount}
+                estimatedShipDate={successData.estimatedShipDate}
                 onHome={() => setSuccessData(null)}
             />
         );
@@ -318,6 +335,7 @@ function App() {
                             onShippingCostChange={handleShippingCostChange}
                             isFreeShipping={isFreeShipping}
                             errors={validationErrors}
+                            totalQuantity={totalQuantity} // Pass quantity
                         />
 
                         <Button

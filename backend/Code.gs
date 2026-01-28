@@ -50,7 +50,15 @@ function doPost(e) {
 
     // 2. Email Notification (To Customer)
     if (customer.email) {
-      sendOrderConfirmationEmail(customer.email, rowData, rawData.items);
+      // Calculate Total Quantity
+      const totalQuantity = rawData.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+      
+      // Calculate Estimated Ship Date
+      const processingDays = getProcessingWorkingDays(totalQuantity);
+      const estimatedShipDateObj = addWorkingDays(new Date(), processingDays);
+      const estimatedShipDateStr = formatDate(estimatedShipDateObj);
+
+      sendOrderConfirmationEmail(customer.email, rowData, rawData.items, estimatedShipDateStr, processingDays);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ 'result': 'success', 'row': sheet.getLastRow() }))
@@ -65,7 +73,7 @@ function doPost(e) {
 }
 
 // --- Email Notification ---
-function sendOrderConfirmationEmail(email, rowData, items) {
+function sendOrderConfirmationEmail(email, rowData, items, estimatedShipDateStr, processingDays) {
   const orderId = rowData[0];
   const totalAmount = rowData[8];
   
@@ -85,6 +93,10 @@ function sendOrderConfirmationEmail(email, rowData, items) {
           <h3 style="margin-top: 0; color: #5d4037;">訂單資訊</h3>
           <p><strong>訂單編號：</strong>${orderId}</p>
           <p><strong>對稿需求：</strong>${rowData[10]}</p>
+          <div style="background-color: #fff3e0; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #ffe0b2;">
+             <p style="margin: 0; color: #e65100;"><strong>📅 預計出貨日期：${estimatedShipDateStr}</strong></p>
+             <p style="margin: 5px 0 0 0; font-size: 12px; color: #f57c00;">(收到款項後約 ${processingDays} 個工作天)</p>
+          </div>
           <p><strong>總金額：</strong>$${totalAmount}</p>
         </div>
 
@@ -186,6 +198,38 @@ ${rowData[9]}`.trim();
       "payload": JSON.stringify(payload)
     });
   } catch (e) { console.log(e); }
+}
+
+// --- Date Helpers ---
+function getProcessingWorkingDays(quantity) {
+    if (quantity < 25) {
+        return 3;
+    }
+    const baseDays = 5;
+    const additionalChunk = Math.floor((quantity - 25) / 25);
+    return baseDays + (additionalChunk * 2);
+}
+
+function addWorkingDays(startDate, days) {
+    var result = new Date(startDate);
+    var count = 0;
+    
+    while (count < days) {
+        result.setDate(result.getDate() + 1);
+        var dayOfWeek = result.getDay();
+        // 0 = Sunday, 6 = Saturday
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            count++;
+        }
+    }
+    return result;
+}
+
+function formatDate(date) {
+    var y = date.getFullYear();
+    var m = ('0' + (date.getMonth() + 1)).slice(-2);
+    var d = ('0' + date.getDate()).slice(-2);
+    return y + '/' + m + '/' + d;
 }
 
 
