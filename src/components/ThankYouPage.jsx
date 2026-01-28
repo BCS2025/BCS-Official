@@ -1,6 +1,7 @@
 
-import { CheckCircle, Home, FileText, CreditCard } from 'lucide-react';
+import { CheckCircle, Home, FileText, Calendar, Mail } from 'lucide-react';
 import { Button } from './ui/Button';
+import { formatCurrency } from '../lib/pricing';
 
 export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate }) {
     return (
@@ -15,14 +16,11 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                     <h2 className="text-2xl font-serif font-bold text-wood-900">
                         感謝您的訂購！
                     </h2>
-                    <p className="text-wood-600">
-                        我們已收到您的訂製需求
-                    </p>
-                    <div className="bg-wood-50 py-3 px-6 rounded-lg inline-block border border-wood-200">
-                        <span className="text-sm text-wood-500 block mb-1">訂單編號</span>
-                        <span className="text-xl font-mono font-bold text-wood-800 tracking-wider">
-                            {orderId}
-                        </span>
+
+                    {/* Email Notice */}
+                    <div className="bg-blue-50 text-blue-800 px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2">
+                        <Mail size={16} />
+                        <span>訂單詳細資訊已發送至您的 Email</span>
                     </div>
 
                     {estimatedDate && (
@@ -57,7 +55,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
 
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
-                                <span>加入官方 LINE，告知「訂單編號」與「匯款後五碼」。</span>
+                                <span>請點擊下方<span className="font-bold text-green-600">「加入官方 LINE」</span>，告知「訂單編號」與「匯款後五碼」。</span>
                             </p>
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">3</span>
@@ -81,7 +79,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
 
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
-                                <span>加入官方 LINE，告知「訂單編號」與「匯款後五碼」。</span>
+                                <span>請點擊下方<span className="font-bold text-green-600">「加入官方 LINE」</span>，告知「訂單編號」與「匯款後五碼」。</span>
                             </p>
                             <p className="flex gap-2">
                                 <span className="bg-wood-200 text-wood-700 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">3</span>
@@ -94,7 +92,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                 {/* Call to Action: LINE */}
                 <div className="text-center space-y-4">
                     <p className="text-sm font-medium text-wood-600">
-                        請點擊下方按鈕或掃描 QR Code 加入好友
+                        請點擊下方綠色按鈕或掃描 QR Code 加入好友
                     </p>
 
                     <div className="flex flex-col items-center gap-4">
@@ -108,7 +106,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                         </div>
 
                         {/* Official Button */}
-                        <a href="https://lin.ee/05XoDu4" target="_blank" rel="noopener noreferrer" className="hover:opacity-90 transition-opacity">
+                        <a href="https://lin.ee/ax9WURy" target="_blank" rel="noopener noreferrer" className="hover:opacity-90 transition-opacity">
                             <img
                                 src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png"
                                 alt="加入好友"
