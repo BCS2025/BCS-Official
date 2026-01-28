@@ -1,9 +1,30 @@
-
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PRODUCTS } from '../data/products';
 import { formatCurrency } from '../lib/pricing';
+import { ArrowUpDown } from 'lucide-react';
 
 export default function ProductGallery() {
+    const [sortBy, setSortBy] = useState('featured');
+
+    const sortedProducts = useMemo(() => {
+        const sorted = [...PRODUCTS];
+        if (sortBy === 'price-asc') {
+            return sorted.sort((a, b) => a.price - b.price);
+        }
+        if (sortBy === 'price-desc') {
+            return sorted.sort((a, b) => b.price - a.price);
+        }
+        if (sortBy === 'newest') {
+            return sorted.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateB - dateA; // Newest first
+            });
+        }
+        return sorted; // 'featured' uses original order
+    }, [sortBy]);
+
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <section className="text-center space-y-2 mb-12">
@@ -20,8 +41,29 @@ export default function ProductGallery() {
                 </div>
             </section>
 
+            {/* Controls Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <p className="text-wood-600 font-medium">
+                    共 <span className="text-wood-900 font-bold">{sortedProducts.length}</span> 項商品
+                </p>
+                <div className="flex items-center gap-2">
+                    <ArrowUpDown size={16} className="text-wood-500" />
+                    <span className="text-sm text-wood-600 hidden sm:inline">排序方式：</span>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="bg-white border border-wood-200 rounded-lg px-3 py-2 text-sm text-wood-800 focus:outline-none focus:ring-2 focus:ring-wood-400 cursor-pointer hover:border-wood-300 transition-colors"
+                    >
+                        <option value="featured">✨ 精選推薦</option>
+                        <option value="newest">🆕 最新上架</option>
+                        <option value="price-asc">💰 價格：由低到高</option>
+                        <option value="price-desc">💎 價格：由高到低</option>
+                    </select>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {PRODUCTS.map((product) => (
+                {sortedProducts.map((product) => (
                     <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-wood-100 overflow-hidden group flex flex-col">
                         <div className="aspect-square w-full overflow-hidden bg-wood-50 relative">
                             <img
@@ -34,7 +76,13 @@ export default function ProductGallery() {
                         </div>
 
                         <div className="p-6 flex flex-col flex-grow">
-                            <h3 className="text-xl font-bold text-wood-900 mb-2">{product.name}</h3>
+                            <div className="flex justify-between items-start mb-2">
+                                <h3 className="text-xl font-bold text-wood-900">{product.name}</h3>
+                                {/* New Label */}
+                                {(new Date(product.createdAt) > new Date('2023-12-01')) && (
+                                    <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">NEW</span>
+                                )}
+                            </div>
                             <p className="text-wood-500 text-sm mb-4 line-clamp-2 flex-grow">{product.description}</p>
 
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-wood-50">

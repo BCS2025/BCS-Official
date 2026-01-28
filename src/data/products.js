@@ -10,6 +10,7 @@ export const PRODUCTS = [
         description: '獨一無二的專屬訂製，溫潤手感，送禮自用兩相宜。',
         priceDescription: '單面 $99 / 雙面 $150 (滿50個同內容享量販價)',
         calculatePrice: calculateKeychainPrice,
+        createdAt: '2023-01-01T00:00:00Z',
         fields: [
             {
                 name: 'siding',
@@ -74,6 +75,7 @@ export const PRODUCTS = [
         priceDescription: '$490 / 個',
         fields: [],
         calculatePrice: (config, qty) => 490 * (qty || 0),
+        createdAt: '2023-06-01T00:00:00Z',
     },
     {
         id: 'wooden-coaster',
@@ -84,6 +86,7 @@ export const PRODUCTS = [
         priceDescription: '$290 / 個',
         fields: [],
         calculatePrice: (config, qty) => 290 * (qty || 0),
+        createdAt: '2023-03-01T00:00:00Z',
     },
     {
         id: 'spring-couplets',
@@ -94,6 +97,7 @@ export const PRODUCTS = [
         priceDescription: '$390 / 組',
         fields: [],
         calculatePrice: (config, qty) => 390 * (qty || 0),
+        createdAt: '2024-01-01T00:00:00Z',
     },
     {
         id: 'tile-night-light',
@@ -104,6 +108,7 @@ export const PRODUCTS = [
         priceDescription: '$590 / 個',
         fields: [],
         calculatePrice: (config, qty) => 590 * (qty || 0),
+        createdAt: '2023-11-01T00:00:00Z',
     },
     {
         id: 'tile-calendar',
@@ -114,6 +119,7 @@ export const PRODUCTS = [
         priceDescription: '$690 / 個',
         fields: [],
         calculatePrice: (config, qty) => 690 * (qty || 0),
+        createdAt: '2023-12-01T00:00:00Z',
     },
 ];
 
