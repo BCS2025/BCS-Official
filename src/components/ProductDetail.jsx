@@ -2,6 +2,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { getProductById } from '../data/products';
 import ProductForm from './ProductForm';
+import { getImageUrl } from '../lib/imageUtils';
 import { ArrowLeft } from 'lucide-react';
 
 export default function ProductDetail({ onAddToCart }) {
@@ -28,7 +29,7 @@ export default function ProductDetail({ onAddToCart }) {
                 {/* Product Image */}
                 <div className="rounded-2xl overflow-hidden shadow-sm border border-wood-100 bg-white p-2">
                     <img
-                        src={product.image}
+                        src={getImageUrl(product.image)}
                         alt={product.name}
                         className="w-full h-auto rounded-xl object-cover"
                     />

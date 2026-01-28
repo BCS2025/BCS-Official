@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PRODUCTS } from '../data/products';
 import { formatCurrency } from '../lib/pricing';
+import { getImageUrl } from '../lib/imageUtils';
 import { ArrowUpDown } from 'lucide-react';
 
 export default function ProductGallery() {
@@ -67,7 +68,7 @@ export default function ProductGallery() {
                     <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-wood-100 overflow-hidden group flex flex-col">
                         <div className="aspect-square w-full overflow-hidden bg-wood-50 relative">
                             <img
-                                src={product.image}
+                                src={getImageUrl(product.image)}
                                 alt={product.name}
                                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                             />
