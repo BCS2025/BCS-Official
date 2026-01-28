@@ -5,7 +5,7 @@ import { Select } from './ui/Select';
 import { TAIWAN_DATA } from '../lib/taiwanData';
 import { Truck, MapPin, Store, Users, Calendar, Clock } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
-import { calculateLeadDays } from '../lib/utils';
+import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 
 const SHIPPING_METHODS = [
     { id: 'store', name: '超商一般店到店', price: 60, icon: Store, description: '需提供超商門市' },
@@ -23,11 +23,13 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 
+
+
     // Calculate Estimated Shipping Date
-    const processingDays = getProcessingWorkingDays(totalQuantity);
-    const estimatedShipDateObj = addWorkingDays(new Date(), processingDays);
-    const minDateStr = formatDate(estimatedShipDateObj);
-    const formattedShipDate = `${estimatedShipDateObj.getFullYear()}/${estimatedShipDateObj.getMonth() + 1}/${estimatedShipDateObj.getDate()}`;
+    const processingDays = calculateLeadDays(totalQuantity);
+    // getEstimatedShipDate returns YYYY-MM-DD
+    const estDateStr = getEstimatedShipDate(processingDays);
+    const formattedShipDate = estDateStr.replace(/-/g, '/');
 
     // Initialize needProof if not present
     useEffect(() => {
