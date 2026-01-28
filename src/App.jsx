@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { PRODUCTS, getProductLabel } from './data/products'; // Correct import path
 import Navbar from './components/Navbar';
@@ -11,7 +11,15 @@ import { formatCurrency } from './lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from './lib/utils';
 
 function App() {
-    const [cart, setCart] = useState([]);
+    const [cart, setCart] = useState(() => {
+        const savedCart = localStorage.getItem('cart');
+        return savedCart ? JSON.parse(savedCart) : [];
+    });
+
+    // Save cart to local storage
+    useEffect(() => {
+        localStorage.setItem('cart', JSON.stringify(cart));
+    }, [cart]);
     const [customer, setCustomer] = useState({
         name: '',
         phone: '',
