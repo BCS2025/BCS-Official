@@ -1,8 +1,9 @@
 import { Trash2, Edit2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
+import { getProductLabel } from '../data/products';
 
-export default function OrderList({ items, onEdit, onDelete, getLabel }) {
+export default function OrderList({ items, onEdit, onDelete }) {
     if (items.length === 0) {
         return (
             <div className="text-center py-10 bg-wood-50 rounded-lg border border-dashed border-wood-200 text-wood-500">
@@ -21,7 +22,7 @@ export default function OrderList({ items, onEdit, onDelete, getLabel }) {
                         <thead className="bg-wood-100 text-wood-700 font-medium">
                             <tr>
                                 <th className="px-4 py-3">商品內容</th>
-                                <th className="px-4 py-3 text-center">款式/字體</th>
+                                <th className="px-4 py-3 text-center">規格</th>
                                 <th className="px-4 py-3 text-center">數量</th>
                                 <th className="px-4 py-3 text-right">金額</th>
                                 <th className="px-4 py-3 text-center">操作</th>
@@ -38,11 +39,17 @@ export default function OrderList({ items, onEdit, onDelete, getLabel }) {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center text-wood-600">
-                                        <div>{item.siding === 'double' ? '雙面' : '單面'}</div>
-                                        <div className="text-xs">
-                                            {getLabel ? getLabel('shape', item.shape) : item.shape}
-                                            {' / '}
-                                            {getLabel ? getLabel('font', item.font) : item.font}
+                                        {/* Display specific fields if they exist */}
+                                        {item.siding && (
+                                            <div>{item.siding === 'double' ? '雙面雕刻' : '單面雕刻'}</div>
+                                        )}
+                                        <div className="text-xs space-y-1">
+                                            {item.shape && (
+                                                <div>{getProductLabel(item.productId, 'shape', item.shape)}</div>
+                                            )}
+                                            {item.font && (
+                                                <div>{getProductLabel(item.productId, 'font', item.font)}</div>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center font-medium">{item.quantity}</td>

@@ -118,3 +118,12 @@ export const PRODUCTS = [
 ];
 
 export const getProductById = (id) => PRODUCTS.find(p => p.id === id);
+
+export const getProductLabel = (productId, fieldName, value) => {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return value;
+
+    const field = product.fields?.find(f => f.name === fieldName);
+    const option = field?.options?.find(o => o.value === value);
+    return option ? option.label : value;
+};

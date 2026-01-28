@@ -1,17 +1,19 @@
-
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import OrderList from './OrderList';
 import CustomerInfo from './CustomerInfo';
+import ProductForm from './ProductForm';
 import { Button } from './ui/Button';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, X } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
+import { getProductById } from '../data/products';
 
 export default function Cart({
     cart,
     customer,
     shippingCost,
-    onEdit,
+    onUpdateItem, // Changed from onEdit
     onDelete,
     onCustomerChange,
     onShippingCostChange,
@@ -21,18 +23,7 @@ export default function Cart({
     FREE_SHIPPING_THRESHOLD,
     itemsTotal
 }) {
-    // Helper to extract display labels
-    // Note: We might need to pass this down or import it if the logic is complex.
-    // For now, we reuse the simple logic or rely on stored labels if we saved them.
-    // A better approach is to rely on the OrderList to display what it has.
-
-    // We need 'getProductLabel' logic here if OrderList depends on it being passed as a prop.
-    // In App.jsx, it used `activeProduct` which is not available here easily for ALL products.
-    // Ideally, the cart items should ALREADY have the human-readable labels stored when added.
-    // Let's assume we will refactor 'handleAddToCart' in App.jsx to save labels, 
-    // OR we pass a helper that looks up based on item.productId.
-
-    // For this refactor, let's import the product list to lookup.
+    const [editingItem, setEditingItem] = useState(null);
 
     // Calculate total quantity for lead time
     const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
@@ -100,7 +91,7 @@ export default function Cart({
                 */}
                 <OrderList
                     items={cart}
-                    onEdit={onEdit}
+                    onEdit={setEditingItem}
                     onDelete={onDelete}
                 // getLabel passed from App or handled inside
                 />
@@ -127,8 +118,11 @@ export default function Cart({
                     <span>運費 ({customer.shippingMethod === 'store' ? '超商' : customer.shippingMethod === 'post' ? '郵寄' : '自取'})</span>
                     <span>{isFreeShipping ? '免運' : formatCurrency(shippingCost)}</span>
                 </div>
+                <div className="border-t border-wood-200 pt-4 flex justify-between text-xl font-bold text-wood-900">
+                    <span>結帳總金額</span>
                     <span>{formatCurrency(itemsTotal + (isFreeShipping ? 0 : shippingCost))}</span>
                 </div>
+
                 {/* Estimated Date */}
                 <div className="mt-4 pt-4 border-t border-wood-200 text-sm text-wood-700">
                     <div className="flex justify-between">
@@ -161,12 +155,36 @@ export default function Cart({
             </Button>
 
             {
-        !isValid && (
-            <p className="text-center text-sm text-red-500">
-                請填寫完整的訂購資訊以送出訂單
-            </p>
-        )
-    }
+                !isValid && (
+                    <p className="text-center text-sm text-red-500">
+                        請填寫完整的訂購資訊以送出訂單
+                    </p>
+                )
+            }
+
+            {/* Edit Modal */}
+            {editingItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="absolute top-4 right-4 z-10">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(null)} className="h-8 w-8 p-0 rounded-full bg-white/80 hover:bg-wood-100">
+                                <X size={20} />
+                            </Button>
+                        </div>
+                        <div className="p-1">
+                            <ProductForm
+                                product={getProductById(editingItem.productId)}
+                                initialData={editingItem}
+                                onAddToCart={(updatedItem) => {
+                                    onUpdateItem(updatedItem);
+                                    setEditingItem(null);
+                                }}
+                                onCancelEdit={() => setEditingItem(null)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

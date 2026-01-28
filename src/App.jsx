@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { PRODUCTS } from './data/products'; // Correct import path
+import { PRODUCTS, getProductLabel } from './data/products'; // Correct import path
 import Navbar from './components/Navbar';
 import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
@@ -92,15 +92,7 @@ function App() {
         setShippingCost(cost);
     };
 
-    // Helper to find label
-    const getProductLabel = (fieldName, value, productId) => {
-        const product = PRODUCTS.find(p => p.id === productId);
-        if (!product) return value;
 
-        const field = product.fields?.find(f => f.name === fieldName);
-        const option = field?.options?.find(o => o.value === value);
-        return option ? option.label : value;
-    };
 
     const handleSubmit = async () => {
         let confirmMsg = `確定要送出訂單嗎？\n\n商品總計: ${formatCurrency(itemsTotal)}`;
@@ -204,7 +196,7 @@ function App() {
                             cart={cart}
                             customer={customer}
                             shippingCost={finalShippingCost} // Use final calculated cost
-                            onEdit={handleEditItem}
+                            onUpdateItem={handleAddToCart}
                             onDelete={handleDeleteItem}
                             onCustomerChange={handleCustomerChange}
                             onShippingCostChange={handleShippingCostChange}
