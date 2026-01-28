@@ -35,7 +35,16 @@ export default function ProductDetail({ onAddToCart }) {
                     />
                     <div className="p-4 bg-wood-50 rounded-lg mt-2">
                         <h1 className="text-2xl font-serif font-bold text-wood-900 mb-2">{product.name}</h1>
-                        <p className="text-wood-600 text-sm whitespace-pre-line leading-relaxed">{product.description}</p>
+                        <div className="text-wood-600 text-sm leading-relaxed space-y-2">
+                            {product.description.split('\n').map((line, index) => (
+                                <p key={index}
+                                    className={line.trim().startsWith('---') ? "border-t border-wood-200 my-4" : "min-h-[1.5em]"}
+                                    dangerouslySetInnerHTML={{
+                                        __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-wood-800">$1</strong>')
+                                    }}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
 
