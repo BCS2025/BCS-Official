@@ -119,8 +119,8 @@ function App() {
         // Format items with readable labels
         const formattedItems = cart.map(item => ({
             ...item,
-            shape: getProductLabel('shape', item.shape, item.productId),
-            font: getProductLabel('font', item.font, item.productId)
+            shape: getProductLabel(item.productId, 'shape', item.shape),
+            font: getProductLabel(item.productId, 'font', item.font)
         }));
 
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
@@ -165,7 +165,7 @@ function App() {
             });
 
             // Success
-            setSuccessData({ orderId, needProof, estimatedDate });
+            setSuccessData({ orderId, needProof, estimatedDate, totalAmount });
             setCart([]);
             setCustomer(prev => ({
                 ...prev,
@@ -232,6 +232,7 @@ function App() {
                                         navigate('/');
                                     }}
                                     estimatedDate={successData.estimatedDate}
+                                    totalAmount={successData.totalAmount}
                                 />
                             ) : (
                                 <ProductGallery /> // Fallback if no success data

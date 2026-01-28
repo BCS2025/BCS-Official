@@ -3,7 +3,7 @@ import { CheckCircle, Home, FileText, Calendar, Mail } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
 
-export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate }) {
+export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate, totalAmount }) {
     return (
         <div className="min-h-screen bg-wood-50 flex flex-col items-center justify-center p-4">
             <div className="bg-white max-w-lg w-full rounded-2xl shadow-xl p-8 space-y-8 animate-in zoom-in-95 duration-300">
@@ -23,12 +23,23 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                         <span>訂單詳細資訊已發送至您的 Email</span>
                     </div>
 
-                    {estimatedDate && (
-                        <div className="mt-2 text-wood-700">
-                            <span className="text-sm">預計出貨/取貨日期：</span>
-                            <span className="font-bold">{estimatedDate}</span>
+                    {/* Information Grid */}
+                    <div className="mt-4 grid grid-cols-1 gap-2 text-wood-700 bg-wood-50 p-4 rounded-lg">
+                        <div className="flex justify-between border-b border-wood-200 pb-2">
+                            <span className="text-sm">訂單編號</span>
+                            <span className="font-bold font-mono text-wood-900">{orderId}</span>
                         </div>
-                    )}
+                        {estimatedDate && (
+                            <div className="flex justify-between border-b border-wood-200 pb-2">
+                                <span className="text-sm">預計出貨/取貨</span>
+                                <span className="font-bold">{estimatedDate}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between pt-1">
+                            <span className="text-sm font-bold text-wood-800">應付金額</span>
+                            <span className="font-bold text-xl text-red-600">{formatCurrency(totalAmount)}</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Dynamic Process Content */}
