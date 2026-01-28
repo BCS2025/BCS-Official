@@ -57,22 +57,53 @@ function App() {
     const totalQuantity = cart.reduce((sum, item) => sum + Number(item.quantity), 0);
 
     const handleAddToCart = (item) => {
-        // item should contain productId, _id, etc.
-        const existingIndex = cart.findIndex(i => i._id === item._id);
+        let newCart = [...cart];
 
-        let newCart;
-        if (existingIndex >= 0) {
-            // Edit existing
-            newCart = [...cart];
-            newCart[existingIndex] = item;
+        // Check if we are updating an specific existing item (by ID)
+        const existingIdIndex = cart.findIndex(i => i._id === item._id);
+
+        if (existingIdIndex >= 0) {
+            // Update existing item
+            newCart[existingIdIndex] = item;
         } else {
-            // Add new
-            newCart = [...cart, item];
+            // Adding new item - check for identical content to merge
+            const identicalIndex = cart.findIndex(i => {
+                if (i.productId !== item.productId) return false;
+
+                // Fields to ignore during comparison
+                const keysToIgnore = ['_id', 'quantity', 'price', 'productName'];
+                // productName should be same, but safe to ignore if productId is same.
+
+                // Compare all other keys
+                const allKeys = new Set([...Object.keys(i), ...Object.keys(item)]);
+                for (const key of allKeys) {
+                    if (keysToIgnore.includes(key)) continue;
+                    if (i[key] !== item[key]) return false;
+                }
+                return true;
+            });
+
+            if (identicalIndex >= 0) {
+                // Merge with existing item
+                const existingItem = newCart[identicalIndex];
+                const newQuantity = Number(existingItem.quantity) + Number(item.quantity);
+
+                // Recalculate price for the new total quantity
+                const product = PRODUCTS.find(p => p.id === item.productId);
+                const newPrice = product.calculatePrice(item, newQuantity);
+
+                newCart[identicalIndex] = {
+                    ...existingItem,
+                    quantity: newQuantity,
+                    price: newPrice
+                };
+            } else {
+                // Add as completely new item
+                newCart.push(item);
+            }
         }
 
         setCart(newCart);
-
-        // Stay on page and notify user
         alert('已加入購物車！');
     };
 

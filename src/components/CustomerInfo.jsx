@@ -274,8 +274,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         required
                         error={errors.phone}
                     />
-                    {/* Error Message for Phone */}
-                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+
 
                     {/* Dynamic Fields based on Shipping Method */}
 
@@ -452,8 +451,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         required
                         error={errors.email}
                     />
-                    {/* Error Message for Email */}
-                    {errors.email && <p className="text-red-500 text-xs mt-1 md:col-span-2">{errors.email}</p>}
+
                 </div>
             </CardContent>
         </Card>
