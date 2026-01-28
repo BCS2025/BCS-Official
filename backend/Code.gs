@@ -112,7 +112,7 @@ function sendOrderConfirmationEmail(email, rowData, items) {
 
         <div style="text-align: center; margin-top: 30px;">
           <p>如有任何問題，歡迎隨時聯繫我們！</p>
-          <a href="https://line.me/ti/p/@your_line_id" style="background-color: #00c300; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">加入官方 LINE</a>
+          <a href="https://lin.ee/ax9WURy" style="background-color: #00c300; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">加入官方 LINE</a>
         </div>
       </div>
       <div style="background-color: #eeeeee; padding: 10px; text-align: center; font-size: 12px; color: #757575;">
@@ -188,9 +188,4 @@ ${rowData[9]}`.trim();
   } catch (e) { console.log(e); }
 }
 
-// --- Force Email Authorization ---
-// Run this function ONCE to get the 'Approve' popup for MailApp
-function forceEmailAuth() {
-  MailApp.getRemainingDailyQuota(); 
-  console.log("Email Authorization Check: OK");
-}
+

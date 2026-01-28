@@ -18,7 +18,7 @@ const PICKUP_LOCATIONS = [
     { value: '7-11北園門市', label: '7-ELEVEN 北園門市' },
 ];
 
-export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping }) {
+export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, errors = {} }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 
@@ -173,7 +173,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         placeholder="請輸入姓名"
                         value={data.name}
                         onChange={handleChange}
-                        required
+                        error={errors.name}
                     />
                     <Input
                         id="phone"
@@ -183,6 +183,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         value={data.phone}
                         onChange={handleChange}
                         required
+                        error={errors.phone}
                     />
 
                     {/* Dynamic Fields based on Shipping Method */}
@@ -197,6 +198,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 value={data.storeName || ''}
                                 onChange={handleChange}
                                 required
+                                error={errors.storeName}
                             />
 
                             {/* Map Links */}
@@ -238,6 +240,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 onChange={handleCityChange}
                                 options={Object.keys(TAIWAN_DATA).map(c => ({ value: c, label: c }))}
                                 required
+                                error={errors.city}
                             />
                             <Select
                                 id="district"
@@ -247,6 +250,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 options={city ? TAIWAN_DATA[city].map(d => ({ value: d, label: d })) : []}
                                 disabled={!city}
                                 required
+                                error={errors.district}
                             />
                             <div className="md:col-span-2 space-y-1">
                                 <label htmlFor="address" className="block text-sm font-medium text-wood-800">詳細地址</label>
@@ -258,6 +262,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     onChange={handleChange}
                                     required
                                 />
+                                {errors.address && <span className="text-xs text-red-500">{errors.address}</span>}
                             </div>
                         </>
                     )}
@@ -273,6 +278,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     onChange={handleChange}
                                     options={PICKUP_LOCATIONS}
                                     required
+                                    error={errors.pickupLocation}
                                 />
                             </div>
                             <div className="md:col-span-2">
@@ -283,6 +289,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     value={data.pickupTime || ''}
                                     onChange={handleChange}
                                     required
+                                    error={errors.pickupTime}
                                 />
                                 <div className="flex items-center gap-2 mt-1 text-xs text-wood-500">
                                     <Clock size={12} />
@@ -302,6 +309,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 value={data.friendName || ''}
                                 onChange={handleChange}
                                 required
+                                error={errors.friendName}
                             />
                         </div>
                     )}
@@ -315,6 +323,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         onChange={handleChange}
                         className="md:col-span-2"
                         required
+                        error={errors.email}
                     />
                 </div>
             </CardContent>

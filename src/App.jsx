@@ -28,6 +28,7 @@ function App() {
     const [shippingCost, setShippingCost] = useState(60); // Default store shipping
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successData, setSuccessData] = useState(null); // { orderId, needProof }
+    const [validationErrors, setValidationErrors] = useState({});
 
     // We currently only have one product, but structure handles more
     const activeProduct = PRODUCTS[0];
@@ -73,26 +74,58 @@ function App() {
     };
 
     // Validation Logic
-    const isCustomerValid = () => {
-        // Basic fields
-        const basic = customer.name && customer.phone && customer.email;
-        if (!basic) return false;
+    const validateFields = () => {
+        const errors = {};
 
+        // Phone validation: Must be 10 digits
+        const phoneRegex = /^09\d{8}$/;
+        if (!customer.phone) {
+            errors.phone = "請輸入聯絡電話";
+        } else if (!phoneRegex.test(customer.phone)) {
+            errors.phone = "請輸入有效的 10 碼手機號碼 (09xxxxxxxx)";
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!customer.email) {
+            errors.email = "請輸入 Email";
+        } else if (!emailRegex.test(customer.email)) {
+            errors.email = "請輸入有效的 Email 格式";
+        }
+
+        if (!customer.name) errors.name = "請輸入訂購人姓名";
+
+        // Shipping specific validation
         switch (customer.shippingMethod) {
             case 'store':
-                return !!customer.storeName;
+                if (!customer.storeName) errors.storeName = "請填寫超商門市資訊";
+                break;
             case 'post':
-                return customer.city && customer.district && customer.address;
+                if (!customer.city) errors.city = "請選擇縣市";
+                if (!customer.district) errors.district = "請選擇區域";
+                if (!customer.address) errors.address = "請填寫詳細地址";
+                break;
             case 'pickup':
-                return customer.pickupLocation && customer.pickupTime;
+                if (!customer.pickupLocation) errors.pickupLocation = "請選擇取貨地點";
+                if (!customer.pickupTime) errors.pickupTime = "請填寫預計取貨時間";
+                break;
             case 'friend':
-                return !!customer.friendName;
-            default:
-                return false;
+                if (!customer.friendName) errors.friendName = "請填寫代領人姓名";
+                break;
         }
+
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
-    const isValid = cart.length > 0 && isCustomerValid();
+    const isCustomerValid = () => {
+        // We rely on validateFields for strict check on submit. 
+        // For button disabled state, we can keep it loose or make it strict.
+        // Let's keep the button enabled to allow user to click and see errors.
+        return true;
+    };
+
+    const isValid = cart.length > 0; // Allow submit click to show errors
 
     // Helper to find label (for UI and Submit)
     const getProductLabel = (fieldName, value) => {
@@ -102,7 +135,17 @@ function App() {
     };
 
     const handleSubmit = async () => {
-        if (!isValid) return;
+        if (!validateFields()) {
+            // Scroll to first error? Or just show errors.
+            // Since errors are shown inline, user will see them.
+            // Maybe alert if they missed it.
+            const firstErrorKey = Object.keys(validationErrors)[0];
+            if (firstErrorKey) {
+                // Creating a simple map for field names if needed
+            }
+            alert("請檢查填寫的資訊是否正確");
+            return;
+        }
 
         let confirmMsg = `確定要送出訂單嗎？\n\n商品總計: ${formatCurrency(itemsTotal)}`;
         if (finalShippingCost > 0) {
@@ -274,6 +317,7 @@ function App() {
                             onChange={handleCustomerChange}
                             onShippingCostChange={handleShippingCostChange}
                             isFreeShipping={isFreeShipping}
+                            errors={validationErrors}
                         />
 
                         <Button
