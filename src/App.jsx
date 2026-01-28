@@ -8,6 +8,7 @@ import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import ThankYouPage from './components/ThankYouPage';
 import { formatCurrency } from './lib/pricing';
+import { calculateLeadDays, getEstimatedShipDate } from './lib/utils';
 
 function App() {
     const [cart, setCart] = useState([]);
@@ -16,7 +17,7 @@ function App() {
         phone: '',
         email: '',
         address: '',
-        shippingMethod: '', // Default empty to force selection
+        shippingMethod: 'store', // Default
         storeName: '',
         city: '',
         district: '',
@@ -24,7 +25,7 @@ function App() {
         pickupDate: '',
         pickupTime: '',
         friendName: '',
-        needProof: '' // Default empty to force selection
+        needProof: 'yes' // Default proof preference
     });
     const [shippingCost, setShippingCost] = useState(60); // Default store shipping
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,9 +125,21 @@ function App() {
         const orderId = `ORD-${Date.now().toString().slice(-6)}`;
         const needProof = customer.needProof || 'yes';
 
+        const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
+        const leadDays = calculateLeadDays(totalQuantity);
+
+        let estimatedDate = '';
+        if (customer.shippingMethod === 'pickup') {
+            estimatedDate = customer.pickupDate;
+        } else {
+            // For shipping, calculate estimated completion date
+            estimatedDate = getEstimatedShipDate(leadDays);
+        }
+
         const orderData = {
             orderId,
             timestamp: new Date().toISOString(),
+            estimatedDate,
             customer: {
                 ...customer,
                 needProof,
@@ -150,7 +163,7 @@ function App() {
             });
 
             // Success
-            setSuccessData({ orderId, needProof });
+            setSuccessData({ orderId, needProof, estimatedDate });
             setCart([]);
             setCustomer(prev => ({
                 ...prev,
@@ -213,6 +226,7 @@ function App() {
                                         setSuccessData(null);
                                         navigate('/');
                                     }}
+                                    estimatedDate={successData.estimatedDate}
                                 />
                             ) : (
                                 <ProductGallery /> // Fallback if no success data

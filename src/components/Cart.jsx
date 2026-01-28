@@ -5,6 +5,7 @@ import CustomerInfo from './CustomerInfo';
 import { Button } from './ui/Button';
 import { Send, ArrowLeft } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
+import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 
 export default function Cart({
     cart,
@@ -33,23 +34,17 @@ export default function Cart({
 
     // For this refactor, let's import the product list to lookup.
 
-    // Regex validations
-    const phoneRegex = /^09\d{8}$/; // Taiwan mobile: 09xxxxxxxx
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     // Calculate total quantity for lead time
     const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
 
     const isValid = cart.length > 0 &&
         customer.name &&
-        phoneRegex.test(customer.phone) && // Validate phone
-        emailRegex.test(customer.email) && // Validate email
-        customer.shippingMethod && // Ensure shipping method selected
-        customer.needProof && // Ensure proof option selected
+        customer.phone && /^09\d{8}$/.test(customer.phone) &&
+        customer.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) && // Basic with Regex
         (
             (customer.shippingMethod === 'store' && customer.storeName) ||
             (customer.shippingMethod === 'post' && customer.city && customer.district && customer.address) ||
-            (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupDate && customer.pickupTime) ||
+            (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupTime) ||
             (customer.shippingMethod === 'friend' && customer.friendName)
         );
 
@@ -107,7 +102,7 @@ export default function Cart({
                     items={cart}
                     onEdit={onEdit}
                     onDelete={onDelete}
-                    getLabel={getProductLabel}
+                // getLabel passed from App or handled inside
                 />
                 <div className="mt-6 pt-4 border-t border-wood-100 flex justify-between items-center text-lg font-bold text-wood-900">
                     <span>商品小計</span>
@@ -132,9 +127,23 @@ export default function Cart({
                     <span>運費 ({customer.shippingMethod === 'store' ? '超商' : customer.shippingMethod === 'post' ? '郵寄' : '自取'})</span>
                     <span>{isFreeShipping ? '免運' : formatCurrency(shippingCost)}</span>
                 </div>
-                <div className="border-t border-wood-200 pt-4 flex justify-between text-xl font-bold text-wood-900">
-                    <span>結帳總金額</span>
                     <span>{formatCurrency(itemsTotal + (isFreeShipping ? 0 : shippingCost))}</span>
+                </div>
+                {/* Estimated Date */}
+                <div className="mt-4 pt-4 border-t border-wood-200 text-sm text-wood-700">
+                    <div className="flex justify-between">
+                        <span>預計出貨/取貨日期</span>
+                        <span className="font-bold">
+                            {customer.shippingMethod === 'pickup' && customer.pickupDate
+                                ? customer.pickupDate
+                                : (() => {
+                                    const leadDays = calculateLeadDays(totalQuantity);
+                                    const estDate = getEstimatedShipDate(leadDays);
+                                    return `${estDate} (約 ${leadDays} 個工作天)`;
+                                })()
+                            }
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -151,11 +160,13 @@ export default function Cart({
                 )}
             </Button>
 
-            {!isValid && (
-                <p className="text-center text-sm text-red-500">
-                    請填寫完整的訂購資訊以送出訂單
-                </p>
-            )}
-        </div>
+            {
+        !isValid && (
+            <p className="text-center text-sm text-red-500">
+                請填寫完整的訂購資訊以送出訂單
+            </p>
+        )
+    }
+        </div >
     );
 }

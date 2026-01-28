@@ -5,6 +5,7 @@ import { Select } from './ui/Select';
 import { TAIWAN_DATA } from '../lib/taiwanData';
 import { Truck, MapPin, Store, Users, Clock } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
+import { calculateLeadDays } from '../lib/utils';
 
 const SHIPPING_METHODS = [
     { id: 'store', name: '超商一般店到店', price: 60, icon: Store, description: '需提供超商門市' },
@@ -23,11 +24,11 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
     const [district, setDistrict] = useState(data.district || '');
 
     // Initialize needProof if not present
-    // useEffect(() => {
-    //     if (data.needProof === undefined) {
-    //         onChange('needProof', 'yes'); // Default to yes
-    //     }
-    // }, [data.needProof, onChange]);
+    useEffect(() => {
+        if (data.needProof === undefined) {
+            onChange('needProof', 'yes'); // Default to yes
+        }
+    }, [data.needProof, onChange]);
 
     // Reset district when city changes
     useEffect(() => {
@@ -59,9 +60,31 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         onChange('district', newDistrict);
     };
 
+    const [errors, setErrors] = useState({});
+
+    // Validation Logic
+    const validateField = (id, value) => {
+        let error = '';
+        if (id === 'phone') {
+            const phoneRegex = /^09\d{8}$/;
+            if (!value) error = '請輸入電話號碼';
+            else if (!phoneRegex.test(value)) error = '請輸入有效的台灣手機號碼 (09xxxxxxxx)';
+        }
+        if (id === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!value) error = '請輸入 Email';
+            else if (!emailRegex.test(value)) error = '請輸入有效的 Email 格式';
+        }
+        return error;
+    };
+
     const handleChange = (e) => {
         const { id, value } = e.target;
         onChange(id, value);
+
+        // Real-time validation
+        const error = validateField(id, value);
+        setErrors(prev => ({ ...prev, [id]: error }));
     };
 
     const currentMethod = SHIPPING_METHODS.find(m => m.id === data.shippingMethod) || SHIPPING_METHODS[0];
@@ -184,6 +207,8 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         onChange={handleChange}
                         required
                     />
+                    {/* Error Message for Phone */}
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
 
                     {/* Dynamic Fields based on Shipping Method */}
 
@@ -271,7 +296,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     label="取貨地點"
                                     value={data.pickupLocation || ''}
                                     onChange={handleChange}
-                                    options={[{ value: '', label: '請選擇取貨地點', disabled: true }, ...PICKUP_LOCATIONS]}
+                                    options={PICKUP_LOCATIONS}
                                     required
                                 />
                             </div>
@@ -285,15 +310,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     value={data.pickupDate || ''}
                                     min={(() => {
                                         const today = new Date();
-                                        // Dynamic Lead Time Logic
-                                        let leadDays = 3; // Default (<= 5)
-                                        const qty = typeof totalQuantity !== 'undefined' ? totalQuantity : 0;
-
-                                        if (qty > 50) leadDays = 21;
-                                        else if (qty > 25) leadDays = 14;
-                                        else if (qty > 10) leadDays = 10;
-                                        else if (qty > 5) leadDays = 5;
-
+                                        const leadDays = calculateLeadDays(totalQuantity);
                                         const minDate = new Date(today);
                                         minDate.setDate(today.getDate() + leadDays);
                                         return minDate.toISOString().split('T')[0];
@@ -303,14 +320,14 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     required
                                 />
                                 <p className="text-xs text-wood-500 mt-1">
-                                    {(() => {
-                                        const qty = typeof totalQuantity !== 'undefined' ? totalQuantity : 0;
-                                        if (qty > 50) return '大量訂購需 21 個工作天 (我們將主動聯繫確認)';
-                                        if (qty > 25) return '需 14 個工作天備貨';
-                                        if (qty > 10) return '需 10 個工作天備貨';
-                                        if (qty > 5) return '需 5 個工作天備貨';
-                                        return '一般訂購需 3 個工作天備貨';
-                                    })()}
+                                    {(typeof totalQuantity !== 'undefined' && totalQuantity > 50)
+                                        ? '大量訂購需約 21 個工作天 (實際交期將主動聯繫確認)'
+                                        : (
+                                            (() => {
+                                                const leadDays = calculateLeadDays(totalQuantity);
+                                                return `預計備貨需 ${leadDays} 個工作天`;
+                                            })()
+                                        )}
                                 </p>
                             </div>
                             <div className="md:col-span-1">
@@ -382,6 +399,8 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         className="md:col-span-2"
                         required
                     />
+                    {/* Error Message for Email */}
+                    {errors.email && <p className="text-red-500 text-xs mt-1 md:col-span-2">{errors.email}</p>}
                 </div>
             </CardContent>
         </Card>

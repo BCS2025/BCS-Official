@@ -2,7 +2,7 @@
 import { CheckCircle, Home, FileText, CreditCard } from 'lucide-react';
 import { Button } from './ui/Button';
 
-export default function ThankYouPage({ orderId, needProof, onHome }) {
+export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate }) {
     return (
         <div className="min-h-screen bg-wood-50 flex flex-col items-center justify-center p-4">
             <div className="bg-white max-w-lg w-full rounded-2xl shadow-xl p-8 space-y-8 animate-in zoom-in-95 duration-300">
@@ -24,6 +24,13 @@ export default function ThankYouPage({ orderId, needProof, onHome }) {
                             {orderId}
                         </span>
                     </div>
+
+                    {estimatedDate && (
+                        <div className="mt-2 text-wood-700">
+                            <span className="text-sm">預計出貨/取貨日期：</span>
+                            <span className="font-bold">{estimatedDate}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Dynamic Process Content */}

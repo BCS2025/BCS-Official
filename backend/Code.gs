@@ -13,7 +13,7 @@ function doPost(e) {
     const headers = [
       '訂單編號', '訂單時間', '訂購人', '電話', 'Email', 
       '運送方式', '運送詳情', '運費', '總金額',
-      '商品明細', '對稿需求'
+      '商品明細', '對稿需求', '預計出貨/取貨日'
     ];
     
     if (sheet.getLastRow() === 0) {
@@ -40,7 +40,8 @@ function doPost(e) {
       customer.shippingCost,
       rawData.totalAmount,
       itemsDescription,
-      needProofText
+      needProofText,
+      rawData.estimatedDate || 'N/A' // Added estimated date
     ];
 
     sheet.appendRow(rowData);
@@ -68,6 +69,7 @@ function doPost(e) {
 function sendOrderConfirmationEmail(email, rowData, items) {
   const orderId = rowData[0];
   const totalAmount = rowData[8];
+  const estimatedDate = rowData[11]; // Get date
   
   // HTML Email Template
   const subject = `【比創空間】訂單確認通知 (${orderId})`;
@@ -84,6 +86,7 @@ function sendOrderConfirmationEmail(email, rowData, items) {
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #5d4037;">訂單資訊</h3>
           <p><strong>訂單編號：</strong>${orderId}</p>
+          <p><strong>預計出貨/取貨日：</strong>${estimatedDate}</p>
           <p><strong>對稿需求：</strong>${rowData[10]}</p>
           <p><strong>總金額：</strong>$${totalAmount}</p>
         </div>
