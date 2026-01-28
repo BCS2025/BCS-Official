@@ -3,7 +3,7 @@ import { CheckCircle, Home, FileText, Calendar, Mail } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
 
-export default function ThankYouPage({ orderId, needProof, onHome, totalAmount, estimatedShipDate }) {
+export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate }) {
     return (
         <div className="min-h-screen bg-wood-50 flex flex-col items-center justify-center p-4">
             <div className="bg-white max-w-lg w-full rounded-2xl shadow-xl p-8 space-y-8 animate-in zoom-in-95 duration-300">
@@ -23,26 +23,10 @@ export default function ThankYouPage({ orderId, needProof, onHome, totalAmount, 
                         <span>訂單詳細資訊已發送至您的 Email</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div className="bg-wood-50 py-3 px-4 rounded-lg border border-wood-200">
-                            <span className="text-sm text-wood-500 block mb-1">訂單編號</span>
-                            <span className="text-lg font-mono font-bold text-wood-800 tracking-wider">
-                                {orderId}
-                            </span>
-                        </div>
-                        <div className="bg-wood-50 py-3 px-4 rounded-lg border border-wood-200">
-                            <span className="text-sm text-wood-500 block mb-1">應付金額</span>
-                            <span className="text-lg font-bold text-red-600 tracking-wider">
-                                {formatCurrency(totalAmount)}
-                            </span>
-                        </div>
-                    </div>
-
-                    {estimatedShipDate && (
-                        <div className="text-sm text-wood-600 flex items-center justify-center gap-1.5 bg-orange-50 py-2 rounded-md">
-                            <Calendar size={16} className="text-orange-500" />
-                            <span>預計出貨日期：</span>
-                            <span className="font-bold text-wood-900">{estimatedShipDate}</span>
+                    {estimatedDate && (
+                        <div className="mt-2 text-wood-700">
+                            <span className="text-sm">預計出貨/取貨日期：</span>
+                            <span className="font-bold">{estimatedDate}</span>
                         </div>
                     )}
                 </div>

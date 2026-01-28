@@ -5,7 +5,7 @@ import { Select } from './ui/Select';
 import { TAIWAN_DATA } from '../lib/taiwanData';
 import { Truck, MapPin, Store, Users, Calendar, Clock } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
-import { getProcessingWorkingDays, addWorkingDays, formatDate } from '../lib/dates';
+import { calculateLeadDays } from '../lib/utils';
 
 const SHIPPING_METHODS = [
     { id: 'store', name: '超商一般店到店', price: 60, icon: Store, description: '需提供超商門市' },
@@ -19,22 +19,7 @@ const PICKUP_LOCATIONS = [
     { value: '7-11北園門市', label: '7-ELEVEN 北園門市' },
 ];
 
-// Time slots generation
-const generateTimeSlots = (isWeekend) => {
-    const slots = [];
-    const startHour = isWeekend ? 8 : 19;
-    const endHour = 22; // 22:00
-
-    for (let h = startHour; h <= endHour; h++) {
-        slots.push(`${h.toString().padStart(2, '0')}:00`);
-        if (h !== endHour) { // Don't add 22:30 if limit is 22:00, or maybe just hour slots? User asked for 19:00-22:00.
-            slots.push(`${h.toString().padStart(2, '0')}:30`);
-        }
-    }
-    return slots.map(t => ({ value: t, label: t }));
-};
-
-export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, errors = {}, totalQuantity = 0 }) {
+export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 
@@ -88,9 +73,31 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         onChange('district', newDistrict);
     };
 
+    const [errors, setErrors] = useState({});
+
+    // Validation Logic
+    const validateField = (id, value) => {
+        let error = '';
+        if (id === 'phone') {
+            const phoneRegex = /^09\d{8}$/;
+            if (!value) error = '請輸入電話號碼';
+            else if (!phoneRegex.test(value)) error = '請輸入有效的台灣手機號碼 (09xxxxxxxx)';
+        }
+        if (id === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!value) error = '請輸入 Email';
+            else if (!emailRegex.test(value)) error = '請輸入有效的 Email 格式';
+        }
+        return error;
+    };
+
     const handleChange = (e) => {
         const { id, value } = e.target;
         onChange(id, value);
+
+        // Real-time validation
+        const error = validateField(id, value);
+        setErrors(prev => ({ ...prev, [id]: error }));
     };
 
     // Calculate time slots based on selected date
@@ -249,6 +256,8 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         required
                         error={errors.phone}
                     />
+                    {/* Error Message for Phone */}
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
 
                     {/* Dynamic Fields based on Shipping Method */}
 
@@ -345,40 +354,77 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     error={errors.pickupLocation}
                                 />
                             </div>
-
-                            {/* Pickup Date Picker */}
-                            <div>
-                                <Input
-                                    id="pickupDate"
-                                    label="預計取貨日期"
+                            <div className="md:col-span-1">
+                                <label className="block text-sm font-medium text-wood-800 mb-1">
+                                    預計取貨日期
+                                </label>
+                                <input
                                     type="date"
-                                    min={minDateStr}
+                                    id="pickupDate"
                                     value={data.pickupDate || ''}
+                                    min={(() => {
+                                        const today = new Date();
+                                        const leadDays = calculateLeadDays(totalQuantity);
+                                        const minDate = new Date(today);
+                                        minDate.setDate(today.getDate() + leadDays);
+                                        return minDate.toISOString().split('T')[0];
+                                    })()}
                                     onChange={handleChange}
+                                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
                                     required
-                                    error={errors.pickupDate} // Make sure App.jsx validates this
                                 />
-                                <span className={cn("text-xs mt-1 block", data.pickupDate ? "text-wood-500" : "text-amber-600")}>
-                                    {data.pickupDate ? `※ 請盡量於該日之後取貨` : `※ 最快可取貨日：${formattedShipDate}`}
-                                </span>
+                                <p className="text-xs text-wood-500 mt-1">
+                                    {(typeof totalQuantity !== 'undefined' && totalQuantity > 50)
+                                        ? '大量訂購需約 21 個工作天 (實際交期將主動聯繫確認)'
+                                        : (
+                                            (() => {
+                                                const leadDays = calculateLeadDays(totalQuantity);
+                                                return `預計備貨需 ${leadDays} 個工作天`;
+                                            })()
+                                        )}
+                                </p>
                             </div>
-
-                            {/* Pickup Time Select */}
-                            <div>
-                                <Select
+                            <div className="md:col-span-1">
+                                <label className="block text-sm font-medium text-wood-800 mb-1">
+                                    預計取貨時間
+                                </label>
+                                <select
                                     id="pickupTime"
-                                    label="預計取貨時間"
                                     value={data.pickupTime || ''}
-                                    onChange={(e) => onChange('pickupTime', e.target.value)}
-                                    options={timeSlots}
-                                    disabled={!data.pickupDate}
-                                    placeholder={!data.pickupDate ? "請先選擇日期" : "請選擇時間"}
+                                    onChange={handleChange}
+                                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
                                     required
-                                    error={errors.pickupTime}
-                                />
-                                <div className="mt-1 text-xs text-wood-500">
-                                    平日 19:00-22:00, 假日 08:00-22:00
-                                </div>
+                                    disabled={!data.pickupDate}
+                                >
+                                    <option value="" disabled>請選擇時間</option>
+                                    {(() => {
+                                        if (!data.pickupDate) return null;
+                                        const dayOfWeek = new Date(data.pickupDate).getDay(); // 0=Sun, 6=Sat
+                                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+                                        // Time Slots
+                                        // Weekday: 19:00 - 22:00
+                                        // Weekend: 09:00 - 22:00
+                                        const startHour = isWeekend ? 9 : 19;
+                                        const endHour = 22;
+                                        const slots = [];
+
+                                        for (let h = startHour; h <= endHour; h++) {
+                                            const time = `${h.toString().padStart(2, '0')}:00`;
+                                            slots.push(<option key={time} value={time}>{time}</option>);
+                                            // Optional: half-hour slots? User said "19:00~22:00", implies range or slots. 
+                                            // Let's stick to hour slots for simplicity unless asked.
+                                            if (h !== endHour) {
+                                                const time30 = `${h.toString().padStart(2, '0')}:30`;
+                                                slots.push(<option key={time30} value={time30}>{time30}</option>);
+                                            }
+                                        }
+                                        return slots;
+                                    })()}
+                                </select>
+                                <p className="text-xs text-wood-500 mt-1">
+                                    平日 19:00-22:00 / 假日 09:00-22:00
+                                </p>
                             </div>
                         </>
                     )}
@@ -409,6 +455,8 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         required
                         error={errors.email}
                     />
+                    {/* Error Message for Email */}
+                    {errors.email && <p className="text-red-500 text-xs mt-1 md:col-span-2">{errors.email}</p>}
                 </div>
             </CardContent>
         </Card>

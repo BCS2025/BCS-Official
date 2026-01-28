@@ -5,9 +5,10 @@ import { Select } from './ui/Select';
 import { VisualOptionSelector } from './ui/VisualOptionSelector';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/Card';
 import { formatCurrency } from '../lib/pricing';
+import { Loader2 } from 'lucide-react';
 
 export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit }) {
-    // ... (keep logic same)
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
 
     const [formData, setFormData] = useState(() => {
         if (initialData) return { ...initialData };
@@ -23,6 +24,21 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     });
 
     const [estimatedPrice, setEstimatedPrice] = useState(0);
+    const [inventory, setInventory] = useState({});
+    const [isLoadingStock, setIsLoadingStock] = useState(true);
+
+    // Fetch Inventory on Mount
+    useEffect(() => {
+        fetch(`${GAS_URL}?action=getInventory`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    setInventory(data.inventory);
+                }
+            })
+            .catch(err => console.error("Stock Fetch Error", err))
+            .finally(() => setIsLoadingStock(false));
+    }, []);
 
     // Recalculate price whenever formData changes
     useEffect(() => {
@@ -71,6 +87,13 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
     const isEditing = !!initialData;
 
+    // Calculate Stock
+    const currentSku = formData.shape ? `${product.id}-${formData.shape}` : product.id;
+    const stockRaw = inventory[currentSku];
+    const hasStockLimit = stockRaw !== undefined;
+    const remainingStock = hasStockLimit ? parseInt(stockRaw, 10) : 999;
+    const isOutOfStock = remainingStock <= 0;
+
     return (
         <Card className={`w-full transition-all duration-300 ${isEditing ? 'ring-2 ring-wood-500 shadow-lg bg-wood-50/50' : ''}`}>
             {isEditing && (
@@ -79,8 +102,12 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                 </div>
             )}
             <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-                <p className="text-sm text-wood-500">{product.description}</p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>{product.name}</CardTitle>
+                        <p className="text-sm text-wood-500">{product.description}</p>
+                    </div>
+                </div>
                 <p className="text-sm text-wood-600 font-medium mt-1">{product.priceDescription}</p>
             </CardHeader>
             <form onSubmit={handleSubmit}>
@@ -136,15 +163,35 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                         return null;
                     })}
 
-                    <Input
-                        id="quantity"
-                        type="number"
-                        label="數量"
-                        min="1"
-                        value={formData.quantity}
-                        onChange={handleChange}
-                        required
-                    />
+                    <div className="space-y-1">
+                        <Input
+                            id="quantity"
+                            type="number"
+                            label="數量"
+                            min="1"
+                            max={hasStockLimit ? remainingStock : 999}
+                            value={formData.quantity}
+                            onChange={handleChange}
+                            required
+                            disabled={isOutOfStock}
+                        />
+                        <div className="flex items-center gap-2 text-xs">
+                            {isLoadingStock ? (
+                                <span className="flex items-center text-wood-500">
+                                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                    庫存確認中...
+                                </span>
+                            ) : hasStockLimit ? (
+                                <span className={`${isOutOfStock ? 'text-red-600 font-bold' : 'text-wood-600'}`}>
+                                    {isOutOfStock ? '⚠️ 目前缺貨中' : `庫存剩餘: ${remainingStock}`}
+                                </span>
+                            ) : (
+                                <span className="text-green-600">
+                                    庫存充足
+                                </span>
+                            )}
+                        </div>
+                    </div>
 
                     <div className="flex justify-between items-center rounded-lg bg-wood-50 p-3 mt-4 border border-wood-100">
                         <span className="text-sm font-medium text-wood-600">預估金額</span>
@@ -157,8 +204,8 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                             取消修改
                         </Button>
                     )}
-                    <Button type="submit" className="flex-1">
-                        {isEditing ? '更新購買清單' : '加入購買清單'}
+                    <Button type="submit" className="flex-1" disabled={isOutOfStock || (hasStockLimit && formData.quantity > remainingStock)}>
+                        {isEditing ? '更新購買清單' : (isOutOfStock ? '缺貨中' : '加入購買清單')}
                     </Button>
                 </CardFooter>
             </form>
