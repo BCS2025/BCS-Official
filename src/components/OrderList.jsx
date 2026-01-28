@@ -40,9 +40,9 @@ export default function OrderList({ items, onEdit, onDelete, getLabel }) {
                                     <td className="px-4 py-3 text-center text-wood-600">
                                         <div>{item.siding === 'double' ? '雙面' : '單面'}</div>
                                         <div className="text-xs">
-                                            {getLabel ? getLabel('shape', item.shape) : item.shape}
+                                            {getLabel ? getLabel('shape', item.shape, item.productId) : item.shape}
                                             {' / '}
-                                            {getLabel ? getLabel('font', item.font) : item.font}
+                                            {getLabel ? getLabel('font', item.font, item.productId) : item.font}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center font-medium">{item.quantity}</td>

@@ -33,12 +33,23 @@ export default function Cart({
 
     // For this refactor, let's import the product list to lookup.
 
+    // Regex validations
+    const phoneRegex = /^09\d{8}$/; // Taiwan mobile: 09xxxxxxxx
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Calculate total quantity for lead time
+    const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
+
     const isValid = cart.length > 0 &&
-        customer.name && customer.phone && customer.email && // Basic
+        customer.name &&
+        phoneRegex.test(customer.phone) && // Validate phone
+        emailRegex.test(customer.email) && // Validate email
+        customer.shippingMethod && // Ensure shipping method selected
+        customer.needProof && // Ensure proof option selected
         (
             (customer.shippingMethod === 'store' && customer.storeName) ||
             (customer.shippingMethod === 'post' && customer.city && customer.district && customer.address) ||
-            (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupTime) ||
+            (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupDate && customer.pickupTime) ||
             (customer.shippingMethod === 'friend' && customer.friendName)
         );
 
@@ -96,7 +107,7 @@ export default function Cart({
                     items={cart}
                     onEdit={onEdit}
                     onDelete={onDelete}
-                // getLabel passed from App or handled inside
+                    getLabel={getProductLabel}
                 />
                 <div className="mt-6 pt-4 border-t border-wood-100 flex justify-between items-center text-lg font-bold text-wood-900">
                     <span>商品小計</span>
@@ -109,6 +120,7 @@ export default function Cart({
                 onChange={onCustomerChange}
                 onShippingCostChange={onShippingCostChange}
                 isFreeShipping={isFreeShipping}
+                totalQuantity={totalQuantity}
             />
 
             <div className="bg-wood-50 p-6 rounded-lg border border-wood-200">

@@ -147,7 +147,7 @@ function getShippingDetail(c) {
   switch(c.shippingMethod) {
     case 'store': return c.storeName;
     case 'post': return c.address;
-    case 'pickup': return `${c.pickupLocation} (${c.pickupTime})`;
+    case 'pickup': return `${c.pickupLocation} (${c.pickupDate} ${c.pickupTime})`;
     case 'friend': return `代領人: ${c.friendName}`;
     default: return c.address;
   }

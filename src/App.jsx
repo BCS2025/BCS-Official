@@ -16,14 +16,15 @@ function App() {
         phone: '',
         email: '',
         address: '',
-        shippingMethod: 'store', // Default
+        shippingMethod: '', // Default empty to force selection
         storeName: '',
         city: '',
         district: '',
         pickupLocation: '',
+        pickupDate: '',
         pickupTime: '',
         friendName: '',
-        needProof: 'yes' // Default proof preference
+        needProof: '' // Default empty to force selection
     });
     const [shippingCost, setShippingCost] = useState(60); // Default store shipping
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,10 +62,8 @@ function App() {
 
         setCart(newCart);
 
-        // Navigate to Cart or just show feedback? 
-        // User didn't specify, but typically we might stay or go to cart.
-        // Let's go to Cart to show the user what happened, as per requirement "Checkout/Cart Page".
-        navigate('/cart');
+        // Stay on page and notify user
+        alert('已加入購物車！');
     };
 
     const handleEditItem = (item) => {

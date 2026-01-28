@@ -18,16 +18,16 @@ const PICKUP_LOCATIONS = [
     { value: '7-11北園門市', label: '7-ELEVEN 北園門市' },
 ];
 
-export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping }) {
+export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
 
     // Initialize needProof if not present
-    useEffect(() => {
-        if (data.needProof === undefined) {
-            onChange('needProof', 'yes'); // Default to yes
-        }
-    }, [data.needProof, onChange]);
+    // useEffect(() => {
+    //     if (data.needProof === undefined) {
+    //         onChange('needProof', 'yes'); // Default to yes
+    //     }
+    // }, [data.needProof, onChange]);
 
     // Reset district when city changes
     useEffect(() => {
@@ -271,23 +271,89 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     label="取貨地點"
                                     value={data.pickupLocation || ''}
                                     onChange={handleChange}
-                                    options={PICKUP_LOCATIONS}
+                                    options={[{ value: '', label: '請選擇取貨地點', disabled: true }, ...PICKUP_LOCATIONS]}
                                     required
                                 />
                             </div>
-                            <div className="md:col-span-2">
-                                <Input
-                                    id="pickupTime"
-                                    label="預計取貨時間"
-                                    placeholder="平日 19:00 - 22:00"
-                                    value={data.pickupTime || ''}
+                            <div className="md:col-span-1">
+                                <label className="block text-sm font-medium text-wood-800 mb-1">
+                                    預計取貨日期
+                                </label>
+                                <input
+                                    type="date"
+                                    id="pickupDate"
+                                    value={data.pickupDate || ''}
+                                    min={(() => {
+                                        const today = new Date();
+                                        // Dynamic Lead Time Logic
+                                        let leadDays = 3; // Default (<= 5)
+                                        const qty = typeof totalQuantity !== 'undefined' ? totalQuantity : 0;
+
+                                        if (qty > 50) leadDays = 21;
+                                        else if (qty > 25) leadDays = 14;
+                                        else if (qty > 10) leadDays = 10;
+                                        else if (qty > 5) leadDays = 5;
+
+                                        const minDate = new Date(today);
+                                        minDate.setDate(today.getDate() + leadDays);
+                                        return minDate.toISOString().split('T')[0];
+                                    })()}
                                     onChange={handleChange}
+                                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
                                     required
                                 />
-                                <div className="flex items-center gap-2 mt-1 text-xs text-wood-500">
-                                    <Clock size={12} />
-                                    <span>建議取貨時間為平日晚上 19:00 至 22:00</span>
-                                </div>
+                                <p className="text-xs text-wood-500 mt-1">
+                                    {(() => {
+                                        const qty = typeof totalQuantity !== 'undefined' ? totalQuantity : 0;
+                                        if (qty > 50) return '大量訂購需 21 個工作天 (我們將主動聯繫確認)';
+                                        if (qty > 25) return '需 14 個工作天備貨';
+                                        if (qty > 10) return '需 10 個工作天備貨';
+                                        if (qty > 5) return '需 5 個工作天備貨';
+                                        return '一般訂購需 3 個工作天備貨';
+                                    })()}
+                                </p>
+                            </div>
+                            <div className="md:col-span-1">
+                                <label className="block text-sm font-medium text-wood-800 mb-1">
+                                    預計取貨時間
+                                </label>
+                                <select
+                                    id="pickupTime"
+                                    value={data.pickupTime || ''}
+                                    onChange={handleChange}
+                                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                    required
+                                    disabled={!data.pickupDate}
+                                >
+                                    <option value="" disabled>請選擇時間</option>
+                                    {(() => {
+                                        if (!data.pickupDate) return null;
+                                        const dayOfWeek = new Date(data.pickupDate).getDay(); // 0=Sun, 6=Sat
+                                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+                                        // Time Slots
+                                        // Weekday: 19:00 - 22:00
+                                        // Weekend: 09:00 - 22:00
+                                        const startHour = isWeekend ? 9 : 19;
+                                        const endHour = 22;
+                                        const slots = [];
+
+                                        for (let h = startHour; h <= endHour; h++) {
+                                            const time = `${h.toString().padStart(2, '0')}:00`;
+                                            slots.push(<option key={time} value={time}>{time}</option>);
+                                            // Optional: half-hour slots? User said "19:00~22:00", implies range or slots. 
+                                            // Let's stick to hour slots for simplicity unless asked.
+                                            if (h !== endHour) {
+                                                const time30 = `${h.toString().padStart(2, '0')}:30`;
+                                                slots.push(<option key={time30} value={time30}>{time30}</option>);
+                                            }
+                                        }
+                                        return slots;
+                                    })()}
+                                </select>
+                                <p className="text-xs text-wood-500 mt-1">
+                                    平日 19:00-22:00 / 假日 09:00-22:00
+                                </p>
                             </div>
                         </>
                     )}
