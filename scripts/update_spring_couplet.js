@@ -1,5 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -18,7 +19,7 @@ async function updateSpringCouplet() {
     const { data: products, error: searchError } = await supabase
         .from('products')
         .select('*')
-        .ilike('name', '%春聯%'); // Search for "春聯"
+        .ilike('name', '%春聯%');
 
     if (searchError) {
         console.error('Search Error:', searchError);
@@ -34,8 +35,8 @@ async function updateSpringCouplet() {
     console.log(`✅ Found Product: ${product.name} (Slug: ${product.slug})`);
 
     // 2. Define New Configuration
-    // Filter out existing 'size' first to avoid duplicates
     const existingSchema = product.config_schema || [];
+    // Remove old 'size' if exists to avoid duplicates
     const filteredSchema = existingSchema.filter(f => f.name !== 'size');
 
     const newConfigSchema = [
