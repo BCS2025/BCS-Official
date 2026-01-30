@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { calculateKeychainPrice } from './pricing';
+import { calculateKeychainPrice, calculateVariantPrice } from './pricing';
 
 /**
  * Transforms a DB product row into the Frontend Product Object format
@@ -12,6 +12,8 @@ function transformProduct(dbProduct) {
 
     if (dbProduct.pricing_logic?.type === 'keychain') {
         calculatePrice = calculateKeychainPrice;
+    } else if (dbProduct.pricing_logic?.type === 'variant') {
+        calculatePrice = (config, qty) => calculateVariantPrice(dbProduct.price, config, qty, dbProduct.pricing_logic);
     }
 
     // Transform fields to restore functions (e.g. condition)

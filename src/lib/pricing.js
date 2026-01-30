@@ -23,6 +23,34 @@ export function calculateKeychainPrice(config, quantity) {
     return unitPrice * qty;
 }
 
+/**
+ * Calculates price based on Generic Variant Logic
+ * @param {number} basePrice - The starting price of the product
+ * @param {object} config - The form data (selected options)
+ * @param {number} quantity - Number of items
+ * @param {object} pricingLogic - The rules defined in DB (dbProduct.pricing_logic)
+ */
+export function calculateVariantPrice(basePrice, config, quantity, pricingLogic) {
+    const qty = parseInt(quantity || 0, 10);
+    if (qty <= 0) return 0;
+
+    let unitPrice = basePrice;
+
+    // logic: { modifiers: { size: { '14': 200 }, movement: { 'radio': 300 } } }
+    const modifiers = pricingLogic?.modifiers || {};
+
+    for (const [key, rules] of Object.entries(modifiers)) {
+        const selectedValue = config[key];    // e.g. "14"
+        const addOn = rules[selectedValue];   // e.g. 200
+
+        if (typeof addOn === 'number') {
+            unitPrice += addOn;
+        }
+    }
+
+    return unitPrice * qty;
+}
+
 export function formatCurrency(amount) {
     return new Intl.NumberFormat('zh-TW', {
         style: 'currency',
