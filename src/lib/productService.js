@@ -38,6 +38,7 @@ function transformProduct(dbProduct) {
         priceDescription: dbProduct.price_description,
         fields: fields,
         createdAt: dbProduct.created_at,
+        sortOrder: dbProduct.sort_order, // Expose sort order
         calculatePrice: calculatePrice
     };
 }
@@ -47,7 +48,8 @@ export async function fetchProducts() {
         .from('products')
         .select('*')
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .order('sort_order', { ascending: false }) // Primary Sort: High priority first
+        .order('created_at', { ascending: false }); // Secondary Sort: Newest first
 
     if (error) {
         console.error('Error fetching products:', error);
