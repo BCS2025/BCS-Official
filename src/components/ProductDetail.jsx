@@ -1,13 +1,12 @@
 
 import { useParams, Link } from 'react-router-dom';
-import { getProductById } from '../data/products';
 import ProductForm from './ProductForm';
 import { getImageUrl } from '../lib/imageUtils';
 import { ArrowLeft } from 'lucide-react';
 
-export default function ProductDetail({ onAddToCart }) {
+export default function ProductDetail({ products, onAddToCart }) {
     const { id } = useParams();
-    const product = getProductById(id);
+    const product = products.find(p => p.id === id);
 
     if (!product) {
         return (
@@ -17,6 +16,7 @@ export default function ProductDetail({ onAddToCart }) {
             </div>
         );
     }
+
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">

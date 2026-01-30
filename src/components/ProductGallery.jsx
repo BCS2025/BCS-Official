@@ -1,15 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { PRODUCTS } from '../data/products';
 import { formatCurrency } from '../lib/pricing';
 import { getImageUrl } from '../lib/imageUtils';
 import { ArrowUpDown } from 'lucide-react';
 
-export default function ProductGallery() {
+export default function ProductGallery({ products = [] }) {
     const [sortBy, setSortBy] = useState('featured');
 
     const sortedProducts = useMemo(() => {
-        const sorted = [...PRODUCTS];
+        const sorted = [...products];
         if (sortBy === 'price-asc') {
             return sorted.sort((a, b) => a.price - b.price);
         }
@@ -23,8 +22,8 @@ export default function ProductGallery() {
                 return dateB - dateA; // Newest first
             });
         }
-        return sorted; // 'featured' uses original order
-    }, [sortBy]);
+        return sorted; // 'featured' uses original order (database default or fetch order)
+    }, [sortBy, products]);
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">

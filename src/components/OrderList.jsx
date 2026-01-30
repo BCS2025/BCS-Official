@@ -1,9 +1,8 @@
-import { Trash2, Edit2 } from 'lucide-react';
+import { Trash2, Edit2, FileImage } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
-import { getProductLabel } from '../data/products';
 
-export default function OrderList({ items, onEdit, onDelete }) {
+export default function OrderList({ items, products = [], onEdit, onDelete }) {
     if (items.length === 0) {
         return (
             <div className="text-center py-10 bg-wood-50 rounded-lg border border-dashed border-wood-200 text-wood-500">
@@ -14,6 +13,58 @@ export default function OrderList({ items, onEdit, onDelete }) {
 
     const totalPrice = items.reduce((sum, item) => sum + item.price, 0);
 
+    const getFieldLabel = (productId, fieldName, value) => {
+        const product = products.find(p => p.id === productId);
+        if (!product) return value;
+
+        const field = product.fields?.find(f => f.name === fieldName);
+        if (!field) return value;
+
+        if (field.type === 'select') {
+            const option = field.options?.find(o => o.value === value);
+            return option ? option.label : value;
+        }
+        return value;
+    }
+
+    const renderItemDetails = (item) => {
+        const product = products.find(p => p.id === item.productId);
+        if (!product) return null;
+
+        return (
+            <div className="text-xs text-wood-600 space-y-1 mt-1">
+                {product.fields.map(field => {
+                    const value = item[field.name];
+                    if (!value) return null;
+
+                    // Condition Check
+                    if (field.condition && !field.condition(item)) return null;
+
+                    if (field.type === 'file') {
+                        let displayName = '已選擇檔案';
+                        if (value instanceof File) displayName = value.name;
+                        else if (typeof value === 'string') displayName = '已上傳圖檔';
+
+                        return (
+                            <div key={field.name} className="flex items-center gap-1 text-blue-600">
+                                <FileImage size={12} />
+                                <span>{field.label}: {displayName}</span>
+                            </div>
+                        );
+                    }
+
+                    const displayValue = getFieldLabel(item.productId, field.name, value);
+                    return (
+                        <div key={field.name}>
+                            <span className="text-wood-400 mr-1">{field.label}:</span>
+                            <span className="font-medium">{displayValue}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-4">
             <div className="overflow-hidden rounded-lg border border-wood-200 bg-white">
@@ -22,7 +73,6 @@ export default function OrderList({ items, onEdit, onDelete }) {
                         <thead className="bg-wood-100 text-wood-700 font-medium">
                             <tr>
                                 <th className="px-4 py-3">商品內容</th>
-                                <th className="px-4 py-3 text-center">規格</th>
                                 <th className="px-4 py-3 text-center">數量</th>
                                 <th className="px-4 py-3 text-right">金額</th>
                                 <th className="px-4 py-3 text-center">操作</th>
@@ -32,25 +82,8 @@ export default function OrderList({ items, onEdit, onDelete }) {
                             {items.map((item) => (
                                 <tr key={item._id} className="hover:bg-wood-50">
                                     <td className="px-4 py-3">
-                                        <div className="font-medium text-wood-900">{item.productName}</div>
-                                        <div className="text-xs text-wood-500">
-                                            正面: {item.textFront}
-                                            {item.textBack && ` / 背面: ${item.textBack}`}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-center text-wood-600">
-                                        {/* Display specific fields if they exist */}
-                                        {item.siding && (
-                                            <div>{item.siding === 'double' ? '雙面雕刻' : '單面雕刻'}</div>
-                                        )}
-                                        <div className="text-xs space-y-1">
-                                            {item.shape && (
-                                                <div>{getProductLabel(item.productId, 'shape', item.shape)}</div>
-                                            )}
-                                            {item.font && (
-                                                <div>{getProductLabel(item.productId, 'font', item.font)}</div>
-                                            )}
-                                        </div>
+                                        <div className="font-medium text-wood-900 text-base">{item.productName}</div>
+                                        {renderItemDetails(item)}
                                     </td>
                                     <td className="px-4 py-3 text-center font-medium">{item.quantity}</td>
                                     <td className="px-4 py-3 text-right font-medium text-wood-800">{formatCurrency(item.price)}</td>
@@ -69,7 +102,7 @@ export default function OrderList({ items, onEdit, onDelete }) {
                         </tbody>
                         <tfoot className="bg-wood-50 font-bold text-wood-900 border-t border-wood-200">
                             <tr>
-                                <td colSpan={3} className="px-4 py-3 text-right">總計</td>
+                                <td colSpan={2} className="px-4 py-3 text-right">總計</td>
                                 <td className="px-4 py-3 text-right text-lg">{formatCurrency(totalPrice)}</td>
                                 <td></td>
                             </tr>

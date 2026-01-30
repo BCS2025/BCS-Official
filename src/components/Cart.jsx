@@ -11,6 +11,7 @@ import { getProductById } from '../data/products';
 
 export default function Cart({
     cart,
+    products,
     customer,
     shippingCost,
     onUpdateItem, // Changed from onEdit
@@ -91,6 +92,7 @@ export default function Cart({
                 */}
                 <OrderList
                     items={cart}
+                    products={products}
                     onEdit={setEditingItem}
                     onDelete={onDelete}
                 // getLabel passed from App or handled inside
@@ -173,7 +175,7 @@ export default function Cart({
                         </div>
                         <div className="p-1">
                             <ProductForm
-                                product={getProductById(editingItem.productId)}
+                                product={products.find(p => p.id === editingItem.productId)}
                                 initialData={editingItem}
                                 onAddToCart={(updatedItem) => {
                                     onUpdateItem(updatedItem);

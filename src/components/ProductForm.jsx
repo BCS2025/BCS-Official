@@ -64,8 +64,12 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     }, [initialData, product]);
 
     const handleChange = (e) => {
-        const { id, value } = e.target;
-        setFormData(prev => ({ ...prev, [id]: value }));
+        const { id, value, files } = e.target;
+        if (files) {
+            setFormData(prev => ({ ...prev, [id]: files[0] }));
+        } else {
+            setFormData(prev => ({ ...prev, [id]: value }));
+        }
     };
 
     const handleSubmit = (e) => {
@@ -145,6 +149,29 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                                 />
                             );
                         }
+                        if (field.type === 'file') {
+                            return (
+                                <div key={field.name} className="space-y-2">
+                                    <label htmlFor={field.name} className="text-sm font-medium text-wood-700 block">
+                                        {field.label} {field.required && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <Input
+                                        id={field.name}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleChange}
+                                        required={field.required}
+                                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-wood-50 file:text-wood-700 hover:file:bg-wood-100 cursor-pointer"
+                                    />
+                                    {formData[field.name] && (
+                                        <p className="text-xs text-green-600">
+                                            已選擇: {formData[field.name].name}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        }
+
                         if (field.type === 'text') {
                             return (
                                 <Input
