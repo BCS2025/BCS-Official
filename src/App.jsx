@@ -260,6 +260,7 @@ function App() {
                     <Route path="/product/:id" element={
                         <ProductDetail
                             products={products}
+                            cart={cart}
                             onAddToCart={handleAddToCart}
                         />
                     } />

@@ -1,7 +1,10 @@
--- Function to calculate max stock for a specific product configuration
+-- Advanced Stock Calculation with Cart Context
+-- Calculates max addable quantity considering what's already in the cart.
+
 create or replace function calculate_max_stock(
   p_product_id uuid,
-  p_variants jsonb
+  p_variants jsonb,
+  p_cart_items jsonb default '[]'::jsonb
 )
 returns int
 language plpgsql
@@ -10,23 +13,47 @@ as $$
 declare
   max_quantity int;
 begin
-  -- Calculate the maximum number of units that can be produced
-  -- by finding the LIMITING FACTOR among all required materials.
+  -- 1. Calculate the hypothetical remaining stock for each material
+  --    after subtracting what's currently in the cart.
   
-  select min(floor(m.current_stock / pr.quantity_required)::int)
+  with cart_consumption as (
+    -- Unroll cart items and find which materials they consume
+    select 
+      r.material_id,
+      sum((cart_item->>'quantity')::int * r.quantity_required) as consumed_qty
+    from jsonb_array_elements(p_cart_items) as cart_item
+    join product_recipes r on r.product_id = (cart_item->>'productId')::uuid
+    where (r.match_condition is null or cart_item @> r.match_condition)
+    group by r.material_id
+  ),
+  
+  effective_stock as (
+    -- Material Stock - Cart Consumption
+    select
+      m.id as material_id,
+      m.current_stock - coalesce(cc.consumed_qty, 0) as available_stock
+    from materials m
+    left join cart_consumption cc on m.id = cc.material_id
+  )
+
+  -- 2. Calculate the limiting factor for the TARGET product variant
+  --    based on the effective_stock calculated above.
+  select min(floor(es.available_stock / pr.quantity_required)::int)
   into max_quantity
   from product_recipes pr
-  join materials m on pr.material_id = m.id
+  join effective_stock es on pr.material_id = es.material_id
   where pr.product_id = p_product_id
-  -- Match rules:
-  -- 1. Recipe has NO condition (Always required)
-  -- 2. OR Recipe condition is contained in the User's Selection
   and (pr.match_condition is null or p_variants @> pr.match_condition);
 
-  -- If no recipes match (product doesn't track inventory), return null (or a high number)
-  -- We'll return 9999 to indicate "Plenty/Unlimited"
+  -- Handle cases
+  -- If product has no recipes (not tracked), return 9999.
   if max_quantity is null then
     return 9999;
+  end if;
+
+  -- Ensure we don't return negative numbers if cart already exceeds stock
+  if max_quantity < 0 then
+    return 0;
   end if;
 
   return max_quantity;
