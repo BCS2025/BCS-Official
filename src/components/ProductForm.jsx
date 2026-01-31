@@ -26,10 +26,27 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
     const [estimatedPrice, setEstimatedPrice] = useState(0);
     const [maxStock, setMaxStock] = useState(null); // Initialize as null (unknown)
+    const [isLowStock, setIsLowStock] = useState(false); // Controls display text
     const [isLoadingStock, setIsLoadingStock] = useState(false);
 
     // Deep compare helper for cart dependency
     const cartDependency = JSON.stringify(cart.filter(item => item.productId === product.id));
+
+    // ... (Effect hooks are fine, just make sure they use the new state setter if needed - addressed in previous step)
+    // ...
+
+    const isEditing = !!initialData;
+
+    // UI Logic
+    const remainingStock = maxStock === null ? '...' : maxStock;
+    const isOutOfStock = maxStock !== null && maxStock <= 0;
+
+    // Validation Limit (Always active)
+    const hasValidLimit = maxStock !== null && maxStock < 9999;
+
+    // Display Logic: Show number ONLY if Low Stock. Otherwise "Sufficient".
+    // But if Out of Stock, show "Out of Stock" (handled by isOutOfStock check in JSX)
+    const showExactStock = isLowStock && hasValidLimit;
 
     // Fetch Stock from Supabase based on current selection
     useEffect(() => {
@@ -49,13 +66,23 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                 if (error) throw error;
 
                 if (!isCancelled) {
-                    // console.log("Stock for", product.name, formData, "is", data);
-                    // If RPC returns null (no recipe), we consider it unlimited (9999)
-                    setMaxStock(data === null ? 9999 : data);
+                    // data is now { max_quantity: int, is_low_stock: bool }
+                    // OR null if something failed (fallback)
+                    if (data && typeof data === 'object') {
+                        setMaxStock(data.max_quantity);
+                        setIsLowStock(data.is_low_stock);
+                    } else {
+                        // Fallback for unexpected format (or old API version cached)
+                        setMaxStock(typeof data === 'number' ? data : 9999);
+                        setIsLowStock(false);
+                    }
                 }
             } catch (err) {
                 console.error("Stock Check Error:", err);
-                if (!isCancelled) setMaxStock(9999);
+                if (!isCancelled) {
+                    setMaxStock(9999);
+                    setIsLowStock(false);
+                }
             } finally {
                 if (!isCancelled) setIsLoadingStock(false);
             }
@@ -144,13 +171,6 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
         });
     };
 
-    const isEditing = !!initialData;
-
-    // UI Logic
-    // If maxStock is null, we are loading.
-    const remainingStock = maxStock === null ? '...' : maxStock;
-    const isOutOfStock = maxStock !== null && maxStock <= 0;
-    const hasStockLimit = maxStock !== null && maxStock < 9999;
 
 
 
@@ -264,9 +284,13 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                                     <Loader2 className="w-3 h-3 animate-spin mr-1" />
                                     庫存確認中...
                                 </span>
-                            ) : hasStockLimit ? (
-                                <span className={`${isOutOfStock ? 'text-red-600 font-bold' : 'text-wood-600'}`}>
-                                    {isOutOfStock ? '⚠️ 目前缺貨中' : `庫存剩餘: ${remainingStock}`}
+                            ) : isOutOfStock ? (
+                                <span className="text-red-600 font-bold">
+                                    ⚠️ 目前缺貨中
+                                </span>
+                            ) : showExactStock ? (
+                                <span className="text-wood-600">
+                                    庫存剩餘: {remainingStock}
                                 </span>
                             ) : (
                                 <span className="text-green-600">
