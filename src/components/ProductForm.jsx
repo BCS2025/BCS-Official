@@ -42,11 +42,11 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     const isOutOfStock = maxStock !== null && maxStock <= 0;
 
     // Validation Limit (Always active)
-    const hasValidLimit = maxStock !== null && maxStock < 9999;
+    const hasStockLimit = maxStock !== null && maxStock < 9999;
 
     // Display Logic: Show number ONLY if Low Stock. Otherwise "Sufficient".
     // But if Out of Stock, show "Out of Stock" (handled by isOutOfStock check in JSX)
-    const showExactStock = isLowStock && hasValidLimit;
+    const showExactStock = isLowStock && hasStockLimit;
 
     // Fetch Stock from Supabase based on current selection
     useEffect(() => {
