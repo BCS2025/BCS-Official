@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 
 import { supabase } from '../lib/supabaseClient';
 
-export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit }) {
+export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit, cart = [] }) {
 
     const [formData, setFormData] = useState(() => {
         if (initialData) return { ...initialData };
@@ -35,27 +35,21 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
         async function checkStock() {
             setIsLoadingStock(true);
             try {
-                // Prepare variants JSON for the RPC function
-                // We only need the fields that might affect inventory (e.g. shape, material, lightBase)
-                // But passing the whole formData is fine, the RPC will ignore extras or we can filter.
-                // The RPC expects a jsonb object.
-
+                // Pass cart items to calculate effective stock
                 const { data, error } = await supabase
                     .rpc('calculate_max_stock', {
                         p_product_id: product.id,
-                        p_variants: formData
+                        p_variants: formData,
+                        p_cart_items: cart
                     });
 
                 if (error) throw error;
 
                 if (!isCancelled) {
-                    // console.log("Stock for", product.name, formData, "is", data);
                     setMaxStock(data === null ? 9999 : data);
                 }
             } catch (err) {
                 console.error("Stock Check Error:", err);
-                // Fallback to allow ordering if check fails, or set to 0? 
-                // Let's set to 999 to avoid blocking sales on error, but maybe log it.
                 if (!isCancelled) setMaxStock(999);
             } finally {
                 if (!isCancelled) setIsLoadingStock(false);
@@ -71,7 +65,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
             isCancelled = true;
             clearTimeout(timer);
         };
-    }, [formData, product.id]); // Re-run when ANY form data changes (shape, material, etc.)
+    }, [formData.shape, formData.material, formData.lightBase, product.id, cart]); // Re-run when options or cart changes
 
     // Recalculate price whenever formData changes
     useEffect(() => {
@@ -101,13 +95,32 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
         if (files) {
             setFormData(prev => ({ ...prev, [id]: files[0] }));
         } else {
-            setFormData(prev => ({ ...prev, [id]: value }));
+            let newValue = value;
+
+            // Auto-clamp quantity if over maxStock
+            if (id === 'quantity') {
+                const qty = parseInt(value, 10);
+                if (!isNaN(qty) && hasStockLimit && qty > remainingStock) {
+                    newValue = remainingStock;
+                }
+            }
+
+            setFormData(prev => ({ ...prev, [id]: newValue }));
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // strict validation before submit
         if (formData.quantity < 1) return;
+
+        const currentQty = parseInt(formData.quantity, 10);
+        if (hasStockLimit && currentQty > remainingStock) {
+            alert(`庫存不足！目前剩餘可購買數量為: ${remainingStock}`);
+            setFormData(prev => ({ ...prev, quantity: remainingStock }));
+            return;
+        }
 
         const finalPrice = product.calculatePrice(formData, formData.quantity);
 
@@ -119,6 +132,14 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
             _id: initialData?._id || Date.now().toString()
         });
     };
+
+    const isEditing = !!initialData;
+
+    // UI Logic (Moved up for use in handlers)
+    // Note: maxStock is the "Available to Add" (DB Stock - Cart Qty)
+    const remainingStock = maxStock;
+    const isOutOfStock = remainingStock <= 0;
+    const hasStockLimit = remainingStock < 999;
 
     const isEditing = !!initialData;
 
