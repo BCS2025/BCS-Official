@@ -143,7 +143,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
     const isEditing = !!initialData;
 
-    // UI Logic
+    // UI LogicC
     const remainingStock = maxStock;
     const isOutOfStock = remainingStock <= 0;
     const hasStockLimit = remainingStock < 999;
