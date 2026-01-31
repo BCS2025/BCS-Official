@@ -141,12 +141,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     const isOutOfStock = remainingStock <= 0;
     const hasStockLimit = remainingStock < 999;
 
-    const isEditing = !!initialData;
 
-    // UI Logic
-    const remainingStock = maxStock;
-    const isOutOfStock = remainingStock <= 0;
-    const hasStockLimit = remainingStock < 999;
 
     return (
         <Card className={`w-full transition-all duration-300 ${isEditing ? 'ring-2 ring-wood-500 shadow-lg bg-wood-50/50' : ''}`}>
