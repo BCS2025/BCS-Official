@@ -25,8 +25,11 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     });
 
     const [estimatedPrice, setEstimatedPrice] = useState(0);
-    const [maxStock, setMaxStock] = useState(999);
+    const [maxStock, setMaxStock] = useState(null); // Initialize as null (unknown)
     const [isLoadingStock, setIsLoadingStock] = useState(false);
+
+    // Deep compare helper for cart dependency
+    const cartDependency = JSON.stringify(cart.filter(item => item.productId === product.id));
 
     // Fetch Stock from Supabase based on current selection
     useEffect(() => {
@@ -46,26 +49,24 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                 if (error) throw error;
 
                 if (!isCancelled) {
+                    // console.log("Stock for", product.name, formData, "is", data);
+                    // If RPC returns null (no recipe), we consider it unlimited (9999)
                     setMaxStock(data === null ? 9999 : data);
                 }
             } catch (err) {
                 console.error("Stock Check Error:", err);
-                if (!isCancelled) setMaxStock(999);
+                if (!isCancelled) setMaxStock(9999);
             } finally {
                 if (!isCancelled) setIsLoadingStock(false);
             }
         }
 
-        // Debounce slightly to avoid rapid calls
-        const timer = setTimeout(() => {
-            checkStock();
-        }, 300);
+        checkStock(); // Call immediately, debounce logic was causing race conditions with "typing"
 
         return () => {
             isCancelled = true;
-            clearTimeout(timer);
         };
-    }, [formData.shape, formData.material, formData.lightBase, product.id, cart]); // Re-run when options or cart changes
+    }, [formData.shape, formData.material, formData.lightBase, product.id, cartDependency]);
 
     // Recalculate price whenever formData changes
     useEffect(() => {
@@ -97,11 +98,14 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
         } else {
             let newValue = value;
 
-            // Auto-clamp quantity if over maxStock
+            // Auto-clamp quantity
             if (id === 'quantity') {
+                const limit = maxStock === null ? 9999 : maxStock;
+                const stockLimitExceeded = limit < 9999;
+
                 const qty = parseInt(value, 10);
-                if (!isNaN(qty) && hasStockLimit && qty > remainingStock) {
-                    newValue = remainingStock;
+                if (!isNaN(qty) && stockLimitExceeded && qty > limit) {
+                    newValue = limit;
                 }
             }
 
@@ -112,13 +116,20 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // strict validation before submit
+        if (isLoadingStock || maxStock === null) {
+            alert("正在確認庫存，請稍後...");
+            return;
+        }
+
         if (formData.quantity < 1) return;
 
+        const limit = maxStock;
+        const stockLimitExceeded = limit < 9999;
+
         const currentQty = parseInt(formData.quantity, 10);
-        if (hasStockLimit && currentQty > remainingStock) {
-            alert(`庫存不足！目前剩餘可購買數量為: ${remainingStock}`);
-            setFormData(prev => ({ ...prev, quantity: remainingStock }));
+        if (stockLimitExceeded && currentQty > limit) {
+            alert(`庫存不足！目前剩餘可購買數量為: ${limit}`);
+            setFormData(prev => ({ ...prev, quantity: limit }));
             return;
         }
 
@@ -135,11 +146,11 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
     const isEditing = !!initialData;
 
-    // UI Logic (Moved up for use in handlers)
-    // Note: maxStock is the "Available to Add" (DB Stock - Cart Qty)
-    const remainingStock = maxStock;
-    const isOutOfStock = remainingStock <= 0;
-    const hasStockLimit = remainingStock < 999;
+    // UI Logic
+    // If maxStock is null, we are loading.
+    const remainingStock = maxStock === null ? '...' : maxStock;
+    const isOutOfStock = maxStock !== null && maxStock <= 0;
+    const hasStockLimit = maxStock !== null && maxStock < 9999;
 
 
 
