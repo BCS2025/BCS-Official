@@ -172,11 +172,10 @@ function App() {
                     }
                 }
 
-                // Add readable labels (Shape, Font)
+                // Add readable labels (Shape, Font) - REMOVED: Now storing Raw Codes
+                // The conversion happens at display time using getLabel dictionary.
                 return {
-                    ...newItem,
-                    shape: getProductLabel(products, item.productId, 'shape', item.shape),
-                    font: getProductLabel(products, item.productId, 'font', item.font)
+                    ...newItem
                 };
             }));
 

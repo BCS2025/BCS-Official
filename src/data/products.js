@@ -17,36 +17,36 @@ export const PRODUCTS = [
                 label: '雕刻面數',
                 type: 'select',
                 options: [
-                    { value: 'single', label: '單面雕刻 ($99)' },
-                    { value: 'double', label: '雙面雕刻 ($150)' },
+                    { value: 'siding_single', label: '單面雕刻 ($99)' },
+                    { value: 'siding_double', label: '雙面雕刻 ($150)' },
                 ],
-                defaultValue: 'single',
+                defaultValue: 'siding_single',
             },
             {
                 name: 'shape',
                 label: '款式選擇',
                 type: 'select',
                 options: [
-                    { value: 'style1', label: '款式 1 (圓形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_圓形.png' },
-                    { value: 'style2', label: '款式 2 (心形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_心形.png' },
-                    { value: 'style3', label: '款式 3 (矩形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_矩形.png' },
-                    { value: 'style4', label: '款式 4 (盾牌)', image: '/wood-keychain-thumbnails/鑰匙圈版型_盾牌形.png' },
-                    { value: 'style5', label: '款式 5 (正方形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_正方形.png' },
+                    { value: 'keychain_round', label: '款式 1 (圓形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_圓形.png' },
+                    { value: 'keychain_heart', label: '款式 2 (心形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_心形.png' },
+                    { value: 'keychain_rect', label: '款式 3 (矩形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_矩形.png' },
+                    { value: 'keychain_shield', label: '款式 4 (盾牌)', image: '/wood-keychain-thumbnails/鑰匙圈版型_盾牌形.png' },
+                    { value: 'keychain_square', label: '款式 5 (正方形)', image: '/wood-keychain-thumbnails/鑰匙圈版型_正方形.png' },
                 ],
-                defaultValue: 'style1',
+                defaultValue: 'keychain_round',
             },
             {
                 name: 'font',
                 label: '字體選擇',
                 type: 'select',
                 options: [
-                    { value: 'lishu', label: '隸書體', image: '/wood-keychain-thumbnails/鑰匙圈字體_隸書體.png' },
-                    { value: 'kai', label: '楷體', image: '/wood-keychain-thumbnails/鑰匙圈字體_楷體.png' },
-                    { value: 'fangsong', label: '仿宋體', image: '/wood-keychain-thumbnails/鑰匙圈字體_仿宋體.png' },
-                    { value: 'yicai', label: '逸彩體', image: '/wood-keychain-thumbnails/鑰匙圈字體_逸彩體.png' },
-                    { value: 'xingcao', label: '行草', image: '/wood-keychain-thumbnails/鑰匙圈字體_行草.png' },
+                    { value: 'font_lishu', label: '隸書體', image: '/wood-keychain-thumbnails/鑰匙圈字體_隸書體.png' },
+                    { value: 'font_kai', label: '楷體', image: '/wood-keychain-thumbnails/鑰匙圈字體_楷體.png' },
+                    { value: 'font_fangsong', label: '仿宋體', image: '/wood-keychain-thumbnails/鑰匙圈字體_仿宋體.png' },
+                    { value: 'font_yicai', label: '逸彩體', image: '/wood-keychain-thumbnails/鑰匙圈字體_逸彩體.png' },
+                    { value: 'font_xingcao', label: '行草', image: '/wood-keychain-thumbnails/鑰匙圈字體_行草.png' },
                 ],
-                defaultValue: 'lishu',
+                defaultValue: 'font_lishu',
             },
             {
                 name: 'textFront',
@@ -62,7 +62,7 @@ export const PRODUCTS = [
                 type: 'text',
                 maxLength: 10,
                 placeholder: '請輸入背面文字',
-                condition: (config) => config.siding === 'double',
+                condition: (config) => config.siding === 'siding_double',
             },
         ],
     },
@@ -73,9 +73,20 @@ export const PRODUCTS = [
         image: '/product-thumbnails/image%20thumbnail_花磚小夜燈.png',
         description: '復古花磚圖騰，結合現代工藝的優雅家飾。',
         priceDescription: '$590 / 個',
-        fields: [],
         calculatePrice: (config, qty) => 590 * (qty || 0),
         createdAt: '2024-01-25T00:00:00Z',
+        fields: [
+            {
+                name: 'lightBase',
+                label: '燈座燈光',
+                type: 'select',
+                options: [
+                    { value: 'light_base_warm', label: '溫馨暖黃光' },
+                    { value: 'light_base_white', label: '明亮白光' },
+                ],
+                defaultValue: 'light_base_warm',
+            }
+        ],
     },
     {
         id: 'spring-couplets',
@@ -121,11 +132,11 @@ export const PRODUCTS = [
                 label: '款式選擇',
                 type: 'select',
                 options: [
-                    { value: 'fu', label: '福氣滿滿滿 (福)', image: '/3D_Spring_Couplets_thumbnails/image%20thumbnail_福.png' },
-                    { value: 'cai', label: '財源滾滾來 (財)', image: '/3D_Spring_Couplets_thumbnails/image%20thumbnail_財.png' },
-                    { value: 'fa', label: '好運發發發 (發)', image: '/3D_Spring_Couplets_thumbnails/image%20thumbnail_發.png' },
+                    { value: 'spring_couplet_fu', label: '福氣滿滿滿 (福)', image: '/3D_Spring_Couplets_thumbnails/image%20thumbnail_福.png' },
+                    { value: 'spring_couplet_cai', label: '財源滾滾來 (財)', image: '/3D_Spring_Couplets_thumbnails/image%20thumbnail_財.png' },
+                    { value: 'spring_couplet_fa', label: '好運發發發 (發)', image: '/3D_Spring_Couplets_thumbnails/image%20thumbnail_發.png' },
                 ],
-                defaultValue: 'fu',
+                defaultValue: 'spring_couplet_fu',
             },
         ],
     },
@@ -136,9 +147,20 @@ export const PRODUCTS = [
         image: '/product-thumbnails/image%20thumbnail_客製化原木杯墊.png',
         description: '天然原木紋理，雷射雕刻專屬圖樣。',
         priceDescription: '$290 / 個',
-        fields: [],
         calculatePrice: (config, qty) => 290 * (qty || 0),
         createdAt: '2024-01-15T00:00:00Z',
+        fields: [
+            {
+                name: 'material',
+                label: '材質選擇',
+                type: 'select',
+                options: [
+                    { value: 'coaster_beech', label: '櫸木 (淺色)' },
+                    { value: 'coaster_walnut', label: '胡桃木 (深色)' },
+                ],
+                defaultValue: 'coaster_beech',
+            }
+        ],
     },
     {
         id: 'tile-calendar',
@@ -158,9 +180,20 @@ export const PRODUCTS = [
         image: '/product-thumbnails/image%20thumbnail_客製化小夜燈.png',
         description: '溫馨暖光，點亮您的每一個夜晚。',
         priceDescription: '$490 / 個',
-        fields: [],
         calculatePrice: (config, qty) => 490 * (qty || 0),
         createdAt: '2024-01-10T00:00:00Z',
+        fields: [
+            {
+                name: 'lightBase',
+                label: '燈座燈光',
+                type: 'select',
+                options: [
+                    { value: 'light_base_warm', label: '溫馨暖黃光' },
+                    { value: 'light_base_white', label: '明亮白光' },
+                ],
+                defaultValue: 'light_base_warm',
+            }
+        ],
     }
 ];
 

@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/Card'
 import { formatCurrency } from '../lib/pricing';
 import { Loader2 } from 'lucide-react';
 
+import { supabase } from '../lib/supabaseClient';
+
 export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit }) {
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
 
     const [formData, setFormData] = useState(() => {
         if (initialData) return { ...initialData };
@@ -24,30 +25,62 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     });
 
     const [estimatedPrice, setEstimatedPrice] = useState(0);
-    const [inventory, setInventory] = useState({});
-    const [isLoadingStock, setIsLoadingStock] = useState(true);
+    const [maxStock, setMaxStock] = useState(999);
+    const [isLoadingStock, setIsLoadingStock] = useState(false);
 
-    // Fetch Inventory on Mount
+    // Fetch Stock from Supabase based on current selection
     useEffect(() => {
-        fetch(`${GAS_URL}?action=getInventory`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.result === 'success') {
-                    setInventory(data.inventory);
+        let isCancelled = false;
+
+        async function checkStock() {
+            setIsLoadingStock(true);
+            try {
+                // Prepare variants JSON for the RPC function
+                // We only need the fields that might affect inventory (e.g. shape, material, lightBase)
+                // But passing the whole formData is fine, the RPC will ignore extras or we can filter.
+                // The RPC expects a jsonb object.
+
+                const { data, error } = await supabase
+                    .rpc('calculate_max_stock', {
+                        p_product_id: product.id,
+                        p_variants: formData
+                    });
+
+                if (error) throw error;
+
+                if (!isCancelled) {
+                    // console.log("Stock for", product.name, formData, "is", data);
+                    setMaxStock(data === null ? 9999 : data);
                 }
-            })
-            .catch(err => console.error("Stock Fetch Error", err))
-            .finally(() => setIsLoadingStock(false));
-    }, []);
+            } catch (err) {
+                console.error("Stock Check Error:", err);
+                // Fallback to allow ordering if check fails, or set to 0? 
+                // Let's set to 999 to avoid blocking sales on error, but maybe log it.
+                if (!isCancelled) setMaxStock(999);
+            } finally {
+                if (!isCancelled) setIsLoadingStock(false);
+            }
+        }
+
+        // Debounce slightly to avoid rapid calls
+        const timer = setTimeout(() => {
+            checkStock();
+        }, 300);
+
+        return () => {
+            isCancelled = true;
+            clearTimeout(timer);
+        };
+    }, [formData, product.id]); // Re-run when ANY form data changes (shape, material, etc.)
 
     // Recalculate price whenever formData changes
     useEffect(() => {
         const price = product.calculatePrice(formData, formData.quantity);
         setEstimatedPrice(price);
         setFormData(prev => ({ ...prev, price }));
-    }, [formData.siding, formData.quantity, product]); // Depend on price-affecting fields
+    }, [formData.siding, formData.quantity, product]);
 
-    // Reset form when initialData changes (Fix for Edit Mode)
+    // Reset form when initialData changes
     useEffect(() => {
         if (initialData) {
             setFormData({ ...initialData });
@@ -76,27 +109,23 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
         e.preventDefault();
         if (formData.quantity < 1) return;
 
-        // Force recalculate price to avoid 0/stale state
         const finalPrice = product.calculatePrice(formData, formData.quantity);
 
         onAddToCart({
             ...formData,
-            price: finalPrice, // Use newly calculated price
+            price: finalPrice,
             productId: product.id,
             productName: product.name,
-            _id: initialData?._id || Date.now().toString() // Preserve ID if editing
+            _id: initialData?._id || Date.now().toString()
         });
-        // Form reset is handled by parent passing null to initialData, which triggers useEffect
     };
 
     const isEditing = !!initialData;
 
-    // Calculate Stock
-    const currentSku = formData.shape ? `${product.id}-${formData.shape}` : product.id;
-    const stockRaw = inventory[currentSku];
-    const hasStockLimit = stockRaw !== undefined;
-    const remainingStock = hasStockLimit ? parseInt(stockRaw, 10) : 999;
+    // UI Logic
+    const remainingStock = maxStock;
     const isOutOfStock = remainingStock <= 0;
+    const hasStockLimit = remainingStock < 999;
 
     return (
         <Card className={`w-full transition-all duration-300 ${isEditing ? 'ring-2 ring-wood-500 shadow-lg bg-wood-50/50' : ''}`}>
