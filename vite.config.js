@@ -14,6 +14,8 @@ export default defineConfig({
       dynamicRoutes,
       readable: true,
       lastmod: new Date(),
+      generateRobotsTxt: false,
+      robots: [{ userAgent: '*', allow: '/' }], // explicit fallback if flag ignored, but attempting to disable write
     }),
   ],
   base: "/",
