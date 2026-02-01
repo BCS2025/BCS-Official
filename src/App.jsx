@@ -4,6 +4,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { fetchProducts, getProductLabel } from './lib/productService';
 import { submitOrder } from './lib/orderService';
 import { uploadFile } from './lib/storageService';
+import { supabase } from './lib/supabaseClient';
 import Navbar from './components/Navbar';
 import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
@@ -214,17 +215,72 @@ function App() {
                 status: 'pending'
             };
 
-            // 2. Submit to Supabase
+            // 1.5 Create Human Readable Version for Email/Line (Translating Codes to Chinese)
+            // Clone the items to avoid mutating the original strict structure
+            const readableItems = processedItems.map(item => {
+                const product = products.find(p => p.id === item.productId);
+                const readableItem = { ...item };
+
+                // Translate Options
+                Object.keys(item).forEach(key => {
+                    const label = getProductLabel(products, item.productId, key, item[key]);
+                    if (label !== item[key]) {
+                        readableItem[key] = label; // Replace code with Label (e.g. 'double' -> '雙面')
+                    }
+                });
+
+                // Use Chinese Product Name if available
+                if (product) readableItem.productName = product.name;
+
+                return readableItem;
+            });
+
+            // 2. Submit to Supabase (Keep strict codes for DB consistency)
             await submitOrder(orderData);
 
-            // 3. (Optional) Send to Google Sheets for Email Notifications (Fire and Forget)
+            // 3. Send to Google Sheets (Use READABLE version for Email/Line)
             const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
+
+            // Send Order Notification
             fetch(GAS_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
+                body: JSON.stringify({
+                    ...orderData,
+                    items: readableItems // Send CHINESE version to GAS
+                })
             }).catch(e => console.error("GAS Email Trigger Error:", e));
+
+            // 4. LOW STOCK ALERT (New Feature)
+            // Check materials that are below safety stock
+            try {
+                // We perform a fresh check immediately after ordering
+                const { data: lowStockMaterials } = await supabase
+                    .from('materials')
+                    .select('name, current_stock, safety_stock')
+                    .lt('current_stock', supabase.raw('safety_stock')); // Using raw for column comparison if supported, else simplistic approach
+
+                // Note: Simple .lt('current_stock', 5) works, but column comparison needs RPC or raw filter.
+                // Let's use a simpler JS filter to be safe and robust without advanced RLS complexities.
+                const { data: allMaterials } = await supabase.from('materials').select('*');
+                const criticalMaterials = allMaterials.filter(m => m.current_stock < m.safety_stock);
+
+                if (criticalMaterials.length > 0) {
+                    // Send SEPARATE Alert to GAS
+                    fetch(GAS_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'system_alert', // Special Type
+                            message: `⚠️ 庫存告急通知 (Low Stock Alert)\n以下原料已低於安全水位，請盡快補貨：\n\n${criticalMaterials.map(m => `- ${m.name}: 剩餘 ${m.current_stock} (安全量: ${m.safety_stock})`).join('\n')}`
+                        })
+                    }).catch(e => console.error("GAS Alert Error:", e));
+                }
+            } catch (err) {
+                console.error("Failed to check low stock:", err);
+            }
 
             // Success State
             setSuccessData({ orderId, needProof, estimatedDate, totalAmount });
