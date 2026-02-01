@@ -43,7 +43,7 @@ function transformProduct(dbProduct) {
             isOnSale: dbProduct.is_on_sale || false,
             originalPrice: dbProduct.sale_price ? dbProduct.price : null,
             image: dbProduct.image_url || (staticConfig ? staticConfig.image : null),
-            description: dbProduct.description,
+            description: dbProduct.description || '',
             detailedDescription: dbProduct.detailed_description || (staticConfig ? staticConfig.detailedDescription : ''),
             priceDescription: dbProduct.price_description || (staticConfig ? staticConfig.priceDescription : ''),
             fields: fields,
