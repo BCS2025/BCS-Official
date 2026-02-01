@@ -4,8 +4,9 @@
 -- 1. DROP EXISTING SCHEMA
 drop trigger if exists trigger_deduct_inventory on orders;
 drop function if exists auto_deduct_inventory;
-drop function if exists calculate_max_stock;
-drop function if exists lookup_product_id;
+drop function if exists calculate_max_stock(uuid, jsonb, jsonb);
+drop function if exists calculate_max_stock(text, jsonb, jsonb);
+drop function if exists lookup_product_id(text);
 
 drop table if exists product_recipes cascade;
 drop table if exists materials cascade;

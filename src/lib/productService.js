@@ -28,8 +28,8 @@ function transformProduct(dbProduct) {
     });
 
     return {
-        id: dbProduct.slug,      // Frontend uses slug as ID
-        uuid: dbProduct.id,      // Keep real UUID
+        id: dbProduct.id,        // Use ID directly (it is now the English Code)
+        uuid: dbProduct.id,      // Keep for compatibility
         name: dbProduct.name,
         price: dbProduct.price,
         image: dbProduct.image_url,
@@ -63,7 +63,7 @@ export async function fetchProductBySlug(slug) {
     const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('slug', slug)
+        .eq('id', slug) // Use 'id' column instead of 'slug'
         .single();
 
     if (error) {
