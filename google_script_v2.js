@@ -1,10 +1,10 @@
 /* 
-  BCS Order Manager & Notifier (Google Apps Script) - V3 (Professional)
+  BCS Order Manager & Notifier (Google Apps Script) - V4 (Ultimate)
   
   FEATURES:
-  - Supports LINE Messaging API (Flex Messages)
-  - Beautiful HTML Email Template
-  - Robust Low Stock Alerting
+  - Supports LINE Messaging API (Flex Messages with Customer Info)
+  - Beautiful HTML Email Template with Correct Link
+  - Robust Low Stock Alerting support
   
   SETUP:
   1. Script Properties: LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID, ADMIN_EMAIL
@@ -19,7 +19,6 @@ function doPost(e) {
         const USER_ID = scriptProps.getProperty('LINE_USER_ID');
 
         // --- CASE 1: SYSTEM ALERT (Low Stock) ---
-        // Simple text push is enough for alerts, but let's make it urgent.
         if (data.type === 'system_alert') {
             sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [
                 { type: 'text', text: data.message }
@@ -30,17 +29,24 @@ function doPost(e) {
         // --- CASE 2: NEW ORDER ---
         // 1. Send Beautiful Email to Customer
         if (data.customer && data.customer.email) {
-            sendCustomerEmail(data);
+            try {
+                sendCustomerEmail(data);
+            } catch (err) {
+                console.error("Email Error:", err);
+            }
         }
 
         // 2. Send Flex Message Receipt to Admin
-        const flexMessage = createFlexReceipt(data);
-        sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [flexMessage]);
+        try {
+            const flexMessage = createFlexReceipt(data);
+            sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [flexMessage]);
+        } catch (err) {
+            console.error("Line Error:", err);
+        }
 
         return ContentService.createTextOutput(JSON.stringify({ status: 'success', id: data.orderId }));
 
     } catch (error) {
-        // Log error to Stackdriver Logging
         console.error("Error in doPost:", error);
         return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }));
     }
@@ -65,12 +71,10 @@ function sendLineMessagingApi(token, userId, messages) {
 
 // --- HELPER: Create Flex Message (Receipt Style) ---
 function createFlexReceipt(order) {
-    // Build Items Block
     const itemRows = order.items.map(item => {
-        // Create Detail String (e.g., "M / Red")
         let details = [];
         Object.keys(item).forEach(key => {
-            if (['productId', 'productName', '_id', 'price', 'quantity', 'quantity', 'image'].includes(key)) return;
+            if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
             if (key.endsWith('_filename')) return;
             details.push(item[key]);
         });
@@ -138,8 +142,10 @@ function createFlexReceipt(order) {
                         type: "box", layout: "vertical", margin: "lg", spacing: "sm",
                         contents: [
                             { type: "text", text: `客戶: ${order.customer.name}`, size: "sm", color: "#555555" },
-                            { type: "text", text: `配送: ${order.customer.shippingMethod === 'pickup' ? '自取' : '郵寄'}`, size: "sm", color: "#555555" }
-                        ]
+                            { type: "text", text: `電話: ${order.customer.phone}`, size: "sm", color: "#555555" },
+                            { type: "text", text: `配送: ${order.customer.shippingMethod === 'pickup' ? '自取' : '郵寄'}`, size: "sm", color: "#555555" },
+                            order.customer.address ? { type: "text", text: `地址: ${order.customer.address}`, size: "xs", color: "#999999", wrap: true } : null
+                        ].filter(Boolean)
                     }
                 ]
             }
@@ -151,7 +157,6 @@ function createFlexReceipt(order) {
 function sendCustomerEmail(order) {
     const subject = `【BCS 訂單確認】${order.orderId} - 感謝您的訂購`;
 
-    // Generate Items Table Rows
     let itemsHtml = order.items.map(item => {
         let details = [];
         Object.keys(item).forEach(key => {
@@ -228,4 +233,23 @@ function sendCustomerEmail(order) {
         subject: subject,
         htmlBody: body
     });
+}
+
+function testLine() {
+    var scriptProps = PropertiesService.getScriptProperties();
+    var token = scriptProps.getProperty('LINE_CHANNEL_ACCESS_TOKEN');
+    var userId = scriptProps.getProperty('LINE_USER_ID');
+
+    if (!token || !userId) {
+        Logger.log("❌ 錯誤：找不到 TOKEN 或 USER_ID！請檢查「專案設定 > 指令碼屬性」。");
+        return;
+    }
+
+    Logger.log("✅ 準備發送...");
+    try {
+        sendLineMessagingApi(token, userId, [{ type: 'text', text: "🔔 測試成功！這是來自 GAS (Messaging API) 的測試訊息。" }]);
+        Logger.log("✅ 訊息發送指令已執行，請檢查手機。");
+    } catch (e) {
+        Logger.log("❌ 發送失敗：" + e.toString());
+    }
 }
