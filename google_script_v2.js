@@ -1,123 +1,226 @@
 /* 
-  BCS Order Manager & Notifier (Google Apps Script)
+  BCS Order Manager & Notifier (Google Apps Script) - V3 (Professional)
   
-  DEPLOYMENT INSTRUCTIONS:
-  1. Go to https://script.google.com/
-  2. Paste this code into Code.gs
-  3. Set Script Properties (Project Settings > Script Properties):
-     - LINE_TOKEN: Your Line Notify Token
-     - ADMIN_EMAIL: Your Email (e.g., admin@bcs.tw)
-  4. Deploy as Web App -> "Who has access": "Anyone"
+  FEATURES:
+  - Supports LINE Messaging API (Flex Messages)
+  - Beautiful HTML Email Template
+  - Robust Low Stock Alerting
+  
+  SETUP:
+  1. Script Properties: LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID, ADMIN_EMAIL
 */
 
 function doPost(e) {
     try {
         const data = JSON.parse(e.postData.contents);
         const scriptProps = PropertiesService.getScriptProperties();
-        const LINE_TOKEN = scriptProps.getProperty('LINE_TOKEN');
-        const ADMIN_EMAIL = scriptProps.getProperty('ADMIN_EMAIL') || 'roylo@example.com'; // Change to default if not set
+
+        const CHANNEL_TOKEN = scriptProps.getProperty('LINE_CHANNEL_ACCESS_TOKEN');
+        const USER_ID = scriptProps.getProperty('LINE_USER_ID');
 
         // --- CASE 1: SYSTEM ALERT (Low Stock) ---
+        // Simple text push is enough for alerts, but let's make it urgent.
         if (data.type === 'system_alert') {
-            sendLineNotify(LINE_TOKEN, data.message);
+            sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [
+                { type: 'text', text: data.message }
+            ]);
             return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'alert' }));
         }
 
         // --- CASE 2: NEW ORDER ---
-        // 1. Send Email to Customer
+        // 1. Send Beautiful Email to Customer
         if (data.customer && data.customer.email) {
             sendCustomerEmail(data);
         }
 
-        // 2. Send Line Notify to Admin
-        const lineMsg = formatLineMessage(data);
-        sendLineNotify(LINE_TOKEN, lineMsg);
+        // 2. Send Flex Message Receipt to Admin
+        const flexMessage = createFlexReceipt(data);
+        sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [flexMessage]);
 
         return ContentService.createTextOutput(JSON.stringify({ status: 'success', id: data.orderId }));
 
     } catch (error) {
+        // Log error to Stackdriver Logging
+        console.error("Error in doPost:", error);
         return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }));
     }
 }
 
-// --- HELPER: Send Line Notify ---
-function sendLineNotify(token, message) {
-    if (!token) return;
+// --- HELPER: Send Line Messaging API ---
+function sendLineMessagingApi(token, userId, messages) {
+    if (!token || !userId) return;
 
-    UrlFetchApp.fetch('https://notify-api.line.me/api/notify', {
+    UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
         'method': 'post',
         'headers': {
-            'Authorization': 'Bearer ' + token
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
         },
-        'payload': {
-            'message': message
+        'payload': JSON.stringify({
+            to: userId,
+            messages: messages
+        })
+    });
+}
+
+// --- HELPER: Create Flex Message (Receipt Style) ---
+function createFlexReceipt(order) {
+    // Build Items Block
+    const itemRows = order.items.map(item => {
+        // Create Detail String (e.g., "M / Red")
+        let details = [];
+        Object.keys(item).forEach(key => {
+            if (['productId', 'productName', '_id', 'price', 'quantity', 'quantity', 'image'].includes(key)) return;
+            if (key.endsWith('_filename')) return;
+            details.push(item[key]);
+        });
+        const detailText = details.join(' / ');
+
+        return {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "sm",
+            contents: [
+                {
+                    type: "box",
+                    layout: "baseline",
+                    spacing: "sm",
+                    contents: [
+                        { type: "text", text: item.productName || item.productId, weight: "bold", size: "sm", color: "#333333", flex: 4, wrap: true },
+                        { type: "text", text: `x${item.quantity}`, size: "sm", color: "#666666", align: "end", flex: 1 }
+                    ]
+                },
+                detailText ? { type: "text", text: detailText, size: "xs", color: "#aaaaaa", wrap: true, margin: "xs" } : null
+            ].filter(Boolean)
+        };
+    });
+
+    return {
+        type: "flex",
+        altText: `新訂單 ${order.orderId}`,
+        contents: {
+            type: "bubble",
+            body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    { type: "text", text: "NEW ORDER", weight: "bold", color: "#1DB446", size: "sm" },
+                    { type: "text", text: "BCS 客製工坊", weight: "bold", size: "xl", margin: "md" },
+                    { type: "text", text: `ID: ${order.orderId}`, size: "xs", color: "#aaaaaa", wrap: true },
+                    { type: "separator", margin: "xxl" },
+                    {
+                        type: "box",
+                        layout: "vertical",
+                        margin: "xxl",
+                        spacing: "sm",
+                        contents: itemRows
+                    },
+                    { type: "separator", margin: "xxl" },
+                    {
+                        type: "box",
+                        layout: "vertical",
+                        margin: "xxl",
+                        spacing: "sm",
+                        contents: [
+                            {
+                                type: "box",
+                                layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "總金額", color: "#555555" },
+                                    { type: "text", text: `$${order.totalAmount}`, color: "#111111", size: "lg", weight: "bold", align: "end" }
+                                ]
+                            }
+                        ]
+                    },
+                    { type: "separator", margin: "xxl" },
+                    {
+                        type: "box", layout: "vertical", margin: "lg", spacing: "sm",
+                        contents: [
+                            { type: "text", text: `客戶: ${order.customer.name}`, size: "sm", color: "#555555" },
+                            { type: "text", text: `配送: ${order.customer.shippingMethod === 'pickup' ? '自取' : '郵寄'}`, size: "sm", color: "#555555" }
+                        ]
+                    }
+                ]
+            }
         }
-    });
+    };
 }
 
-// --- HELPER: Format Order for Line ---
-function formatLineMessage(order) {
-    let msg = `\n📦 新訂單通知 (${order.orderId})\n`;
-    msg += `----------------\n`;
-    msg += `姓名: ${order.customer.name}\n`;
-    msg += `金額: $${order.totalAmount}\n`;
-    msg += `付款: 尚未付款 (請確認)\n`;
-    msg += `----------------\n`;
-
-    order.items.forEach((item, idx) => {
-        // Note: The Frontend now sends "productName" (Chinese) and translated labels!
-        msg += `${idx + 1}. ${item.productName || item.productId} x ${item.quantity}\n`;
-
-        // Append options if any (Skip internal keys)
-        Object.keys(item).forEach(key => {
-            // Skip known non-option keys
-            if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
-            if (key.endsWith('_filename')) return;
-
-            msg += `   - ${key}: ${item[key]}\n`;
-        });
-    });
-
-    return msg;
-}
-
-// --- HELPER: Send Customer Email ---
+// --- HELPER: Send Professional HTML Email ---
 function sendCustomerEmail(order) {
-    const subject = `【Be Creative Space】訂單確認通知 (${order.orderId})`;
+    const subject = `【BCS 訂單確認】${order.orderId} - 感謝您的訂購`;
 
-    // Convert items to HTML list
-    let itemsHtml = '<ul>';
-    order.items.forEach(item => {
-        let optionsHtml = '';
+    // Generate Items Table Rows
+    let itemsHtml = order.items.map(item => {
+        let details = [];
         Object.keys(item).forEach(key => {
             if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
             if (key.endsWith('_filename')) return;
-            // Convert camelCase to Readable if needed, or just show Value
-            optionsHtml += `<span style="color:#666; font-size:12px; margin-left:5px;">[${item[key]}]</span>`;
+            details.push(`${key}: ${item[key]}`);
         });
 
-        itemsHtml += `<li><b>${item.productName || item.productId}</b> x ${item.quantity} ${optionsHtml}</li>`;
-    });
-    itemsHtml += '</ul>';
+        return `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 12px 0;">
+          <div style="font-weight: bold; color: #333;">${item.productName || item.productId}</div>
+          <div style="font-size: 12px; color: #888;">${details.join(' | ')}</div>
+        </td>
+        <td style="padding: 12px 0; text-align: right; color: #555;">x ${item.quantity}</td>
+      </tr>
+    `;
+    }).join('');
 
     const body = `
-    <h2>感謝您的訂購！</h2>
-    <p>親愛的 ${order.customer.name} 您好，</p>
-    <p>我們已收到您的訂單 <b>${order.orderId}</b>。</p>
-    
-    <h3>訂單內容：</h3>
-    ${itemsHtml}
-    
-    <h3>總金額：$${order.totalAmount}</h3>
-    
-    <hr>
-    <h3>接下來的步驟：</h3>
-    <p><b>1. 請完成匯款</b></p>
-    <p>銀行代碼：822 (中國信託)<br>帳號：123-456-7890</p>
-    <p><b>2. 回傳證明</b></p>
-    <p>匯款後請至官方 Line (@bcs_official) 告知末五碼。</p>
-    
-    <p style="color:#888; font-size:12px;">此郵件為系統自動發送，請勿直接回信。</p>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        .btn { display: inline-block; background: #00B900; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .container { max-width: 600px; margin: 0 auto; font-family: sans-serif; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        .header { background: #333; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999; }
+      </style>
+    </head>
+    <body style="margin:0; padding:20px; background:#f5f5f5;">
+      <div class="container" style="background: white;">
+        <div class="header">
+          <h1 style="margin:0; font-size: 20px;">訂單確認</h1>
+          <p style="margin:5px 0 0; opacity: 0.8;">${order.orderId}</p>
+        </div>
+        
+        <div class="content">
+          <p>親愛的 ${order.customer.name} 您好，</p>
+          <p>感謝您的訂購！我們已經收到您的訂單資料。</p>
+          
+          <h3 style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 30px;">訂單明細</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${itemsHtml}
+            <tr>
+              <td style="padding: 15px 0; font-weight: bold; font-size: 18px;">總金額</td>
+              <td style="padding: 15px 0; text-align: right; font-weight: bold; font-size: 18px; color: #e53e3e;">$${order.totalAmount}</td>
+            </tr>
+          </table>
+          
+          <div style="background: #f0f7ff; border: 1px solid #cce4ff; padding: 15px; border-radius: 5px; margin-top: 30px;">
+            <h4 style="margin: 0 0 10px; color: #004488;">🛒 下一步：付款與確認</h4>
+            <p style="margin: 5px 0; font-size: 14px;">1. 請將款項匯至：<b>822 (中信) 123-456-7890</b></p>
+            <p style="margin: 5px 0; font-size: 14px;">2. 匯款後，請點擊下方按鈕加入官方 LINE，告知我們您的<b>「帳號末五碼」</b>以完成對帳。</p>
+            
+            <div style="text-align: center; margin-top: 20px;">
+              <a href="https://line.me/R/ti/p/@bcs_official" class="btn" style="color: white !important;">LINE 聯繫客服</a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>此信件為系統自動發送</p>
+          <p>Be Creative Space | 客製化工坊</p>
+        </div>
+      </div>
+    </body>
+    </html>
   `;
 
     MailApp.sendEmail({
