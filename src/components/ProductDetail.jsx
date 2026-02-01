@@ -4,7 +4,7 @@ import ProductForm from './ProductForm';
 import { getImageUrl } from '../lib/imageUtils';
 import { ArrowLeft } from 'lucide-react';
 
-export default function ProductDetail({ products, onAddToCart }) {
+export default function ProductDetail({ products, cart, onAddToCart }) {
     const { id } = useParams();
     const product = products.find(p => p.id === id);
 
@@ -53,6 +53,7 @@ export default function ProductDetail({ products, onAddToCart }) {
                     {product.fields.length > 0 ? (
                         <ProductForm
                             product={product}
+                            cart={cart}
                             onAddToCart={onAddToCart}
                         />
                     ) : (
