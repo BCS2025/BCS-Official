@@ -87,10 +87,21 @@ export default function ProductGallery({ products = [] }) {
 
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-wood-50">
                                 <span className="text-lg font-bold text-wood-800">
-                                    {product.fields.length > 0 ? (
-                                        <span>From {formatCurrency(product.price)}</span>
+                                    {product.isOnSale ? (
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-xs text-wood-400 line-through">
+                                                {formatCurrency(product.originalPrice)}
+                                            </span>
+                                            <span className="text-red-600 font-bold">
+                                                {formatCurrency(product.price)}
+                                            </span>
+                                        </div>
                                     ) : (
-                                        formatCurrency(product.price)
+                                        product.fields.length > 0 ? (
+                                            <span>From {formatCurrency(product.price)}</span>
+                                        ) : (
+                                            formatCurrency(product.price)
+                                        )
                                     )}
                                 </span>
                                 <Link

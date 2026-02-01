@@ -9,6 +9,9 @@ import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import ThankYouPage from './components/ThankYouPage';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminProducts } from './pages/admin/AdminProducts';
+import { AdminInventory } from './pages/admin/AdminInventory';
 import { formatCurrency } from './lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from './lib/utils';
 
@@ -300,6 +303,13 @@ function App() {
                             )
                         }
                     />
+
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<div className="text-xl font-bold text-gray-500 mt-10 ml-4">請選擇左側功能選單</div>} />
+                        <Route path="products" element={<AdminProducts />} />
+                        <Route path="inventory" element={<AdminInventory />} />
+                    </Route>
                 </Routes>
             </div>
         </div>

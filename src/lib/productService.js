@@ -9,57 +9,73 @@ import { PRODUCTS } from '../data/products';
 function transformProduct(dbProduct) {
     if (!dbProduct) return null;
 
-    // FIND STATIC CONFIG (Single Source of Truth for UI Config)
-    const staticConfig = PRODUCTS.find(p => p.id === dbProduct.id);
+    // 1. DYNAMIC DB CONFIG (Preferred)
+    if (dbProduct.config_schema && dbProduct.config_schema.length > 0) {
+        // Restore functions in schema (e.g., conditions)
+        const fields = dbProduct.config_schema.map(field => {
+            if (field.condition_logic) {
+                return {
+                    ...field,
+                    condition: (formData) => formData[field.condition_logic.field] === field.condition_logic.value
+                };
+            }
+            return field;
+        });
 
+        // Determine Pricing Logic
+        let calculatePrice = (config, qty) => (dbProduct.price * (qty || 0)); // Default simpl
+        if (dbProduct.pricing_logic?.type === 'keychain') {
+            calculatePrice = calculateKeychainPrice;
+        } else if (dbProduct.pricing_logic?.type === 'variant') {
+            calculatePrice = (config, qty) => calculateVariantPrice(dbProduct.price, config, qty, dbProduct.pricing_logic);
+        } else if (staticConfig && staticConfig.calculatePrice) {
+            calculatePrice = staticConfig.calculatePrice; // Fallback to static logic if not in DB yet
+        }
+
+        return {
+            id: dbProduct.id,
+            uuid: dbProduct.id,
+            name: dbProduct.name,
+            price: dbProduct.sale_price || dbProduct.price, // Use Sale Price if set
+            isOnSale: dbProduct.is_on_sale || false,
+            originalPrice: dbProduct.sale_price ? dbProduct.price : null,
+            image: dbProduct.image_url || (staticConfig ? staticConfig.image : null),
+            description: dbProduct.description,
+            detailedDescription: dbProduct.detailed_description || (staticConfig ? staticConfig.detailedDescription : ''),
+            priceDescription: dbProduct.price_description || (staticConfig ? staticConfig.priceDescription : ''),
+            fields: fields,
+            createdAt: dbProduct.created_at,
+            sortOrder: dbProduct.sort_order,
+            calculatePrice: calculatePrice
+        };
+    }
+
+    // 2. STATIC CONFIG MERGE (Legacy / Fallback)
     // If static config exists, MERGE DB data on top of it
     if (staticConfig) {
         return {
             ...staticConfig,
-            // Override with dynamic DB data where appropriate
-            price: dbProduct.price, // DB price wins
-            name: dbProduct.name,   // DB name wins (if updated)
-            // image: dbProduct.image_url || staticConfig.image, // Prefer DB image if valid, else static
+            price: dbProduct.sale_price || dbProduct.price, // Use Sale Price if set
+            isOnSale: dbProduct.is_on_sale || false,
+            originalPrice: dbProduct.sale_price ? dbProduct.price : null,
+            name: dbProduct.name,
             uuid: dbProduct.id,
             createdAt: dbProduct.created_at,
             sortOrder: dbProduct.sort_order
         };
     }
 
-    // FALLBACK: If no static config, try to use DB data (will likely be incomplete UI-wise)
-    // Restore calculatePrice function based on logic type
-    let calculatePrice = (config, qty) => (dbProduct.price * (qty || 0)); // Default simple
-
-    if (dbProduct.pricing_logic?.type === 'keychain') {
-        calculatePrice = calculateKeychainPrice;
-    } else if (dbProduct.pricing_logic?.type === 'variant') {
-        calculatePrice = (config, qty) => calculateVariantPrice(dbProduct.price, config, qty, dbProduct.pricing_logic);
-    }
-
-    // Transform fields to restore functions (e.g. condition)
-    const fields = (dbProduct.config_schema || []).map(field => {
-        if (field.condition_logic) {
-            return {
-                ...field,
-                condition: (formData) => formData[field.condition_logic.field] === field.condition_logic.value
-            };
-        }
-        return field;
-    });
-
+    // 3. FALLBACK FOR INCOMPLETE DATA
     return {
-        id: dbProduct.id,        // Use ID directly (it is now the English Code)
-        uuid: dbProduct.id,      // Keep for compatibility
+        id: dbProduct.id,
+        uuid: dbProduct.id,
         name: dbProduct.name,
         price: dbProduct.price,
         image: dbProduct.image_url,
         description: dbProduct.description,
-        detailedDescription: dbProduct.detailed_description,
-        priceDescription: dbProduct.price_description,
-        fields: fields,
+        fields: [],
         createdAt: dbProduct.created_at,
-        sortOrder: dbProduct.sort_order, // Expose sort order
-        calculatePrice: calculatePrice
+        calculatePrice: (config, qty) => (dbProduct.price * (qty || 0))
     };
 }
 
