@@ -11,6 +11,10 @@ export const AdminProducts = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Data for dropdowns
+    const [materials, setMaterials] = useState([]);
+    const [recipes, setRecipes] = useState([]); // Array of { material_id, quantity, match_condition }
+
     // Form State
     const [formData, setFormData] = useState(getInitialForm());
     const [jsonError, setJsonError] = useState(null);
@@ -32,7 +36,13 @@ export const AdminProducts = () => {
 
     useEffect(() => {
         fetchProducts();
+        fetchMaterials();
     }, []);
+
+    async function fetchMaterials() {
+        const { data } = await supabase.from('materials').select('*').order('name');
+        if (data) setMaterials(data);
+    }
 
     async function fetchProducts() {
         setIsLoading(true);
@@ -64,7 +74,7 @@ export const AdminProducts = () => {
         setFormData(prev => ({ ...prev, id: val }));
     };
 
-    const handleOpenEdit = (product) => {
+    const handleOpenEdit = async (product) => {
         setFormData({
             ...product,
             sale_price: product.sale_price || 0, // Ensure number
@@ -72,12 +82,45 @@ export const AdminProducts = () => {
         });
         setJsonError(null);
         setIsModalOpen(true);
+
+        // Fetch Recipes for this product
+        const { data } = await supabase
+            .from('product_recipes')
+            .select('*')
+            .eq('product_id', product.id);
+
+        if (data) {
+            setRecipes(data.map(r => ({
+                material_id: r.material_id,
+                quantity: r.quantity,
+                match_condition: r.match_condition ? JSON.stringify(r.match_condition) : ''
+            })));
+        } else {
+            setRecipes([]);
+        }
     };
 
     const handleOpenCreate = () => {
         setFormData(getInitialForm());
         setJsonError(null);
+        setRecipes([]);
         setIsModalOpen(true);
+    };
+
+    const handleAddRecipe = () => {
+        setRecipes(prev => [...prev, { material_id: materials[0]?.id || '', quantity: 1, match_condition: '' }]);
+    };
+
+    const handleRemoveRecipe = (index) => {
+        setRecipes(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRecipeChange = (index, field, value) => {
+        setRecipes(prev => {
+            const newRecipes = [...prev];
+            newRecipes[index] = { ...newRecipes[index], [field]: value };
+            return newRecipes;
+        });
     };
 
     const handleSave = async (e) => {
@@ -113,11 +156,36 @@ export const AdminProducts = () => {
                 config_schema: parsedSchema
             };
 
-            const { error } = await supabase
+            // A. Upsert Product
+            const { error: prodError } = await supabase
                 .from('products')
                 .upsert(payload);
 
-            if (error) throw error;
+            if (prodError) throw prodError;
+
+            // B. Sync Recipes (Delete All -> Insert All)
+            // Note: This requires RLS policy to allow DELETE/INSERT for Admin
+            const { error: delError } = await supabase
+                .from('product_recipes')
+                .delete()
+                .eq('product_id', formData.id);
+
+            if (delError) throw delError;
+
+            if (recipes.length > 0) {
+                const recipePayload = recipes.map(r => ({
+                    product_id: formData.id,
+                    material_id: r.material_id,
+                    quantity: parseFloat(r.quantity),
+                    match_condition: r.match_condition ? JSON.parse(r.match_condition) : null
+                }));
+
+                const { error: insError } = await supabase
+                    .from('product_recipes')
+                    .insert(recipePayload);
+
+                if (insError) throw insError;
+            }
 
             alert('儲存成功！');
             setIsModalOpen(false);
@@ -238,7 +306,7 @@ export const AdminProducts = () => {
                                         placeholder="prod_keychain_custom"
                                         className="font-mono bg-blue-50 text-blue-800 border-blue-200"
                                         required
-                                        disabled={products.some(p => p.id === formData.id && p.id !== '') && formData.config_schema !== '{}'} // Disable only if editing existing logic... actually let's keep editable for now but warn
+                                        disabled={products.some(p => p.id === formData.id && p.id !== '') && formData.config_schema !== '{}'} // Disable only if editing existing logic
                                     />
                                     <p className="text-xs text-gray-500">格式強制：prod_小寫英文 (例: prod_dragon)</p>
                                 </div>
@@ -266,6 +334,55 @@ export const AdminProducts = () => {
                                     <label className="text-sm font-bold text-gray-700">排序權重 (大在前)</label>
                                     <Input type="number" value={formData.sort_order} onChange={e => setFormData(prev => ({ ...prev, sort_order: e.target.value }))} />
                                 </div>
+                            </div>
+
+                            {/* Recipe Manager (NEW) */}
+                            <div className="space-y-2 border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-blue-900">關聯原料配方 (Product Recipes)</label>
+                                    <Button type="button" size="sm" variant="outline" onClick={handleAddRecipe}>
+                                        <Plus size={14} /> 新增原料關聯
+                                    </Button>
+                                </div>
+
+                                {recipes.length === 0 && <div className="text-sm text-gray-500 italic">尚未設定任何原料關聯 (銷售時不會扣除庫存)</div>}
+
+                                {recipes.map((r, idx) => (
+                                    <div key={idx} className="flex gap-2 items-start mb-2">
+                                        <div className="flex-1">
+                                            <select
+                                                className="w-full text-sm border rounded p-2"
+                                                value={r.material_id}
+                                                onChange={e => handleRecipeChange(idx, 'material_id', e.target.value)}
+                                            >
+                                                <option value="">請選擇原料...</option>
+                                                {materials.map(m => (
+                                                    <option key={m.id} value={m.id}>{m.name} (庫存: {m.current_stock})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="w-24">
+                                            <Input
+                                                type="number"
+                                                placeholder="數量"
+                                                value={r.quantity}
+                                                onChange={e => handleRecipeChange(idx, 'quantity', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <Input
+                                                type="text"
+                                                placeholder='條件 JSON (例: {"siding":"double"})'
+                                                className="font-mono text-xs"
+                                                value={r.match_condition}
+                                                onChange={e => handleRecipeChange(idx, 'match_condition', e.target.value)}
+                                            />
+                                        </div>
+                                        <button type="button" onClick={() => handleRemoveRecipe(idx)} className="text-red-500 hover:text-red-700 p-2">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Image */}

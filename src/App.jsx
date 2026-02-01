@@ -12,6 +12,7 @@ import ThankYouPage from './components/ThankYouPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminInventory } from './pages/admin/AdminInventory';
+import { AdminLogin } from './pages/admin/AdminLogin';
 import { formatCurrency } from './lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from './lib/utils';
 
@@ -310,6 +311,7 @@ function App() {
                         <Route path="products" element={<AdminProducts />} />
                         <Route path="inventory" element={<AdminInventory />} />
                     </Route>
+                    <Route path="/admin/login" element={<AdminLogin />} />
                 </Routes>
             </div>
         </div>

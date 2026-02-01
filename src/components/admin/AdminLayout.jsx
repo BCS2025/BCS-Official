@@ -1,98 +1,107 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Package, Edit, LogOut } from 'lucide-react';
-import { Button } from '../ui/Button';
-
-// Simple "Secret" for MVP (Replace with real Auth later)
-const ADMIN_SECRET = 'bcs_admin_2024';
+import { supabase } from '../../lib/supabaseClient';
+import { LayoutDashboard, Package, Box, LogOut, Settings } from 'lucide-react';
 
 export const AdminLayout = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
+    const [session, setSession] = useState(null);
+    const [loading, setLoading] = useState(true);
     const location = useLocation();
     const navigate = useNavigate();
 
     useEffect(() => {
-        const storedAuth = localStorage.getItem('admin_auth');
-        if (storedAuth === ADMIN_SECRET) {
-            setIsAuthenticated(true);
-        }
-    }, []);
+        // 1. Check active session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            setLoading(false);
+            if (!session) {
+                navigate('/admin/login');
+            }
+        });
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === ADMIN_SECRET) {
-            localStorage.setItem('admin_auth', ADMIN_SECRET);
-            setIsAuthenticated(true);
-        } else {
-            alert('密碼錯誤');
-        }
+        // 2. Listen for changes
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            if (!session) {
+                navigate('/admin/login');
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [navigate]);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        navigate('/admin/login');
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('admin_auth');
-        setIsAuthenticated(false);
-        navigate('/');
-    };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-96">
-                    <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">後台管理登入</h2>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="請輸入管理員密碼"
-                        className="w-full p-2 border border-gray-300 rounded mb-4"
-                    />
-                    <Button type="submit" className="w-full">登入</Button>
-                </form>
-            </div>
-        );
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading Admin...</div>;
     }
+
+    if (!session) {
+        return null; // Will redirect via useEffect
+    }
+
+    // Navigation Items
+    const navItems = [
+        { path: '/admin', icon: LayoutDashboard, label: '總覽 (Dashboard)', exact: true },
+        { path: '/admin/products', icon: Package, label: '商品管理 (Products)' },
+        { path: '/admin/inventory', icon: Box, label: '庫存管理 (Inventory)' },
+    ];
+
+    const isActive = (path, exact) => {
+        if (exact) return location.pathname === path;
+        return location.pathname.startsWith(path);
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
             {/* Sidebar */}
-            <aside className="w-full md:w-64 bg-slate-800 text-white flex-shrink-0">
+            <aside className="w-full md:w-64 bg-slate-800 text-white flex-shrink-0 flex flex-col">
                 <div className="p-6 border-b border-slate-700">
-                    <h1 className="text-xl font-bold flex items-center gap-2">
-                        <Shield size={20} className="text-yellow-400" />
-                        BCS 管理後台
-                    </h1>
+                    <h2 className="text-xl font-bold tracking-wider">BCS ADMIN</h2>
+                    <p className="text-xs text-slate-400 mt-1">Version 2.0 (Auth)</p>
                 </div>
-                <nav className="p-4 space-y-2">
-                    <Link
-                        to="/admin/products"
-                        className={`flex items-center gap-3 px-4 py-3 rounded transition-colors ${location.pathname.includes('/products') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        <Package size={20} />
-                        商品管理 (Products)
-                    </Link>
-                    <Link
-                        to="/admin/inventory"
-                        className={`flex items-center gap-3 px-4 py-3 rounded transition-colors ${location.pathname.includes('/inventory') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                    >
-                        <Edit size={20} />
-                        庫存管理 (Inventory)
-                    </Link>
+
+                <nav className="flex-1 p-4 space-y-2">
+                    {navItems.map(item => (
+                        <Link
+                            key={item.path}
+                            to={item.path}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path, item.exact)
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                                }`}
+                        >
+                            <item.icon size={20} />
+                            <span className="font-medium">{item.label}</span>
+                        </Link>
+                    ))}
                 </nav>
-                <div className="p-4 mt-auto border-t border-slate-700">
-                    <button onClick={handleLogout} className="flex items-center gap-2 text-slate-400 hover:text-white w-full">
-                        <LogOut size={18} />
-                        登出
+
+                <div className="p-4 border-t border-slate-700">
+                    <div className="flex items-center gap-3 px-4 py-3 text-sm text-slate-400">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span className="truncate max-w-[120px]">{session.user.email}</span>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-red-900/50 hover:text-red-200 transition-colors text-left"
+                    >
+                        <LogOut size={20} />
+                        <span className="font-medium">登出 (Logout)</span>
                     </button>
-                    <Link to="/" className="block mt-4 text-xs text-slate-500 hover:text-slate-300 text-center">
-                        返回前台首頁
-                    </Link>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 overflow-auto">
-                <Outlet />
+            <main className="flex-1 p-6 overflow-auto h-screen">
+                <div className="max-w-7xl mx-auto">
+                    <Outlet />
+                </div>
             </main>
         </div>
     );
