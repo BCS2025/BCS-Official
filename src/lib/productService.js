@@ -9,6 +9,9 @@ import { PRODUCTS } from '../data/products';
 function transformProduct(dbProduct) {
     if (!dbProduct) return null;
 
+    // FIND STATIC CONFIG (Single Source of Truth for UI Config - or fallback now)
+    const staticConfig = PRODUCTS.find(p => p.id === dbProduct.id);
+
     // 1. DYNAMIC DB CONFIG (Preferred)
     if (dbProduct.config_schema && dbProduct.config_schema.length > 0) {
         // Restore functions in schema (e.g., conditions)
