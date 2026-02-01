@@ -1,12 +1,32 @@
 import { supabase } from './supabaseClient';
 import { calculateKeychainPrice, calculateVariantPrice } from './pricing';
 
+import { PRODUCTS } from '../data/products';
+
 /**
  * Transforms a DB product row into the Frontend Product Object format
  */
 function transformProduct(dbProduct) {
     if (!dbProduct) return null;
 
+    // FIND STATIC CONFIG (Single Source of Truth for UI Config)
+    const staticConfig = PRODUCTS.find(p => p.id === dbProduct.id);
+
+    // If static config exists, MERGE DB data on top of it
+    if (staticConfig) {
+        return {
+            ...staticConfig,
+            // Override with dynamic DB data where appropriate
+            price: dbProduct.price, // DB price wins
+            name: dbProduct.name,   // DB name wins (if updated)
+            // image: dbProduct.image_url || staticConfig.image, // Prefer DB image if valid, else static
+            uuid: dbProduct.id,
+            createdAt: dbProduct.created_at,
+            sortOrder: dbProduct.sort_order
+        };
+    }
+
+    // FALLBACK: If no static config, try to use DB data (will likely be incomplete UI-wise)
     // Restore calculatePrice function based on logic type
     let calculatePrice = (config, qty) => (dbProduct.price * (qty || 0)); // Default simple
 
