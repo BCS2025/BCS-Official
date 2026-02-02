@@ -11,6 +11,7 @@ import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import ThankYouPage from './components/ThankYouPage';
 import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminLogin } from './pages/admin/AdminLogin';
@@ -377,6 +378,7 @@ function App() {
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<div className="text-xl font-bold text-gray-500 mt-10 ml-4">請選擇左側功能選單</div>} />
+                        <Route path="orders" element={<AdminOrders />} />
                         <Route path="products" element={<AdminProducts />} />
                         <Route path="inventory" element={<AdminInventory />} />
                     </Route>

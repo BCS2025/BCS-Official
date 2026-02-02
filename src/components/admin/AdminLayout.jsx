@@ -48,7 +48,8 @@ export const AdminLayout = () => {
     // Navigation Items
     const navItems = [
         { path: '/admin', icon: LayoutDashboard, label: '總覽 (Dashboard)', exact: true },
-        { path: '/admin/products', icon: Package, label: '商品管理 (Products)' },
+        { path: '/admin/orders', icon: Package, label: '訂單管理 (Orders)' }, // Changed Icon for visual distinction
+        { path: '/admin/products', icon: Box, label: '商品管理 (Products)' },
         { path: '/admin/inventory', icon: Box, label: '庫存管理 (Inventory)' },
     ];
 
@@ -72,8 +73,8 @@ export const AdminLayout = () => {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path, item.exact)
-                                    ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                                 }`}
                         >
                             <item.icon size={20} />
