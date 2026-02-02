@@ -1,28 +1,27 @@
--- Secure Remote Procedure Call (RPC) for checking low stock materials
--- This function allows the frontend to check inventory without direct table access (bypassing RLS safely)
--- It returns ONLY the materials that need attention (Low Stock or Out of Stock)
+-- Drop first to allow modifying return type signature
+DROP FUNCTION IF EXISTS check_low_stock();
 
+-- Recreate with ID as TEXT to handle non-UUID IDs (like 'mat_keychain_round')
 CREATE OR REPLACE FUNCTION check_low_stock()
 RETURNS TABLE (
-  id uuid,
+  id text, -- Changed from UUID to TEXT
   name text,
   current_stock int,
   safety_stock int
 ) 
 LANGUAGE plpgsql
-SECURITY DEFINER -- Runs with privileges of the creator (postgres), bypassing RLS
+SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    m.id,
-    m.name,
-    m.current_stock,
-    m.safety_stock
+    m.id::text, -- Cast to TEXT to be safe
+    m.name::text,
+    m.current_stock::int,
+    m.safety_stock::int
   FROM materials m
   WHERE m.current_stock < m.safety_stock;
 END;
 $$;
 
--- Grant access to public (anon) and logged-in users (authenticated)
 GRANT EXECUTE ON FUNCTION check_low_stock() TO anon, authenticated;
