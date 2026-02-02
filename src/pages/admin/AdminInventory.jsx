@@ -83,6 +83,52 @@ export const AdminInventory = () => {
                 <Button onClick={fetchMaterials} variant="outline" className="flex items-center gap-2">
                     <RefreshCw size={16} /> 重整列表
                 </Button>
+                <Button onClick={async () => {
+                    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
+                    try {
+                        alert('正在測試檢測庫存...');
+                        const { data: criticalMaterials, error: rpcError } = await supabase.rpc('check_low_stock');
+
+                        if (rpcError) {
+                            console.error("RPC Error:", rpcError);
+                            alert('RPC 錯誤: ' + rpcError.message);
+                            return;
+                        }
+
+                        if (!criticalMaterials || criticalMaterials.length === 0) {
+                            alert('沒有偵測到低於安全水位的原料 (所以不會發送通知)');
+                            return;
+                        }
+
+                        // Copy logic from App.jsx
+                        const outOfStock = criticalMaterials.filter(m => m.current_stock <= 0);
+                        const lowStock = criticalMaterials.filter(m => m.current_stock > 0);
+
+                        let alertMessage = `⚠️ 庫存警報通知 (測試)\n`;
+                        if (outOfStock.length > 0) alertMessage += `\n⛔ 庫存用罄:\n${outOfStock.map(m => `- ${m.name}: ${m.current_stock}`).join('\n')}\n`;
+                        if (lowStock.length > 0) alertMessage += `\n⚠️ 庫存告急:\n${lowStock.map(m => `- ${m.name}: ${m.current_stock}`).join('\n')}`;
+
+                        alert(`偵測到 ${criticalMaterials.length} 項告急原料。正在發送 GAS 通知...\n\n內容預覽:\n${alertMessage}`);
+
+                        await fetch(GAS_URL, {
+                            method: 'POST',
+                            mode: 'no-cors', // Important: won't allow reading response
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: 'system_alert',
+                                message: alertMessage
+                            })
+                        });
+
+                        alert('已發送請求給 GAS (請檢查手機是否收到)');
+
+                    } catch (e) {
+                        console.error(e);
+                        alert('發生錯誤: ' + e.message);
+                    }
+                }} variant="destructive" className="flex items-center gap-2 ml-2">
+                    <AlertTriangle size={16} /> 測試告急通知
+                </Button>
             </div>
 
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
