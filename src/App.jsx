@@ -253,30 +253,43 @@ function App() {
             }).catch(e => console.error("GAS Email Trigger Error:", e));
 
             // 4. LOW STOCK ALERT (New Feature)
-            // Check materials that are below safety stock
+            // Check materials that are below safety stock using SECURE RPC
             try {
-                // We perform a fresh check immediately after ordering
-                const { data: lowStockMaterials } = await supabase
-                    .from('materials')
-                    .select('name, current_stock, safety_stock')
-                    .lt('current_stock', supabase.raw('safety_stock')); // Using raw for column comparison if supported, else simplistic approach
+                // Use RPC to bypass RLS and get only low stock items
+                const { data: criticalMaterials, error: rpcError } = await supabase.rpc('check_low_stock');
 
-                // Note: Simple .lt('current_stock', 5) works, but column comparison needs RPC or raw filter.
-                // Let's use a simpler JS filter to be safe and robust without advanced RLS complexities.
-                const { data: allMaterials } = await supabase.from('materials').select('*');
-                const criticalMaterials = allMaterials.filter(m => m.current_stock < m.safety_stock);
+                if (rpcError) throw rpcError;
 
-                if (criticalMaterials.length > 0) {
-                    // Send SEPARATE Alert to GAS
-                    fetch(GAS_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'system_alert', // Special Type
-                            message: `⚠️ 庫存告急通知 (Low Stock Alert)\n以下原料已低於安全水位，請盡快補貨：\n\n${criticalMaterials.map(m => `- ${m.name}: 剩餘 ${m.current_stock} (安全量: ${m.safety_stock})`).join('\n')}`
-                        })
-                    }).catch(e => console.error("GAS Alert Error:", e));
+                if (criticalMaterials && criticalMaterials.length > 0) {
+                    // Group by severity
+                    const outOfStock = criticalMaterials.filter(m => m.current_stock <= 0);
+                    const lowStock = criticalMaterials.filter(m => m.current_stock > 0); // Already filtered by < safety_stock in SQL
+
+                    let alertMessage = `⚠️ 庫存警報通知 (Inventory Alert)\n`;
+                    let hasAlerts = false;
+
+                    if (outOfStock.length > 0) {
+                        alertMessage += `\n⛔ 庫存用罄 (Out of Stock):\n${outOfStock.map(m => `- ${m.name}: 剩餘 ${m.current_stock} (安全量: ${m.safety_stock})`).join('\n')}\n`;
+                        hasAlerts = true;
+                    }
+
+                    if (lowStock.length > 0) {
+                        alertMessage += `\n⚠️ 庫存告急 (Low Stock):\n${lowStock.map(m => `- ${m.name}: 剩餘 ${m.current_stock} (安全量: ${m.safety_stock})`).join('\n')}`;
+                        hasAlerts = true;
+                    }
+
+                    if (hasAlerts) {
+                        // Send SEPARATE Alert to GAS
+                        fetch(GAS_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: 'system_alert', // Special Type
+                                message: alertMessage
+                            })
+                        }).catch(e => console.error("GAS Alert Error:", e));
+                    }
                 }
             } catch (err) {
                 console.error("Failed to check low stock:", err);
