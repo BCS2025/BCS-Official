@@ -28,9 +28,9 @@ export default function ProductGallery({ products = [] }) {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <section className="text-center space-y-2 mb-12">
-                <h1 className="text-4xl font-serif font-bold text-wood-900 mb-4">精選客製化商品</h1>
+                <h1 className="text-4xl font-serif font-bold text-wood-900 mb-4">創意 生活 文創 教育</h1>
                 <p className="text-wood-600 max-w-2xl mx-auto">
-                    為您的生活增添一份溫暖的手作質感，每一件作品都是獨一無二的專屬訂製。
+                    為您的生活增添一份溫暖的小物，每一件作品都是獨一無二的專屬訂製。
                 </p>
                 {/* Free Shipping Banner */}
                 <div className="inline-block mt-4 bg-red-100 border border-red-200 rounded-full px-4 py-1.5 animate-bounce-slow">
