@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, X, Save, Upload, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { uploadFile } from '../../lib/storageService';
+import { ConfigSchemaBuilder } from '../../components/admin/ConfigSchemaBuilder';
 
 export const AdminProducts = () => {
     const [products, setProducts] = useState([]);
@@ -30,6 +31,7 @@ export const AdminProducts = () => {
             images: [], // Multiple images
             description: '',
             config_schema: '[]', // Stringified JSON
+            pricing_logic: {},   // New Pricing Logic
             sort_order: 10,
             is_active: true
         };
@@ -86,6 +88,7 @@ export const AdminProducts = () => {
             ...product,
             sale_price: product.sale_price || 0, // Ensure number
             config_schema: JSON.stringify(product.config_schema, null, 2),
+            pricing_logic: product.pricing_logic || {},
             images: initialImages
         });
         setJsonError(null);
@@ -167,7 +170,8 @@ export const AdminProducts = () => {
                 description: formData.description,
                 sort_order: parseInt(formData.sort_order),
                 is_active: formData.is_active,
-                config_schema: parsedSchema
+                config_schema: parsedSchema,
+                pricing_logic: formData.pricing_logic // Save Pricing Logic
             };
 
             // A. Upsert Product
@@ -456,20 +460,39 @@ export const AdminProducts = () => {
 
                             {/* Config Editor */}
                             <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-sm font-bold text-gray-700">選項設定 (Config Schema JSON)</label>
-                                    <a href="#" className="text-xs text-blue-600 underline">查看 JSON 範例</a>
-                                </div>
-                                <textarea
-                                    value={formData.config_schema}
-                                    onChange={e => setFormData(prev => ({ ...prev, config_schema: e.target.value }))}
-                                    className={`w-full p-4 font-mono text-sm border rounded h-64 bg-slate-900 text-green-400 ${jsonError ? 'border-red-500' : 'border-slate-700'}`}
-                                />
-                                {jsonError && (
-                                    <div className="flex items-center gap-2 text-red-600 text-sm font-bold">
-                                        <AlertCircle size={16} /> {jsonError}
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-gray-700">客製化選項與加價設定</label>
+                                    <div className="text-xs text-gray-500">
+                                        設定商品的可選款式 (如尺寸、顏色) 及其額外加價
                                     </div>
-                                )}
+                                </div>
+
+                                <ConfigSchemaBuilder
+                                    initialSchema={JSON.parse(formData.config_schema || '[]')}
+                                    initialPricing={formData.pricing_logic || {}}
+                                    onChange={(newFields, newPricing) => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            config_schema: JSON.stringify(newFields, null, 2),
+                                            pricing_logic: newPricing
+                                        }));
+                                    }}
+                                />
+
+                                {/* Fallback / Debug: Show Raw JSON if needed (Collapsible or hidden) */}
+                                <details className="mt-4 border-t pt-4">
+                                    <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-600 list-none font-bold">▶ 進階：檢視原始 JSON 設定</summary>
+                                    <textarea
+                                        value={formData.config_schema}
+                                        onChange={e => setFormData(prev => ({ ...prev, config_schema: e.target.value }))}
+                                        className={`w-full mt-2 p-4 font-mono text-sm border rounded h-64 bg-slate-900 text-green-400 ${jsonError ? 'border-red-500' : 'border-slate-700'}`}
+                                    />
+                                    {jsonError && (
+                                        <div className="flex items-center gap-2 text-red-600 text-sm font-bold mt-2">
+                                            <AlertCircle size={16} /> {jsonError}
+                                        </div>
+                                    )}
+                                </details>
                             </div>
 
                             <div className="pt-4 border-t flex justify-end gap-3 sticky bottom-0 bg-white pb-6">
