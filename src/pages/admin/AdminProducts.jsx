@@ -27,6 +27,7 @@ export const AdminProducts = () => {
             is_on_sale: false,
             sale_price: 0,
             image_url: '',
+            images: [], // Multiple images
             description: '',
             config_schema: '[]', // Stringified JSON
             sort_order: 10,
@@ -78,7 +79,8 @@ export const AdminProducts = () => {
         setFormData({
             ...product,
             sale_price: product.sale_price || 0, // Ensure number
-            config_schema: JSON.stringify(product.config_schema, null, 2)
+            config_schema: JSON.stringify(product.config_schema, null, 2),
+            images: product.images || (product.image_url ? [product.image_url] : [])
         });
         setJsonError(null);
         setIsModalOpen(true);
@@ -143,13 +145,21 @@ export const AdminProducts = () => {
 
         setIsSaving(true);
         try {
+            // Prepare Images: default to array, sync image_url to first item
+            const finalImages = formData.images || [];
+            if (formData.image_url && !finalImages.includes(formData.image_url)) {
+                finalImages.unshift(formData.image_url);
+            }
+            const primaryImage = finalImages.length > 0 ? finalImages[0] : '';
+
             const payload = {
                 id: formData.id,
                 name: formData.name,
                 price: parseInt(formData.price),
                 is_on_sale: formData.is_on_sale,
                 sale_price: parseInt(formData.sale_price) || null,
-                image_url: formData.image_url,
+                image_url: primaryImage,
+                images: finalImages,
                 description: formData.description,
                 sort_order: parseInt(formData.sort_order),
                 is_active: formData.is_active,
@@ -205,10 +215,21 @@ export const AdminProducts = () => {
 
         try {
             const url = await uploadFile(file);
-            setFormData(prev => ({ ...prev, image_url: url }));
+            setFormData(prev => ({
+                ...prev,
+                images: [...(prev.images || []), url],
+                image_url: url // Update preview immediately (optional, or rely on array)
+            }));
         } catch (err) {
             alert('圖片上傳失敗');
         }
+    };
+
+    const handleRemoveImage = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, index) => index !== indexToRemove)
+        }));
     };
 
     return (
@@ -385,22 +406,37 @@ export const AdminProducts = () => {
                                 ))}
                             </div>
 
-                            {/* Image */}
+                            {/* Image - Multi-Image Support */}
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-700">商品圖片</label>
-                                <div className="flex gap-4">
-                                    <div className="flex-1 space-y-2">
-                                        <Input value={formData.image_url} onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))} placeholder="https://..." />
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">或是上傳新圖片：</span>
-                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="text-sm" />
-                                        </div>
-                                    </div>
-                                    {formData.image_url && (
-                                        <div className="w-24 h-24 border rounded overflow-hidden">
-                                            <img src={formData.image_url} alt="" className="w-full h-full object-cover" />
-                                        </div>
-                                    )}
+                                <label className="text-sm font-bold text-gray-700">商品圖片 (第一張為封面圖)</label>
+
+                                <div className="flex flex-wrap gap-4 mb-2">
+                                    {(formData.images || [])
+                                        .filter(img => img) // Filter out empty strings
+                                        .map((img, idx) => (
+                                            <div key={idx} className="relative w-24 h-24 border rounded overflow-hidden group">
+                                                <img src={img} alt="" className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage(idx)}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                                {idx === 0 && <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center">封面</span>}
+                                            </div>
+                                        ))}
+
+                                    {/* Add Button */}
+                                    <label className="w-24 h-24 border border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 text-gray-400 hover:text-gray-600">
+                                        <Upload size={24} />
+                                        <span className="text-xs mt-1">上傳</span>
+                                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                    </label>
+                                </div>
+
+                                <div className="text-xs text-gray-500">
+                                    提示: 可上傳多張圖片，第一張將作為商品列表封面。
                                 </div>
                             </div>
 

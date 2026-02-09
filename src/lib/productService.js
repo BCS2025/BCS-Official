@@ -42,6 +42,9 @@ function transformProduct(dbProduct) {
             price: dbProduct.sale_price || dbProduct.price, // Use Sale Price if set
             isOnSale: dbProduct.is_on_sale || false,
             originalPrice: dbProduct.sale_price ? dbProduct.price : null,
+            images: (dbProduct.images && dbProduct.images.length > 0)
+                ? dbProduct.images
+                : (dbProduct.image_url ? [dbProduct.image_url] : (staticConfig?.images || [])),
             image: dbProduct.image_url || (staticConfig ? staticConfig.image : null),
             description: dbProduct.description || '',
             detailedDescription: dbProduct.detailed_description || (staticConfig ? staticConfig.detailedDescription : ''),
@@ -75,7 +78,9 @@ function transformProduct(dbProduct) {
         name: dbProduct.name,
         price: dbProduct.price,
         image: dbProduct.image_url,
+        images: dbProduct.images || (dbProduct.image_url ? [dbProduct.image_url] : []),
         description: dbProduct.description,
+
         fields: [],
         createdAt: dbProduct.created_at,
         calculatePrice: (config, qty) => (dbProduct.price * (qty || 0))

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import ProductForm from './ProductForm';
 import { getImageUrl } from '../lib/imageUtils';
 import { ArrowLeft } from 'lucide-react';
+import ProductImageCarousel from './ProductImageCarousel';
 
 export default function ProductDetail({ products, cart, onAddToCart }) {
     const { id } = useParams();
@@ -28,10 +29,9 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
             <div className="grid md:grid-cols-2 gap-12 items-start">
                 {/* Product Image */}
                 <div className="rounded-2xl overflow-hidden shadow-sm border border-wood-100 bg-white p-2">
-                    <img
-                        src={getImageUrl(product.image)}
-                        alt={product.name}
-                        className="w-full h-auto rounded-xl object-cover"
+                    <ProductImageCarousel
+                        images={product.images && product.images.length > 0 ? product.images : [product.image]}
+                        productName={product.name}
                     />
                     <div className="p-4 bg-wood-50 rounded-lg mt-2">
                         <h1 className="text-2xl font-serif font-bold text-wood-900 mb-2">{product.name}</h1>
