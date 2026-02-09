@@ -76,11 +76,17 @@ export const AdminProducts = () => {
     };
 
     const handleOpenEdit = async (product) => {
+        // Fix: If images is empty array (db default), but image_url exists (legacy), use image_url
+        let initialImages = product.images || [];
+        if (initialImages.length === 0 && product.image_url) {
+            initialImages = [product.image_url];
+        }
+
         setFormData({
             ...product,
             sale_price: product.sale_price || 0, // Ensure number
             config_schema: JSON.stringify(product.config_schema, null, 2),
-            images: product.images || (product.image_url ? [product.image_url] : [])
+            images: initialImages
         });
         setJsonError(null);
         setIsModalOpen(true);
@@ -145,11 +151,9 @@ export const AdminProducts = () => {
 
         setIsSaving(true);
         try {
-            // Prepare Images: default to array, sync image_url to first item
+            // Prepare Images
             const finalImages = formData.images || [];
-            if (formData.image_url && !finalImages.includes(formData.image_url)) {
-                finalImages.unshift(formData.image_url);
-            }
+            // Cover image is simply the first one in the list
             const primaryImage = finalImages.length > 0 ? finalImages[0] : '';
 
             const payload = {
@@ -217,8 +221,8 @@ export const AdminProducts = () => {
             const url = await uploadFile(file);
             setFormData(prev => ({
                 ...prev,
-                images: [...(prev.images || []), url],
-                image_url: url // Update preview immediately (optional, or rely on array)
+                images: [...(prev.images || []), url]
+                // Do NOT auto-update image_url here, rely on images array order
             }));
         } catch (err) {
             alert('圖片上傳失敗');
