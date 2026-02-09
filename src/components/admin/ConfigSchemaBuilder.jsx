@@ -155,6 +155,18 @@ export function ConfigSchemaBuilder({ initialSchema, initialPricing, onChange })
         return modifiers[fieldName]?.[optValue] || '';
     };
 
+    const moveField = (index, direction) => {
+        const newFields = [...fields];
+        if (direction === 'up' && index > 0) {
+            [newFields[index], newFields[index - 1]] = [newFields[index - 1], newFields[index]];
+        } else if (direction === 'down' && index < newFields.length - 1) {
+            [newFields[index], newFields[index + 1]] = [newFields[index + 1], newFields[index]];
+        }
+        setFields(newFields);
+    };
+
+    // ... (rest of functions)
+
     return (
         <div className="space-y-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
             {fields.length === 0 && (
@@ -164,18 +176,42 @@ export function ConfigSchemaBuilder({ initialSchema, initialPricing, onChange })
             )}
 
             {fields.map((field, fIdx) => (
-                <div key={fIdx} className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm relative group">
-                    <button
-                        type="button"
-                        onClick={() => removeField(fIdx)}
-                        className="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors bg-slate-50 rounded-full p-1"
-                        title="移除此選項類別"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                <div key={fIdx} className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm relative group transition-all duration-200 hover:shadow-md">
+                    <div className="absolute top-3 right-3 flex gap-2">
+                        {/* Reordering Controls */}
+                        <div className="flex bg-slate-100 rounded-lg p-1 mr-2">
+                            <button
+                                type="button"
+                                disabled={fIdx === 0}
+                                onClick={() => moveField(fIdx, 'up')}
+                                className="p-1 hover:bg-white rounded disabled:opacity-30 disabled:hover:bg-transparent text-slate-500"
+                                title="上移"
+                            >
+                                <ChevronUp size={16} />
+                            </button>
+                            <button
+                                type="button"
+                                disabled={fIdx === fields.length - 1}
+                                onClick={() => moveField(fIdx, 'down')}
+                                className="p-1 hover:bg-white rounded disabled:opacity-30 disabled:hover:bg-transparent text-slate-500"
+                                title="下移"
+                            >
+                                <ChevronDown size={16} />
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => removeField(fIdx)}
+                            className="text-slate-300 hover:text-red-500 transition-colors bg-slate-50 rounded-full p-2 hover:bg-red-50"
+                            title="移除此選項類別"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
 
                     {/* Field Header */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-32"> {/* Increased padding for buttons */}
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">選項標題 (Label)</label>
                             <Input
