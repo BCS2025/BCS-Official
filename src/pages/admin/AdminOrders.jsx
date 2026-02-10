@@ -32,27 +32,50 @@ export const AdminOrders = () => {
         }
     }
 
+    // Status Update Logic
+    const updateOrderStatus = async (orderId, newStatus) => {
+        if (!confirm(`確定將訂單狀態更改為 ${newStatus} 嗎？`)) return;
+
+        const timestampField = `${newStatus}_at`; // e.g., paid_at, shipped_at
+        const updates = {
+            status: newStatus,
+            // Only update timestamp if it's a completing action regarding that status
+            // But usually we just want to know when it entered that status.
+            [timestampField]: new Date().toISOString()
+        };
+
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .update(updates)
+                .eq('id', orderId);
+
+            if (error) throw error;
+
+            // Refresh local state
+            setOrders(prev => prev.map(o =>
+                o.id === orderId ? { ...o, ...updates } : o
+            ));
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('更新失敗: ' + error.message);
+        }
+    };
+
     // Status Helper
-    const getStatusBadge = (status) => {
-        const styles = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            paid: 'bg-blue-100 text-blue-800',
-            shipped: 'bg-purple-100 text-purple-800',
-            completed: 'bg-green-100 text-green-800',
-            cancelled: 'bg-gray-100 text-gray-800'
-        };
-        const labels = {
-            pending: '待付款 (Pending)',
-            paid: '已付款 (Paid)',
-            shipped: '已出貨 (Shipped)',
-            completed: '已完成 (Completed)',
-            cancelled: '已取消 (Cancelled)'
-        };
-        return (
-            <span className={`px-2 py-1 rounded-full text-xs font-bold ${styles[status] || styles.pending}`}>
-                {labels[status] || status}
-            </span>
-        );
+    const styles = {
+        pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        paid: 'bg-blue-100 text-blue-800 border-blue-200',
+        shipped: 'bg-purple-100 text-purple-800 border-purple-200',
+        completed: 'bg-green-100 text-green-800 border-green-200',
+        cancelled: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    const labels = {
+        pending: '待付款',
+        paid: '已付款',
+        shipped: '已出貨',
+        completed: '已完成',
+        cancelled: '已取消'
     };
 
     if (isLoading) return <div className="p-8 text-center text-gray-500">載入中...</div>;
@@ -73,7 +96,7 @@ export const AdminOrders = () => {
                             <th className="p-4">訂購日期</th>
                             <th className="p-4">客戶姓名</th>
                             <th className="p-4">總金額</th>
-                            <th className="p-4">狀態</th>
+                            <th className="p-4">狀態 (點擊修改)</th>
                             <th className="p-4 text-right">操作</th>
                         </tr>
                     </thead>
@@ -89,7 +112,25 @@ export const AdminOrders = () => {
                                 </td>
                                 <td className="p-4 font-medium">{order.user_info?.name}</td>
                                 <td className="p-4 font-bold text-gray-800">{formatCurrency(order.total_amount)}</td>
-                                <td className="p-4">{getStatusBadge(order.status)}</td>
+                                <td className="p-4">
+                                    <select
+                                        value={order.status}
+                                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                        className={`px-2 py-1 rounded-full text-xs font-bold border cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300 ${styles[order.status] || styles.pending}`}
+                                    >
+                                        <option value="pending">待付款</option>
+                                        <option value="paid">已付款</option>
+                                        <option value="shipped">已出貨</option>
+                                        <option value="completed">已完成</option>
+                                        <option value="cancelled">已取消</option>
+                                    </select>
+                                    {/* Show timestamp if available */}
+                                    {order[`${order.status}_at`] && (
+                                        <div className="text-[10px] text-gray-400 mt-1">
+                                            {new Date(order[`${order.status}_at`]).toLocaleString()}
+                                        </div>
+                                    )}
+                                </td>
                                 <td className="p-4 text-right">
                                     <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)} className="flex items-center gap-1 ml-auto">
                                         <Eye size={16} /> 詳情

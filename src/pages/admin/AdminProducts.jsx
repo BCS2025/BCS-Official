@@ -285,6 +285,9 @@ export const AdminProducts = () => {
                                         ) : (
                                             <span className="font-bold text-gray-800">${p.price}</span>
                                         )}
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            已售: {p.sold_quantity || 0}
+                                        </div>
                                     </td>
                                     <td className="p-4">
                                         <div className="text-sm">排序: {p.sort_order}</div>
