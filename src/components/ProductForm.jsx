@@ -88,19 +88,30 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
             }
         }
 
-        checkStock(); // Call immediately, debounce logic was causing race conditions with "typing"
+        checkStock();
 
         return () => {
             isCancelled = true;
         };
-    }, [formData.shape, formData.material, formData.lightBase, product.id, cartDependency]);
+        // Depend on all variant fields (excluding quantity/price)
+        // We use JSON.stringify to deep compare the relevant parts of formData
+    }, [
+        JSON.stringify(
+            Object.fromEntries(
+                Object.entries(formData).filter(([k]) => k !== 'quantity' && k !== 'price')
+            )
+        ),
+        product.id,
+        cartDependency
+    ]);
 
-    // Recalculate price whenever formData changes
+    // Recalculate price whenever formData changes (including quantity)
     useEffect(() => {
         const price = product.calculatePrice(formData, formData.quantity);
         setEstimatedPrice(price);
-        setFormData(prev => ({ ...prev, price }));
-    }, [formData.siding, formData.quantity, product]);
+        // We do NOT update formData.price here to avoid circular dependency and unnecessary renders.
+        // formData.price is only used for initial state or submission, which we handle in handleSubmit.
+    }, [formData, product]);
 
     // Reset form when initialData changes
     useEffect(() => {
