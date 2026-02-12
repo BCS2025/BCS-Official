@@ -14,9 +14,20 @@ export default function OrderList({ items, products = [], onEdit, onDelete }) {
 
     const totalPrice = items.reduce((sum, item) => sum + item.price, 0);
 
-    const getFieldLabel = (productId, fieldName, value) => {
-        // Use the centralized dictionary first
-        return getLabel(value);
+    const getFieldLabel = (product, fieldName, value) => {
+        if (!product) return value;
+        const field = product.fields.find(f => f.name === fieldName);
+        if (!field) return value;
+
+        // If it's a select/multiselect field, find the option
+        if (field.options) {
+            const option = field.options.find(o => o.value === value);
+            if (option) return option.label;
+        }
+
+        // Fallback: try static dictionary, then raw value
+        const staticLabel = getLabel(value);
+        return staticLabel !== value ? staticLabel : value;
     }
 
     const renderItemDetails = (item) => {
@@ -45,7 +56,7 @@ export default function OrderList({ items, products = [], onEdit, onDelete }) {
                         );
                     }
 
-                    const displayValue = getFieldLabel(item.productId, field.name, value);
+                    const displayValue = getFieldLabel(product, field.name, value);
                     return (
                         <div key={field.name}>
                             <span className="text-wood-400 mr-1">{field.label}:</span>

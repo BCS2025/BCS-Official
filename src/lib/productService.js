@@ -14,7 +14,7 @@ function transformProduct(dbProduct) {
 
     // 1. DYNAMIC DB CONFIG (Preferred)
     if (dbProduct.config_schema && dbProduct.config_schema.length > 0) {
-        // Restore functions in schema (e.g., conditions)
+        // ... (schema restoration) ...
         const fields = dbProduct.config_schema.map(field => {
             if (field.condition_logic) {
                 return {
@@ -25,12 +25,15 @@ function transformProduct(dbProduct) {
             return field;
         });
 
+        const safeBasePrice = parseInt(dbProduct.sale_price || dbProduct.price || 0, 10);
+
         // Determine Pricing Logic
-        let calculatePrice = (config, qty) => (dbProduct.price * (qty || 0)); // Default simpl
+        let calculatePrice = (config, qty) => (safeBasePrice * (qty || 0)); // Default simple
         if (dbProduct.pricing_logic?.type === 'keychain') {
             calculatePrice = calculateKeychainPrice;
         } else if (dbProduct.pricing_logic?.type === 'variant') {
-            calculatePrice = (config, qty) => calculateVariantPrice(dbProduct.price, config, qty, dbProduct.pricing_logic);
+            // Ensure we pass the safe numeric base price
+            calculatePrice = (config, qty) => calculateVariantPrice(safeBasePrice, config, qty, dbProduct.pricing_logic);
         } else if (staticConfig && staticConfig.calculatePrice) {
             calculatePrice = staticConfig.calculatePrice; // Fallback to static logic if not in DB yet
         }
@@ -39,9 +42,10 @@ function transformProduct(dbProduct) {
             id: dbProduct.id,
             uuid: dbProduct.id,
             name: dbProduct.name,
-            price: dbProduct.sale_price || dbProduct.price, // Use Sale Price if set
+            price: safeBasePrice,
             isOnSale: dbProduct.is_on_sale || false,
-            originalPrice: dbProduct.sale_price ? dbProduct.price : null,
+            originalPrice: dbProduct.sale_price ? parseInt(dbProduct.price || 0, 10) : null,
+            // ... (rest of object) ...
             images: (dbProduct.images && dbProduct.images.length > 0)
                 ? dbProduct.images
                 : (dbProduct.image_url ? [dbProduct.image_url] : (staticConfig?.images || [])),
