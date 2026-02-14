@@ -13,6 +13,7 @@ import ThankYouPage from './components/ThankYouPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminProducts } from './pages/admin/AdminProducts';
+import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { formatCurrency } from './lib/pricing';
@@ -146,14 +147,28 @@ function App() {
         setShippingCost(cost);
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (couponData = {}) => {
+        const { couponCode, discountAmount = 0 } = couponData;
+        const discountStart = discountAmount; // Capture for logging
+
+        // Recalculate Final Total (Safety Check)
+        const finalTotal = Math.max(0, itemsTotal - discountAmount + finalShippingCost);
+
         let confirmMsg = `確定要送出訂單嗎？\n\n商品總計: ${formatCurrency(itemsTotal)}`;
+
+        if (discountAmount > 0) {
+            confirmMsg += `\n優惠折抵: -${formatCurrency(discountAmount)}`;
+        }
+
         if (finalShippingCost > 0) {
             confirmMsg += `\n運費: ${formatCurrency(finalShippingCost)}`;
         } else if (isFreeShipping && shippingCost > 0) {
             confirmMsg += `\n運費: 免運 (滿$${FREE_SHIPPING_THRESHOLD}活動)`;
+        } else if (couponCode && finalShippingCost === 0 && !isFreeShipping) {
+            confirmMsg += `\n運費: 免運 (優惠碼)`;
         }
-        confirmMsg += `\n----------------\n總金額: ${formatCurrency(totalAmount)}`;
+
+        confirmMsg += `\n----------------\n總金額: ${formatCurrency(finalTotal)}`;
 
         if (!confirm(confirmMsg)) return;
 
@@ -211,7 +226,9 @@ function App() {
                         : customer.address
                 },
                 items: processedItems,
-                totalAmount: totalAmount,
+                totalAmount: finalTotal, // Use calculated final total
+                couponCode, // Add Coupon
+                discountAmount, // Add Discount
                 totalQuantity,
                 status: 'pending'
             };
@@ -380,6 +397,7 @@ function App() {
                         <Route index element={<div className="text-xl font-bold text-gray-500 mt-10 ml-4">請選擇左側功能選單</div>} />
                         <Route path="orders" element={<AdminOrders />} />
                         <Route path="products" element={<AdminProducts />} />
+                        <Route path="coupons" element={<AdminCoupons />} />
                         <Route path="inventory" element={<AdminInventory />} />
                     </Route>
                     <Route path="/admin/login" element={<AdminLogin />} />

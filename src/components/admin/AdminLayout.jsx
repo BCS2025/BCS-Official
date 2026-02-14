@@ -50,6 +50,7 @@ export const AdminLayout = () => {
         { path: '/admin', icon: LayoutDashboard, label: '總覽 (Dashboard)', exact: true },
         { path: '/admin/orders', icon: Package, label: '訂單管理 (Orders)' }, // Changed Icon for visual distinction
         { path: '/admin/products', icon: Box, label: '商品管理 (Products)' },
+        { path: '/admin/coupons', icon: Box, label: '優惠券管理 (Coupons)' },
         { path: '/admin/inventory', icon: Box, label: '庫存管理 (Inventory)' },
     ];
 
