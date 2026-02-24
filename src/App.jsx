@@ -16,6 +16,8 @@ import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminInventory } from './pages/admin/AdminInventory';
 import { AdminLogin } from './pages/admin/AdminLogin';
+import AboutUs from './pages/AboutUs';
+import CustomQuote from './pages/CustomQuote';
 import { formatCurrency } from './lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from './lib/utils';
 
@@ -348,6 +350,8 @@ function App() {
             <div className="pt-4">
                 <Routes>
                     <Route path="/" element={<ProductGallery products={products} />} />
+                    <Route path="/about" element={<AboutUs />} />
+                    <Route path="/quote" element={<CustomQuote />} />
                     <Route path="/product/:id" element={
                         <ProductDetail
                             products={products}
