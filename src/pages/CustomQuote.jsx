@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, ChevronRight, ChevronLeft, CheckCircle, Package, Blocks } from 'lucide-react';
+import { Upload, ChevronRight, ChevronLeft, CheckCircle, Package, Blocks, Loader2 } from 'lucide-react';
+import { uploadFile } from '../lib/storageService';
+import { submitCustomQuote } from '../lib/quoteService';
 
 export default function CustomQuote() {
     const [step, setStep] = useState(1);
@@ -90,11 +92,79 @@ export default function CustomQuote() {
         return true;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!isStep4Valid()) return;
-        // Logic for handling submission, potentially uploading file to Supabase Storage
-        setIsSubmitted(true);
+
+        setIsSubmitted(false); // Can be used for a loading state
+
+        try {
+            // 1. Upload File to Supabase Storage
+            let uploadedFileUrl = null;
+            let uploadedFileName = null;
+            if (formData.file) {
+                // To show loading state to user we change button text or similar in future, here we just block
+                uploadedFileUrl = await uploadFile(formData.file);
+                uploadedFileName = formData.file.name;
+            }
+
+            // 2. Prepare data for Supabase custom_quotes table
+            const quoteId = `QT-${Date.now().toString().slice(-6)}`;
+
+            const specifications = formData.method === 'laser'
+                ? { needVectorService: formData.needVectorService }
+                : { infill: formData.infill, layerHeight: formData.layerHeight };
+
+            const dimensions = {
+                dimX: Number(formData.dimX),
+                dimY: Number(formData.dimY),
+                dimZ: Number(formData.dimZ)
+            };
+
+            const customer = {
+                name: formData.name,
+                email: formData.email,
+                lineId: formData.lineId || ''
+            };
+
+            const quoteData = {
+                quote_id: quoteId,
+                method: formData.method,
+                material: formData.material,
+                specifications,
+                dimensions,
+                file_url: uploadedFileUrl,
+                file_name: uploadedFileName,
+                customer,
+                need_optimization: formData.needOptimization,
+                notes: formData.notes,
+                status: 'pending'
+            };
+
+            // 3. Save to Supabase custom_quotes table
+            await submitCustomQuote(quoteData);
+
+            // 4. Send to Google Apps Script (GAS) for Email and Line Notify
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'custom_quote',
+                    ...quoteData
+                })
+            }).catch(err => console.error("GAS Notification Error:", err));
+
+            // 5. Show Success Screen
+            setIsSubmitted(true);
+        } catch (error) {
+            console.error("Error submitting quote:", error);
+            alert(error.message || '送出評估失敗，請稍後再試或直接聯繫我們。');
+        } finally {
+            setIsSubmittingForm(false);
+        }
     };
 
     if (isSubmitted) {
@@ -120,7 +190,7 @@ export default function CustomQuote() {
                     {[1, 2, 3, 4].map((s) => (
                         <div key={s} className="flex flex-col items-center bg-white px-2">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${step === s ? 'bg-amber-600 text-white shadow-md ring-4 ring-amber-50' :
-                                    step > s ? 'bg-wood-200 text-wood-700' : 'bg-gray-100 text-gray-400'
+                                step > s ? 'bg-wood-200 text-wood-700' : 'bg-gray-100 text-gray-400'
                                 }`}>
                                 {step > s ? '✓' : s}
                             </div>
