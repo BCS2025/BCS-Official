@@ -29,6 +29,7 @@ export const AdminProducts = () => {
             sale_price: 0,
             image_url: '',
             images: [], // Multiple images
+            slogan: '', //  New Slogan Field
             description: '',
             config_schema: '[]', // Stringified JSON
             pricing_logic: {},   // New Pricing Logic
@@ -87,6 +88,7 @@ export const AdminProducts = () => {
         setFormData({
             ...product,
             sale_price: product.sale_price || 0, // Ensure number
+            slogan: product.slogan || '',
             config_schema: JSON.stringify(product.config_schema, null, 2),
             pricing_logic: product.pricing_logic || {},
             images: initialImages
@@ -112,7 +114,29 @@ export const AdminProducts = () => {
     };
 
     const handleOpenCreate = () => {
-        setFormData(getInitialForm());
+        const initialForm = getInitialForm();
+        initialForm.description = `🔍 產品特色
+✓ 特色一 | 說明
+✓ 特色二 | 說明
+✓ 特色三 | 說明
+
+---
+📐 商品規格
+・尺寸：
+・材質：
+・款式：
+・製作方式：
+
+---
+🏠 適用場景
+・場景一
+・場景二
+
+---
+💡 小提醒
+・提醒一
+・提醒二`;
+        setFormData(initialForm);
         setJsonError(null);
         setRecipes([]);
         setIsModalOpen(true);
@@ -167,6 +191,7 @@ export const AdminProducts = () => {
                 sale_price: parseInt(formData.sale_price) || null,
                 image_url: primaryImage,
                 images: finalImages,
+                slogan: formData.slogan,
                 description: formData.description,
                 sort_order: parseInt(formData.sort_order),
                 is_active: formData.is_active,
@@ -451,13 +476,23 @@ export const AdminProducts = () => {
                                 </div>
                             </div>
 
+                            {/* Slogan */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">產品 Slogan (簡短標語)</label>
+                                <Input
+                                    value={formData.slogan}
+                                    onChange={e => setFormData(prev => ({ ...prev, slogan: e.target.value }))}
+                                    placeholder="實用與美感兼具，記錄生活的美好時刻。"
+                                />
+                            </div>
+
                             {/* Description */}
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-700">商品描述</label>
+                                <label className="text-sm font-bold text-gray-700">詳細圖文說明 (支援 Markdown 風格)</label>
                                 <textarea
                                     value={formData.description}
                                     onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                    className="w-full p-2 border rounded h-20"
+                                    className="w-full p-2 border rounded h-64 font-mono text-sm leading-relaxed"
                                 />
                             </div>
 

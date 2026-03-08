@@ -35,6 +35,11 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
                     />
                     <div className="p-4 bg-wood-50 rounded-lg mt-2">
                         <h1 className="text-2xl font-serif font-bold text-wood-900 mb-2">{product.name}</h1>
+                        {product.slogan && (
+                            <p className="text-sm font-bold text-amber-700 mb-4 bg-amber-50 inline-block px-3 py-1 rounded border border-amber-200">
+                                ✨ {product.slogan}
+                            </p>
+                        )}
                         <div className="text-wood-600 text-sm leading-relaxed space-y-2">
                             {(product.detailedDescription || product.description || '').split('\n').map((line, index) => (
                                 <p key={index}

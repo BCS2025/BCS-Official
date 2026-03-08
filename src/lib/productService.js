@@ -50,6 +50,7 @@ function transformProduct(dbProduct) {
                 ? dbProduct.images
                 : (dbProduct.image_url ? [dbProduct.image_url] : (staticConfig?.images || [])),
             image: dbProduct.image_url || (staticConfig ? staticConfig.image : null),
+            slogan: dbProduct.slogan || '',
             description: dbProduct.description || '',
             detailedDescription: dbProduct.detailed_description || (staticConfig ? staticConfig.detailedDescription : ''),
             priceDescription: dbProduct.price_description || (staticConfig ? staticConfig.priceDescription : ''),

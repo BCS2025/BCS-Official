@@ -83,7 +83,7 @@ export default function ProductGallery({ products = [] }) {
                                     <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">NEW</span>
                                 )}
                             </div>
-                            <p className="text-wood-500 text-sm mb-4 line-clamp-2 flex-grow">{product.description}</p>
+                            <p className="text-wood-500 text-sm mb-4 line-clamp-2 flex-grow">{product.slogan || product.description}</p>
 
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-wood-50">
                                 <span className="text-lg font-bold text-wood-800">
