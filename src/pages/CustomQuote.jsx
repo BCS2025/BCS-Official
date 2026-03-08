@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
 import { Upload, ChevronRight, ChevronLeft, CheckCircle, Package, Blocks, Loader2 } from 'lucide-react';
 import { uploadFile } from '../lib/storageService';
-import { submitCustomQuote } from '../lib/quoteService';
+import { submitCustomQuote, getQuoteMaterials } from '../lib/quoteService';
 
 export default function CustomQuote() {
     const [step, setStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [materialsOptions, setMaterialsOptions] = useState([]);
+    const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
+
+    React.useEffect(() => {
+        const fetchOptions = async () => {
+            setIsLoadingMaterials(true);
+            try {
+                const data = await getQuoteMaterials();
+                setMaterialsOptions(data.filter(m => m.is_active));
+            } catch (err) {
+                console.error("Failed to load materials", err);
+            } finally {
+                setIsLoadingMaterials(false);
+            }
+        };
+        fetchOptions();
+    }, []);
 
     const [formData, setFormData] = useState({
         method: '', // 'laser' | '3dprint'
@@ -244,14 +261,9 @@ export default function CustomQuote() {
                                         onChange={(e) => setFormData({ ...formData, material: e.target.value })}
                                     >
                                         <option value="">請選擇材質</option>
-                                        <option value="Plywood 3mm">夾板 (Plywood) 3mm</option>
-                                        <option value="Plywood 5mm">夾板 (Plywood) 5mm</option>
-                                        <option value="MDF 3mm">密集板 (MDF) 3mm</option>
-                                        <option value="MDF 5mm">密集板 (MDF) 5mm</option>
-                                        <option value="Acrylic Clear">壓克力 (Acrylic) 透明</option>
-                                        <option value="Acrylic Black">壓克力 (Acrylic) 黑</option>
-                                        <option value="Acrylic White">壓克力 (Acrylic) 白</option>
-                                        <option value="Leather">皮革合成材 (Leather)</option>
+                                        {materialsOptions.filter(m => m.method === 'laser').map(m => (
+                                            <option key={m.id} value={m.name}>{m.name}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="flex items-start gap-3 mt-4">
@@ -280,10 +292,9 @@ export default function CustomQuote() {
                                         onChange={(e) => setFormData({ ...formData, material: e.target.value })}
                                     >
                                         <option value="">請選擇材質</option>
-                                        <option value="PLA">PLA (一般環境使用，標準列印)</option>
-                                        <option value="PETG">PETG (耐溫性較佳，具有韌性)</option>
-                                        <option value="TPU">TPU (彈性材質，防滑避震用)</option>
-                                        <option value="ABS">ABS (高硬度高耐溫，需封閉成型)</option>
+                                        {materialsOptions.filter(m => m.method === '3dprint').map(m => (
+                                            <option key={m.id} value={m.name}>{m.name}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>

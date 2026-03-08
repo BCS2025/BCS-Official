@@ -19,3 +19,48 @@ export async function submitCustomQuote(quoteData) {
 
     return data;
 }
+
+// --- Quote Materials Management ---
+
+export async function getQuoteMaterials() {
+    const { data, error } = await supabase
+        .from('quote_materials')
+        .select('*')
+        .order('method', { ascending: true })
+        .order('sort_order', { ascending: false });
+
+    if (error) throw error;
+    return data;
+}
+
+export async function createQuoteMaterial(materialData) {
+    const { data, error } = await supabase
+        .from('quote_materials')
+        .insert([materialData])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function updateQuoteMaterial(id, updates) {
+    const { data, error } = await supabase
+        .from('quote_materials')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteQuoteMaterial(id) {
+    const { error } = await supabase
+        .from('quote_materials')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}

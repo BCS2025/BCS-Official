@@ -15,6 +15,7 @@ import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminInventory } from './pages/admin/AdminInventory';
+import { AdminQuoteMaterials } from './pages/admin/AdminQuoteMaterials';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import AboutUs from './pages/AboutUs';
 import CustomQuote from './pages/CustomQuote';
@@ -403,6 +404,7 @@ function App() {
                         <Route path="products" element={<AdminProducts />} />
                         <Route path="coupons" element={<AdminCoupons />} />
                         <Route path="inventory" element={<AdminInventory />} />
+                        <Route path="quote-materials" element={<AdminQuoteMaterials />} />
                     </Route>
                     <Route path="/admin/login" element={<AdminLogin />} />
                 </Routes>

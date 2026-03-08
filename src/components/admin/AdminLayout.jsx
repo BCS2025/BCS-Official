@@ -52,6 +52,7 @@ export const AdminLayout = () => {
         { path: '/admin/products', icon: Box, label: '商品管理 (Products)' },
         { path: '/admin/coupons', icon: Box, label: '優惠券管理 (Coupons)' },
         { path: '/admin/inventory', icon: Box, label: '庫存管理 (Inventory)' },
+        { path: '/admin/quote-materials', icon: Settings, label: '報價材質 (Quote Materials)' },
     ];
 
     const isActive = (path, exact) => {
