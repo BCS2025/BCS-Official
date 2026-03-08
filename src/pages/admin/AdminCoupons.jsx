@@ -89,18 +89,13 @@ export const AdminCoupons = () => {
             // But we can't change PK (code) easily. If creating, prevent dupes or warn?
             // "upsert" works.
 
-            await couponService.create(payload); // UPSERT logic in 'create' uses 'insert' ? upsert might be better
-            // Wait, create uses insert. Let's switch to upsert in service or handle here.
-            // Actually service.create uses insert. Upsert is safer for "Create or Edit".
-            // Let's assume we use upsert for simplicity in this MVP, 
-            // BUT: modifying 'code' means creating new record. 
-            // Editing existing code: We treat 'code' as ID. So regular upsert works if code matches.
-
-            // To be safe, let's call upsert in service if we want to support edit.
-            // Let's modify service usage:
+            // Fix for duplicate key error on Edit: 
+            // couponService.create might use insert instead of upsert causing duplicate key
+            // We bypass service insert and use upsert directly for Admin Panel
             const { error: upsertError } = await import('../../lib/supabaseClient').then(m =>
-                m.supabase.from('coupons').upsert(payload)
+                m.supabase.from('coupons').upsert(payload, { onConflict: 'code' })
             );
+
             if (upsertError) throw upsertError;
 
             alert('儲存成功');
