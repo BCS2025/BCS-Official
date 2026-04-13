@@ -192,15 +192,22 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                     正在修改訂單項目
                 </div>
             )}
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle>{product.name}</CardTitle>
-                        <p className="text-sm text-wood-500">{product.description}</p>
-                    </div>
-                </div>
-                <p className="text-sm text-wood-600 font-medium mt-1">{product.priceDescription}</p>
-            </CardHeader>
+            {isEditing || product.priceDescription ? (
+                <CardHeader className={!isEditing ? "pb-0" : ""}>
+                    {isEditing && (
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle>{product.name}</CardTitle>
+                            </div>
+                        </div>
+                    )}
+                    {product.priceDescription && (
+                        <p className={`text-sm text-wood-600 font-medium ${isEditing ? 'mt-2' : ''}`}>
+                            {product.priceDescription}
+                        </p>
+                    )}
+                </CardHeader>
+            ) : null}
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
                     {product.fields.map((field) => {
