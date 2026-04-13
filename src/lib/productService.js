@@ -77,18 +77,25 @@ function transformProduct(dbProduct) {
     }
 
     // 3. FALLBACK FOR INCOMPLETE DATA
+    const safeBasePrice = parseInt(dbProduct.sale_price || dbProduct.price || 0, 10);
     return {
         id: dbProduct.id,
         uuid: dbProduct.id,
         name: dbProduct.name,
-        price: dbProduct.price,
+        price: safeBasePrice,
+        isOnSale: dbProduct.is_on_sale || false,
+        originalPrice: dbProduct.sale_price ? parseInt(dbProduct.price || 0, 10) : null,
         image: dbProduct.image_url,
         images: dbProduct.images || (dbProduct.image_url ? [dbProduct.image_url] : []),
+        slogan: dbProduct.slogan || '',
         description: dbProduct.description,
+        detailedDescription: dbProduct.detailed_description || '',
+        priceDescription: dbProduct.price_description || '',
 
         fields: [],
         createdAt: dbProduct.created_at,
-        calculatePrice: (config, qty) => (dbProduct.price * (qty || 0))
+        sortOrder: dbProduct.sort_order,
+        calculatePrice: (config, qty) => (safeBasePrice * (qty || 0))
     };
 }
 

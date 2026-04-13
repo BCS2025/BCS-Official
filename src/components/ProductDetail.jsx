@@ -55,17 +55,11 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
 
                 {/* Config Form */}
                 <div className="md:sticky md:top-24">
-                    {product.fields.length > 0 ? (
-                        <ProductForm
-                            product={product}
-                            cart={cart}
-                            onAddToCart={onAddToCart}
-                        />
-                    ) : (
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-wood-200 text-center py-12">
-                            <p className="text-wood-500 text-lg">Coming Soon... 此商品即將開放訂購</p>
-                        </div>
-                    )}
+                    <ProductForm
+                        product={{ ...product, fields: product.fields || [] }}
+                        cart={cart}
+                        onAddToCart={onAddToCart}
+                    />
                 </div>
             </div>
         </div>
