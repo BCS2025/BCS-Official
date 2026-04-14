@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Save, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Save, AlertTriangle, CheckCircle, RefreshCw, Plus, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 
@@ -10,6 +10,10 @@ export const AdminInventory = () => {
     const [editingId, setEditingId] = useState(null);
     const [tempData, setTempData] = useState({});
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Create Mode States
+    const [isCreating, setIsCreating] = useState(false);
+    const [newMaterial, setNewMaterial] = useState({ id: '', name: '', current_stock: 0, safety_stock: 0 });
 
     useEffect(() => {
         fetchMaterials();
@@ -74,15 +78,57 @@ export const AdminInventory = () => {
         setTempData(prev => ({ ...prev, [field]: value }));
     };
 
+    const handleCreate = async () => {
+        if (!newMaterial.id || !newMaterial.name) {
+            alert('「代號(ID)」與「原料名稱」必填！');
+            return;
+        }
+        if (!newMaterial.id.match(/^[a-z0-9_]+$/)) {
+            alert('代號 ID 只能包含小寫英文、數字與底線 (_)！');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const { error } = await supabase
+                .from('materials')
+                .insert([
+                    {
+                        id: newMaterial.id,
+                        name: newMaterial.name,
+                        current_stock: parseInt(newMaterial.current_stock, 10) || 0,
+                        safety_stock: parseInt(newMaterial.safety_stock, 10) || 0
+                    }
+                ]);
+
+            if (error) throw error;
+
+            setIsCreating(false);
+            setNewMaterial({ id: '', name: '', current_stock: 0, safety_stock: 0 });
+            alert('新增原料成功！');
+            fetchMaterials();
+        } catch (err) {
+            console.error('Create failed:', err);
+            alert('新增失敗: ' + err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     if (isLoading) return <div className="p-8 text-center text-gray-500">載入中...</div>;
 
     return (
         <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">原料庫存管理</h1>
-                <Button onClick={fetchMaterials} variant="outline" className="flex items-center gap-2">
-                    <RefreshCw size={16} /> 重整列表
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white">
+                        <Plus size={16} /> 新增原料
+                    </Button>
+                    <Button onClick={fetchMaterials} variant="outline" className="flex items-center gap-2">
+                        <RefreshCw size={16} /> 重整列表
+                    </Button>
+                </div>
                 <Button onClick={async () => {
                     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
                     try {
@@ -143,6 +189,55 @@ export const AdminInventory = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
+                        {isCreating && (
+                            <tr className="bg-green-50 border-t-2 border-b-2 border-green-200">
+                                <td className="p-4 space-y-2">
+                                    <Input 
+                                        placeholder="原料名稱 (中文，例: 木製底座)" 
+                                        value={newMaterial.name} 
+                                        onChange={e => setNewMaterial(p => ({ ...p, name: e.target.value }))}
+                                        className="border-green-300"
+                                    />
+                                    <Input 
+                                        placeholder="ID 代號 (英文，例: mat_base)" 
+                                        value={newMaterial.id} 
+                                        onChange={e => setNewMaterial(p => ({ ...p, id: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
+                                        className="font-mono text-xs border-green-300"
+                                    />
+                                </td>
+                                <td className="p-4">
+                                    <Input 
+                                        type="number" 
+                                        placeholder="目前庫存" 
+                                        value={newMaterial.current_stock} 
+                                        onChange={e => setNewMaterial(p => ({ ...p, current_stock: e.target.value }))}
+                                        className="text-center font-mono border-green-300"
+                                    />
+                                </td>
+                                <td className="p-4">
+                                    <Input 
+                                        type="number" 
+                                        placeholder="安全庫存" 
+                                        value={newMaterial.safety_stock} 
+                                        onChange={e => setNewMaterial(p => ({ ...p, safety_stock: e.target.value }))}
+                                        className="text-center font-mono border-green-300"
+                                    />
+                                </td>
+                                <td className="p-4 text-center text-green-700 font-bold text-xs">
+                                    【新增中...】
+                                </td>
+                                <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <Button size="sm" variant="ghost" onClick={() => setIsCreating(false)} disabled={isSaving}>
+                                            取消
+                                        </Button>
+                                        <Button size="sm" onClick={handleCreate} disabled={isSaving} className="bg-green-600 hover:bg-green-700 text-white">
+                                            {isSaving ? '儲存中' : '儲存新增'}
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                         {materials.map((m) => {
                             const isEditing = editingId === m.id;
                             const isLowStock = m.current_stock <= m.safety_stock;

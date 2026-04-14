@@ -105,7 +105,7 @@ export const AdminProducts = () => {
         if (data) {
             setRecipes(data.map(r => ({
                 material_id: r.material_id,
-                quantity: r.quantity,
+                quantity: r.quantity_required || 1,
                 match_condition: r.match_condition ? JSON.stringify(r.match_condition) : ''
             })));
         } else {
@@ -219,7 +219,7 @@ export const AdminProducts = () => {
                 const recipePayload = recipes.map(r => ({
                     product_id: formData.id,
                     material_id: r.material_id,
-                    quantity: parseFloat(r.quantity),
+                    quantity_required: parseFloat(r.quantity),
                     match_condition: r.match_condition ? JSON.parse(r.match_condition) : null
                 }));
 
@@ -473,7 +473,12 @@ export const AdminProducts = () => {
                                                 
                                                 <div className="flex gap-4 items-end pr-8">
                                                     <div className="flex-1 space-y-1">
-                                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">1. 扣除原料</label>
+                                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex justify-between items-center block">
+                                                            <span>1. 扣除原料</span>
+                                                            <a href="/admin/inventory" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:text-blue-700 underline flex items-center gap-0.5">
+                                                                <Plus size={10} /> 前往新增原料
+                                                            </a>
+                                                        </label>
                                                         <select
                                                             className="w-full text-sm border-gray-300 rounded-md focus:border-blue-500 focus:ring-blue-500 p-2 border bg-gray-50 outline-none"
                                                             value={r.material_id}
