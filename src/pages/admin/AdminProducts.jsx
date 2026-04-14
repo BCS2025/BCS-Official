@@ -393,53 +393,151 @@ export const AdminProducts = () => {
                                 </div>
                             </div>
 
-                            {/* Recipe Manager (NEW) */}
-                            <div className="space-y-2 border border-blue-200 bg-blue-50 p-4 rounded-lg">
-                                <div className="flex justify-between items-center mb-2">
-                                    <label className="text-sm font-bold text-blue-900">關聯原料配方 (Product Recipes)</label>
-                                    <Button type="button" size="sm" variant="outline" onClick={handleAddRecipe}>
-                                        <Plus size={14} /> 新增原料關聯
+                            {/* Recipe Manager (NEW) - Enhanced Visual Builder */}
+                            <div className="space-y-4 border border-blue-200 bg-blue-50/50 p-5 rounded-xl">
+                                <div className="flex justify-between items-center flex-wrap gap-2">
+                                    <div>
+                                        <label className="text-base font-bold text-blue-900 block">庫存扣除配方 (Inventory Recipes)</label>
+                                        <span className="text-xs text-blue-700">設定商品或「特定規格」下單時，應該扣除哪些原料庫存</span>
+                                    </div>
+                                    <Button type="button" size="sm" onClick={handleAddRecipe} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1">
+                                        <Plus size={16} /> 新增原料配方
                                     </Button>
                                 </div>
 
-                                {recipes.length === 0 && <div className="text-sm text-gray-500 italic">尚未設定任何原料關聯 (銷售時不會扣除庫存)</div>}
-
-                                {recipes.map((r, idx) => (
-                                    <div key={idx} className="flex gap-2 items-start mb-2">
-                                        <div className="flex-1">
-                                            <select
-                                                className="w-full text-sm border rounded p-2"
-                                                value={r.material_id}
-                                                onChange={e => handleRecipeChange(idx, 'material_id', e.target.value)}
-                                            >
-                                                <option value="">請選擇原料...</option>
-                                                {materials.map(m => (
-                                                    <option key={m.id} value={m.id}>{m.name} (庫存: {m.current_stock})</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="w-24">
-                                            <Input
-                                                type="number"
-                                                placeholder="數量"
-                                                value={r.quantity}
-                                                onChange={e => handleRecipeChange(idx, 'quantity', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <Input
-                                                type="text"
-                                                placeholder='條件 JSON (例: {"siding":"double"})'
-                                                className="font-mono text-xs"
-                                                value={r.match_condition}
-                                                onChange={e => handleRecipeChange(idx, 'match_condition', e.target.value)}
-                                            />
-                                        </div>
-                                        <button type="button" onClick={() => handleRemoveRecipe(idx)} className="text-red-500 hover:text-red-700 p-2">
-                                            <Trash2 size={16} />
-                                        </button>
+                                {recipes.length === 0 && (
+                                    <div className="text-sm text-gray-400 italic text-center py-6 bg-white/50 rounded-lg border border-dashed border-gray-300">
+                                        尚未設定任何原料關聯 (所有規格銷售時皆不會自動扣除原料庫存)
                                     </div>
-                                ))}
+                                )}
+
+                                <div className="space-y-3">
+                                    {recipes.map((r, idx) => {
+                                        // Dynamic Schema Parsed for UI Builder
+                                        let schemaFields = [];
+                                        try {
+                                            if (formData.config_schema) schemaFields = JSON.parse(formData.config_schema);
+                                        } catch(e) {}
+                                        
+                                        let condObj = {};
+                                        try {
+                                            if(r.match_condition) condObj = JSON.parse(r.match_condition);
+                                        } catch(e) {}
+                                        
+                                        const condKeys = Object.keys(condObj);
+                                        const isAdvanced = condKeys.length > 1 || (r.match_condition && r.match_condition.trim() !== '' && Object.keys(condObj).length === 0);
+                                        let uiMode = r.match_condition ? (isAdvanced ? 'advanced' : 'conditional') : 'always';
+                                        
+                                        const condField = condKeys.length === 1 ? condKeys[0] : '';
+                                        const condValue = condKeys.length === 1 ? condObj[condField] : '';
+
+                                        return (
+                                            <div key={idx} className="flex flex-col gap-3 p-4 bg-white border border-blue-100 rounded-xl shadow-sm relative group transition-all hover:shadow-md hover:border-blue-300">
+                                                <button type="button" onClick={() => handleRemoveRecipe(idx)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-1.5 bg-gray-50 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                
+                                                <div className="flex gap-4 items-end pr-8">
+                                                    <div className="flex-1 space-y-1">
+                                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">1. 扣除原料</label>
+                                                        <select
+                                                            className="w-full text-sm border-gray-300 rounded-md focus:border-blue-500 focus:ring-blue-500 p-2 border bg-gray-50 outline-none"
+                                                            value={r.material_id}
+                                                            onChange={e => handleRecipeChange(idx, 'material_id', e.target.value)}
+                                                        >
+                                                            <option value="">請選擇原料...</option>
+                                                            {materials.map(m => (
+                                                                <option key={m.id} value={m.id}>{m.name} (庫存: {m.current_stock})</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="w-24 space-y-1">
+                                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">2. 每件用量</label>
+                                                        <Input
+                                                            type="number"
+                                                            value={r.quantity}
+                                                            onChange={e => handleRecipeChange(idx, 'quantity', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3 items-center bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                                    <label className="text-xs font-bold text-blue-800 min-w-max uppercase tracking-wider">3. 觸發條件:</label>
+                                                    <select 
+                                                        className="text-sm border-blue-200 bg-white rounded-md p-1.5 focus:border-blue-500 focus:ring-blue-500 outline-none border"
+                                                        value={uiMode}
+                                                        onChange={e => {
+                                                            const val = e.target.value;
+                                                            if(val === 'always') {
+                                                                handleRecipeChange(idx, 'match_condition', '');
+                                                            } else if (val === 'conditional') {
+                                                                if(schemaFields.length > 0) {
+                                                                    const f = schemaFields[0];
+                                                                    const v = f.options?.[0]?.value || '';
+                                                                    handleRecipeChange(idx, 'match_condition', JSON.stringify({[f.name]: v}));
+                                                                } else {
+                                                                    handleRecipeChange(idx, 'match_condition', '{}');
+                                                                }
+                                                            } else {
+                                                                handleRecipeChange(idx, 'match_condition', r.match_condition || '{}');
+                                                            }
+                                                        }}
+                                                    >
+                                                        <option value="always">無條件必備 (任何規格皆扣)</option>
+                                                        <option value="conditional">當顧客選擇特定規格時</option>
+                                                        <option value="advanced">進階模式 (手動 JSON)</option>
+                                                    </select>
+
+                                                    {uiMode === 'conditional' && schemaFields.length > 0 && (
+                                                        <div className="flex items-center gap-2 flex-1">
+                                                            <span className="text-xs text-blue-600 font-medium">若</span>
+                                                            <select
+                                                                value={condField}
+                                                                onChange={e => {
+                                                                    const newField = e.target.value;
+                                                                    const fData = schemaFields.find(sf => sf.name === newField);
+                                                                    const newVal = fData?.options?.[0]?.value || '';
+                                                                    handleRecipeChange(idx, 'match_condition', JSON.stringify({[newField]: newVal}));
+                                                                }}
+                                                                className="text-sm border-gray-300 rounded-md p-1.5 border bg-white outline-none"
+                                                            >
+                                                                {schemaFields.map(f => (
+                                                                    <option key={f.name} value={f.name}>{f.label || f.name}</option>
+                                                                ))}
+                                                            </select>
+                                                            <span className="text-xs text-blue-600 font-medium">款式為</span>
+                                                            <select
+                                                                value={condValue}
+                                                                onChange={e => {
+                                                                    handleRecipeChange(idx, 'match_condition', JSON.stringify({[condField]: e.target.value}));
+                                                                }}
+                                                                className="text-sm border-gray-300 rounded-md p-1.5 border bg-white outline-none flex-1 font-bold text-blue-900"
+                                                            >
+                                                                {schemaFields.find(f => f.name === condField)?.options?.map(o => (
+                                                                    <option key={o.value} value={o.value}>{o.label || o.value}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {uiMode === 'conditional' && schemaFields.length === 0 && (
+                                                        <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded">請先於下方設定「客製化選項與加價設定」</span>
+                                                    )}
+
+                                                    {uiMode === 'advanced' && (
+                                                        <Input
+                                                            type="text"
+                                                            value={r.match_condition}
+                                                            onChange={e => handleRecipeChange(idx, 'match_condition', e.target.value)}
+                                                            className="font-mono text-sm flex-1 bg-white"
+                                                            placeholder='{"field": "value"}'
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             {/* Image - Multi-Image Support */}
