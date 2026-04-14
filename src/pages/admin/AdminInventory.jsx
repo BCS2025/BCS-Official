@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Save, AlertTriangle, CheckCircle, RefreshCw, Plus, X } from 'lucide-react';
+import { Save, AlertTriangle, CheckCircle, RefreshCw, Plus, X, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 
@@ -296,9 +296,25 @@ export const AdminInventory = () => {
                                                 </Button>
                                             </div>
                                         ) : (
-                                            <Button size="sm" variant="outline" onClick={() => startEdit(m)}>
-                                                編輯
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                <Button size="sm" variant="outline" onClick={() => startEdit(m)}>
+                                                    編輯
+                                                </Button>
+                                                <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={async () => {
+                                                    if(confirm(`確定要永久刪除原料「${m.name}」嗎？\n\n注意：如果已有「商品配方」正在使用此原料，為了保護資料完整性，系統將會拒絕刪除！`)) {
+                                                        try {
+                                                            const { error } = await supabase.from('materials').delete().eq('id', m.id);
+                                                            if (error) throw error;
+                                                            alert('✅ 刪除成功！');
+                                                            fetchMaterials();
+                                                        } catch (err) {
+                                                            alert('❌ 刪除失敗：此原料可能正被某個商品的「扣除配方」使用中，請先去商品管理移除配方後再刪除。\n' + err.message);
+                                                        }
+                                                    }
+                                                }}>
+                                                    <Trash2 size={16} />
+                                                </Button>
+                                            </div>
                                         )}
                                     </td>
                                 </tr>

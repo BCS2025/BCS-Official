@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Edit, Trash2, X, Save, Upload, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Upload, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { uploadFile } from '../../lib/storageService';
@@ -320,9 +320,23 @@ export const AdminProducts = () => {
                                             {p.is_active ? '上架中' : '已隱藏'}
                                         </div>
                                     </td>
-                                    <td className="p-4 text-right">
+                                    <td className="p-4 text-right flex justify-end gap-2">
                                         <Button size="sm" variant="outline" onClick={() => handleOpenEdit(p)}>
                                             <Edit size={16} />
+                                        </Button>
+                                        <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={async () => {
+                                            if (confirm('確定要永久刪除此商品嗎？\n\n警告：若有歷史訂單關聯此商品，刪除可能會失敗！\n若要避免影響歷史資料，建議使用「編輯」將商品設為【隱藏(下架)】即可。')) {
+                                                try {
+                                                    const { error } = await supabase.from('products').delete().eq('id', p.id);
+                                                    if (error) throw error;
+                                                    alert('✅ 商品刪除成功！');
+                                                    fetchProducts();
+                                                } catch (err) {
+                                                    alert('❌ 刪除失敗 (可能已有訂單綁定此商品)：\n' + err.message);
+                                                }
+                                            }
+                                        }}>
+                                            <Trash2 size={16} />
                                         </Button>
                                     </td>
                                 </tr>
@@ -390,6 +404,13 @@ export const AdminProducts = () => {
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">排序權重 (大在前)</label>
                                     <Input type="number" value={formData.sort_order} onChange={e => setFormData(prev => ({ ...prev, sort_order: e.target.value }))} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                        <input type="checkbox" checked={formData.is_active} onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))} className="w-4 h-4 cursor-pointer" />
+                                        上架此商品 (啟用)
+                                    </label>
+                                    <p className="text-xs text-gray-500">取消勾選將將商品隱藏，前台無法購買</p>
                                 </div>
                             </div>
 
@@ -475,9 +496,14 @@ export const AdminProducts = () => {
                                                     <div className="flex-1 space-y-1">
                                                         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex justify-between items-center block">
                                                             <span>1. 扣除原料</span>
-                                                            <a href="/admin/inventory" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:text-blue-700 underline flex items-center gap-0.5">
-                                                                <Plus size={10} /> 前往新增原料
-                                                            </a>
+                                                            <div className="flex items-center gap-3">
+                                                                <button type="button" onClick={fetchMaterials} className="text-[10px] text-green-600 hover:text-green-800 underline flex items-center gap-0.5" title="若剛才新增了原料，可點此重新載入下拉選單">
+                                                                    <RefreshCw size={10} /> 重新載入表單
+                                                                </button>
+                                                                <a href="/admin/inventory" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:text-blue-700 underline flex items-center gap-0.5">
+                                                                    <Plus size={10} /> 前往新增原料
+                                                                </a>
+                                                            </div>
                                                         </label>
                                                         <select
                                                             className="w-full text-sm border-gray-300 rounded-md focus:border-blue-500 focus:ring-blue-500 p-2 border bg-gray-50 outline-none"
