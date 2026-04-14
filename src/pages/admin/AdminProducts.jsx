@@ -393,12 +393,49 @@ export const AdminProducts = () => {
                                 </div>
                             </div>
 
+                            {/* Config Editor (Moved up) */}
+                            <div className="space-y-2 border-t pt-6 mb-6">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-bold text-gray-700">客製化選項與加價設定</label>
+                                    <div className="text-xs text-gray-500">
+                                        設定商品的可選款式 (如尺寸、顏色) 及其額外加價
+                                    </div>
+                                </div>
+
+                                <ConfigSchemaBuilder
+                                    initialSchema={JSON.parse(formData.config_schema || '[]')}
+                                    initialPricing={formData.pricing_logic || {}}
+                                    onChange={(newFields, newPricing) => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            config_schema: JSON.stringify(newFields, null, 2),
+                                            pricing_logic: newPricing
+                                        }));
+                                    }}
+                                />
+
+                                {/* Fallback / Debug: Show Raw JSON if needed (Collapsible or hidden) */}
+                                <details className="mt-4 border-t pt-4">
+                                    <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-600 list-none font-bold">▶ 進階：檢視原始 JSON 設定</summary>
+                                    <textarea
+                                        value={formData.config_schema}
+                                        onChange={e => setFormData(prev => ({ ...prev, config_schema: e.target.value }))}
+                                        className={`w-full mt-2 p-4 font-mono text-sm border rounded h-64 bg-slate-900 text-green-400 ${jsonError ? 'border-red-500' : 'border-slate-700'}`}
+                                    />
+                                    {jsonError && (
+                                        <div className="flex items-center gap-2 text-red-600 text-sm font-bold mt-2">
+                                            <AlertCircle size={16} /> {jsonError}
+                                        </div>
+                                    )}
+                                </details>
+                            </div>
+
                             {/* Recipe Manager (NEW) - Enhanced Visual Builder */}
                             <div className="space-y-4 border border-blue-200 bg-blue-50/50 p-5 rounded-xl">
                                 <div className="flex justify-between items-center flex-wrap gap-2">
                                     <div>
                                         <label className="text-base font-bold text-blue-900 block">庫存扣除配方 (Inventory Recipes)</label>
-                                        <span className="text-xs text-blue-700">設定商品或「特定規格」下單時，應該扣除哪些原料庫存</span>
+                                        <span className="text-xs text-blue-700">設定商品或「特定規格組合」下單時，應該扣除哪些原料庫存</span>
                                     </div>
                                     <Button type="button" size="sm" onClick={handleAddRecipe} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1">
                                         <Plus size={16} /> 新增原料配方
@@ -425,11 +462,8 @@ export const AdminProducts = () => {
                                         } catch(e) {}
                                         
                                         const condKeys = Object.keys(condObj);
-                                        const isAdvanced = condKeys.length > 1 || (r.match_condition && r.match_condition.trim() !== '' && Object.keys(condObj).length === 0);
+                                        const isAdvanced = (r.match_condition && r.match_condition.trim() !== '' && Object.keys(condObj).length === 0 && !r.match_condition.startsWith('{'));
                                         let uiMode = r.match_condition ? (isAdvanced ? 'advanced' : 'conditional') : 'always';
-                                        
-                                        const condField = condKeys.length === 1 ? condKeys[0] : '';
-                                        const condValue = condKeys.length === 1 ? condObj[condField] : '';
 
                                         return (
                                             <div key={idx} className="flex flex-col gap-3 p-4 bg-white border border-blue-100 rounded-xl shadow-sm relative group transition-all hover:shadow-md hover:border-blue-300">
@@ -461,8 +495,8 @@ export const AdminProducts = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-3 items-center bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                                                    <label className="text-xs font-bold text-blue-800 min-w-max uppercase tracking-wider">3. 觸發條件:</label>
+                                                <div className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                                    <label className="text-xs font-bold text-blue-800 min-w-max uppercase tracking-wider mt-2 md:mt-0">3. 觸發條件:</label>
                                                     <select 
                                                         className="text-sm border-blue-200 bg-white rounded-md p-1.5 focus:border-blue-500 focus:ring-blue-500 outline-none border"
                                                         value={uiMode}
@@ -489,39 +523,73 @@ export const AdminProducts = () => {
                                                     </select>
 
                                                     {uiMode === 'conditional' && schemaFields.length > 0 && (
-                                                        <div className="flex items-center gap-2 flex-1">
-                                                            <span className="text-xs text-blue-600 font-medium">若</span>
-                                                            <select
-                                                                value={condField}
-                                                                onChange={e => {
-                                                                    const newField = e.target.value;
-                                                                    const fData = schemaFields.find(sf => sf.name === newField);
-                                                                    const newVal = fData?.options?.[0]?.value || '';
-                                                                    handleRecipeChange(idx, 'match_condition', JSON.stringify({[newField]: newVal}));
-                                                                }}
-                                                                className="text-sm border-gray-300 rounded-md p-1.5 border bg-white outline-none"
-                                                            >
-                                                                {schemaFields.map(f => (
-                                                                    <option key={f.name} value={f.name}>{f.label || f.name}</option>
-                                                                ))}
-                                                            </select>
-                                                            <span className="text-xs text-blue-600 font-medium">款式為</span>
-                                                            <select
-                                                                value={condValue}
-                                                                onChange={e => {
-                                                                    handleRecipeChange(idx, 'match_condition', JSON.stringify({[condField]: e.target.value}));
-                                                                }}
-                                                                className="text-sm border-gray-300 rounded-md p-1.5 border bg-white outline-none flex-1 font-bold text-blue-900"
-                                                            >
-                                                                {schemaFields.find(f => f.name === condField)?.options?.map(o => (
-                                                                    <option key={o.value} value={o.value}>{o.label || o.value}</option>
-                                                                ))}
-                                                            </select>
+                                                        <div className="flex flex-col gap-2 flex-1 w-full">
+                                                            {condKeys.length === 0 && (
+                                                                <Button type="button" size="sm" variant="outline" className="w-fit bg-white" onClick={() => {
+                                                                    const f = schemaFields[0];
+                                                                    const v = f.options?.[0]?.value || '';
+                                                                    handleRecipeChange(idx, 'match_condition', JSON.stringify({[f.name]: v}));
+                                                                }}>+ 設定條件</Button>
+                                                            )}
+                                                            {condKeys.map((key, cidx) => (
+                                                                <div key={cidx} className="flex items-center gap-2 flex-wrap">
+                                                                    <span className="text-xs text-blue-600 font-medium w-6 text-right">{cidx === 0 ? '若' : '且'}</span>
+                                                                    <select
+                                                                        value={key}
+                                                                        onChange={e => {
+                                                                            const newField = e.target.value;
+                                                                            const fData = schemaFields.find(sf => sf.name === newField);
+                                                                            const newVal = fData?.options?.[0]?.value || '';
+                                                                            const newCond = { ...condObj };
+                                                                            delete newCond[key];
+                                                                            newCond[newField] = newVal;
+                                                                            handleRecipeChange(idx, 'match_condition', JSON.stringify(newCond));
+                                                                        }}
+                                                                        className="text-sm border-gray-300 rounded-md p-1.5 border bg-white outline-none"
+                                                                    >
+                                                                        {schemaFields.map(f => (
+                                                                            <option key={f.name} value={f.name}>{f.label || f.name}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <span className="text-xs text-blue-600 font-medium">款式為</span>
+                                                                    <select
+                                                                        value={condObj[key]}
+                                                                        onChange={e => {
+                                                                            const newCond = { ...condObj, [key]: e.target.value };
+                                                                            handleRecipeChange(idx, 'match_condition', JSON.stringify(newCond));
+                                                                        }}
+                                                                        className="text-sm border-gray-300 rounded-md p-1.5 border bg-white outline-none flex-1 min-w-[120px] font-bold text-blue-900"
+                                                                    >
+                                                                        {schemaFields.find(f => f.name === key)?.options?.map(o => (
+                                                                            <option key={o.value} value={o.value}>{o.label || o.value}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <button type="button" className="text-red-300 hover:text-red-500 p-1" onClick={() => {
+                                                                        const newCond = { ...condObj };
+                                                                        delete newCond[key];
+                                                                        handleRecipeChange(idx, 'match_condition', Object.keys(newCond).length > 0 ? JSON.stringify(newCond) : '{}');
+                                                                    }}>
+                                                                        <X size={16}/>
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                            {condKeys.length > 0 && schemaFields.length > condKeys.length && (
+                                                                <button type="button" className="text-xs text-blue-600 font-bold hover:bg-blue-100 p-1 px-2 rounded self-start mt-1 transition-colors flex items-center gap-1" onClick={() => {
+                                                                    const unusedField = schemaFields.find(sf => !condKeys.includes(sf.name));
+                                                                    if (unusedField) {
+                                                                        const v = unusedField.options?.[0]?.value || '';
+                                                                        const newCond = { ...condObj, [unusedField.name]: v };
+                                                                        handleRecipeChange(idx, 'match_condition', JSON.stringify(newCond));
+                                                                    }
+                                                                }}>
+                                                                    <Plus size={12}/> 新增交集條件 (AND)
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
                                                     
                                                     {uiMode === 'conditional' && schemaFields.length === 0 && (
-                                                        <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded">請先於下方設定「客製化選項與加價設定」</span>
+                                                        <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded">請先於上方設定「客製化選項與加價設定」</span>
                                                     )}
 
                                                     {uiMode === 'advanced' && (
@@ -541,7 +609,7 @@ export const AdminProducts = () => {
                             </div>
 
                             {/* Image - Multi-Image Support */}
-                            <div className="space-y-2">
+                            <div className="space-y-2 border-t pt-6">
                                 <label className="text-sm font-bold text-gray-700">商品圖片 (第一張為封面圖)</label>
 
                                 <div className="flex flex-wrap gap-4 mb-2">
@@ -592,43 +660,6 @@ export const AdminProducts = () => {
                                     onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                     className="w-full p-2 border rounded h-64 font-mono text-sm leading-relaxed"
                                 />
-                            </div>
-
-                            {/* Config Editor */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center mb-2">
-                                    <label className="text-sm font-bold text-gray-700">客製化選項與加價設定</label>
-                                    <div className="text-xs text-gray-500">
-                                        設定商品的可選款式 (如尺寸、顏色) 及其額外加價
-                                    </div>
-                                </div>
-
-                                <ConfigSchemaBuilder
-                                    initialSchema={JSON.parse(formData.config_schema || '[]')}
-                                    initialPricing={formData.pricing_logic || {}}
-                                    onChange={(newFields, newPricing) => {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            config_schema: JSON.stringify(newFields, null, 2),
-                                            pricing_logic: newPricing
-                                        }));
-                                    }}
-                                />
-
-                                {/* Fallback / Debug: Show Raw JSON if needed (Collapsible or hidden) */}
-                                <details className="mt-4 border-t pt-4">
-                                    <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-600 list-none font-bold">▶ 進階：檢視原始 JSON 設定</summary>
-                                    <textarea
-                                        value={formData.config_schema}
-                                        onChange={e => setFormData(prev => ({ ...prev, config_schema: e.target.value }))}
-                                        className={`w-full mt-2 p-4 font-mono text-sm border rounded h-64 bg-slate-900 text-green-400 ${jsonError ? 'border-red-500' : 'border-slate-700'}`}
-                                    />
-                                    {jsonError && (
-                                        <div className="flex items-center gap-2 text-red-600 text-sm font-bold mt-2">
-                                            <AlertCircle size={16} /> {jsonError}
-                                        </div>
-                                    )}
-                                </details>
                             </div>
 
                             <div className="pt-4 border-t flex justify-end gap-3 sticky bottom-0 bg-white pb-6">
