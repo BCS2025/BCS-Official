@@ -434,21 +434,21 @@ CREATE POLICY "admin write" ON forge_portfolio FOR ALL USING (auth.role() = 'aut
 ### Phase 4：鍛造工坊改版
 > 服務型頁面，重點在作品集與流程說明。
 
-- [ ] Supabase Migration：建立 `forge_portfolio` 表
-- [ ] 新建 `src/pages/Forge.jsx`：整合落地頁 + 服務說明 + 作品集 + 報價表單
-- [ ] 新建 `src/pages/admin/AdminForgePortfolio.jsx`：作品集管理
-- [ ] 現有 `CustomQuote.jsx` 邏輯移植至 `Forge.jsx` 中的 section
+- [x] Supabase Migration：建立 `forge_portfolio` 表（已隨 20260416_bcs_rewrite.sql 部署）
+- [x] 新建 `src/pages/Forge.jsx`：整合落地頁 + 服務說明 + 作品集 + 報價表單
+- [x] 新建 `src/pages/admin/AdminForgePortfolio.jsx`：作品集管理
+- [x] 現有 `CustomQuote.jsx` 邏輯移植至 `Forge.jsx` 中的 section
 
 **預估工作量：** 1 天
 
 ---
 
 ### Phase 5：收尾與品質優化
-- [ ] SEO：每頁加入 `<title>` 和 `<meta description>`
-- [ ] Loading State：統一 skeleton 樣式
-- [ ] Mobile 全面檢測（Navbar、課程卡、報名表單）
-- [ ] Footer：加入聯絡資訊、三品牌快捷連結、IG / 蝦皮連結
-- [ ] `notification_failures` 後台查詢（已有表，需加入管理介面）
+- [x] SEO：每頁加入 `<title>` 和 `<meta description>`（usePageMeta hook）
+- [x] Loading State：統一 skeleton 樣式（Skeleton.jsx：SkeletonCourseCard、SkeletonPortfolioGrid、SkeletonProductCard）
+- [x] Mobile 全面檢測（Forge 尺寸輸入改 `sm:grid-cols-3`）
+- [x] Footer：加入聯絡資訊、三品牌快捷連結、IG / 蝦皮連結
+- [x] `notification_failures` 後台查詢（AdminNotificationFailures.jsx）
 
 **預估工作量：** 1 天
 

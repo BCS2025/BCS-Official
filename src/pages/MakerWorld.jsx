@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, Users, ChevronRight, GraduationCap } from 'lucide-react';
 import { fetchCourses } from '../lib/courseService';
+import { usePageMeta } from '../hooks/usePageMeta';
+import { SkeletonCourseCard } from '../components/ui/Skeleton';
 
 function CourseCard({ course }) {
     const date = new Date(course.date);
@@ -95,6 +97,7 @@ function CourseCard({ course }) {
 }
 
 export default function MakerWorld() {
+    usePageMeta('創客世界', '比創空間・創客世界——STEAM 教育工作坊、Arduino、3D 列印、雷射切割，週末兒童實作課程，台南永康。');
     const [courses, setCourses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -132,15 +135,7 @@ export default function MakerWorld() {
                 {isLoading && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="card animate-pulse">
-                                <div className="aspect-[16/9] bg-gray-100" />
-                                <div className="p-5 space-y-3">
-                                    <div className="h-4 bg-gray-100 rounded w-1/4" />
-                                    <div className="h-5 bg-gray-100 rounded w-3/4" />
-                                    <div className="h-4 bg-gray-100 rounded w-1/2" />
-                                </div>
-                            </div>
-                        ))}
+                            <SkeletonCourseCard key={i} />
                     </div>
                 )}
 

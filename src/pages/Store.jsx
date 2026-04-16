@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Layers, Lightbulb, ArrowRight } from 'lucide-react';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 const CATEGORIES = [
     {
@@ -26,6 +27,7 @@ const FEATURES = [
 ];
 
 export default function Store() {
+    usePageMeta('販創所', '比創空間・販創所——文創商品、創客材料、壓克力燈、雷射雕刻，台南在地設計師親手製作。');
     return (
         <div className="min-h-screen bg-white">
             {/* Hero Section */}

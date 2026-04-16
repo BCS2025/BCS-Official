@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, Users, ArrowLeft, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchCourseById } from '../lib/courseService';
 import { createRegistration } from '../lib/registrationService';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function GalleryViewer({ images }) {
     const [current, setCurrent] = useState(0);
@@ -191,6 +192,11 @@ export default function CourseDetail() {
     const [course, setCourse] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    usePageMeta(
+        course ? course.title : '課程詳情',
+        course ? `${course.title}——比創空間・創客世界課程報名，STEAM 兒童教育，台南永康。` : undefined
+    );
 
     useEffect(() => {
         fetchCourseById(courseId)

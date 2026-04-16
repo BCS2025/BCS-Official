@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { LayoutDashboard, Package, Box, LogOut, Settings, Tag, FlaskConical, GraduationCap, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Package, Box, LogOut, Settings, Tag, FlaskConical, GraduationCap, ClipboardList, Images, AlertTriangle } from 'lucide-react';
 
 export const AdminLayout = () => {
     const [session, setSession] = useState(null);
@@ -55,6 +55,8 @@ export const AdminLayout = () => {
         { path: '/admin/quote-materials', icon: Settings, label: '報價材質 (Quote Materials)' },
         { path: '/admin/courses', icon: GraduationCap, label: '課程管理 (Courses)' },
         { path: '/admin/registrations', icon: ClipboardList, label: '報名管理 (Registrations)' },
+        { path: '/admin/forge-portfolio', icon: Images, label: '作品集管理 (Portfolio)' },
+        { path: '/admin/notification-failures', icon: AlertTriangle, label: '通知失敗記錄' },
     ];
 
     const isActive = (path, exact) => {

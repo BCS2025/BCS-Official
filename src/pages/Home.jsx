@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Sparkles, Hammer, GraduationCap, ArrowRight, ChevronRight } from 'lucide-react';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function Home() {
+    usePageMeta('首頁', '比創空間——融合文創電商、代工製作與 STEAM 教育的創客工坊，旗下三品牌：販創所、鍛造工坊、創客世界。');
     return (
         <div className="min-h-screen bg-white text-bcs-black font-sans">
 

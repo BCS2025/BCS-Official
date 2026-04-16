@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { fetchProducts } from './lib/productService';
 import { useCart } from './hooks/useCart';
 import { useOrderSubmit } from './hooks/useOrderSubmit';
@@ -18,16 +18,21 @@ import { AdminLogin } from './pages/admin/AdminLogin';
 import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import Store from './pages/Store';
-import CustomQuote from './pages/CustomQuote';
+import Forge from './pages/Forge';
+import Footer from './components/Footer';
 import MakerWorld from './pages/MakerWorld';
 import CourseDetail from './pages/CourseDetail';
 import { AdminCourses } from './pages/admin/AdminCourses';
 import { AdminRegistrations } from './pages/admin/AdminRegistrations';
+import { AdminForgePortfolio } from './pages/admin/AdminForgePortfolio';
+import { AdminNotificationFailures } from './pages/admin/AdminNotificationFailures';
 
 const FREE_SHIPPING_THRESHOLD = 599;
 
 function App() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isAdminPage = location.pathname.startsWith('/admin');
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [customer, setCustomer] = useState({
@@ -108,9 +113,10 @@ function App() {
     }
 
     return (
-        <div className="min-h-screen bg-white font-sans">
+        <div className="min-h-screen bg-white font-sans flex flex-col">
             <Navbar cartCount={cart.length} />
 
+            <div className="flex-1">
             <Routes>
                 {/* 品牌首頁 */}
                 <Route path="/" element={<Home />} />
@@ -167,8 +173,8 @@ function App() {
                 {/* 關於我們 */}
                 <Route path="/about" element={<AboutUs />} />
 
-                {/* 鍛造工坊（Phase 4 前暫用 CustomQuote） */}
-                <Route path="/forge" element={<CustomQuote />} />
+                {/* 鍛造工坊 */}
+                <Route path="/forge" element={<Forge />} />
                 <Route path="/quote" element={<Navigate to="/forge" replace />} />
 
                 {/* 創客世界 */}
@@ -187,9 +193,13 @@ function App() {
                     <Route path="quote-materials" element={<AdminQuoteMaterials />} />
                     <Route path="courses" element={<AdminCourses />} />
                     <Route path="registrations" element={<AdminRegistrations />} />
+                    <Route path="forge-portfolio" element={<AdminForgePortfolio />} />
+                    <Route path="notification-failures" element={<AdminNotificationFailures />} />
                 </Route>
                 <Route path="/admin/login" element={<AdminLogin />} />
             </Routes>
+            </div>
+            {!isAdminPage && <Footer />}
         </div>
     );
 }

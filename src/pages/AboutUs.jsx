@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Sparkles, Hammer, GraduationCap, ChevronRight } from 'lucide-react';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function AboutUs() {
+    usePageMeta('關於我們', '比創空間——兩人一貓的創客工坊，台南在地，融合工程師視角與設計師美感，打造三個子品牌：販創所、鍛造工坊、創客世界。');
     return (
         <div className="min-h-screen bg-white text-bcs-black font-sans pb-24">
 
