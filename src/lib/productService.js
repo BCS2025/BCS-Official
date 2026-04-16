@@ -1,6 +1,8 @@
 import { supabase } from './supabaseClient';
 import { calculateKeychainPrice, calculateVariantPrice } from './pricing';
 
+// TODO: Legacy fallback — 當 Supabase 內所有商品的 config_schema 與 pricing_logic 均已填妥後，
+// 可移除此 import 及 transformProduct 中的 staticConfig 相關邏輯，並刪除 src/data/products.js。
 import { PRODUCTS } from '../data/products';
 
 /**

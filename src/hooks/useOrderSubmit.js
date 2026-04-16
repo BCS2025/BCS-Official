@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import { notifyGAS } from '../lib/webhookService';
+import { MESSAGES } from '../constants/messages';
 
 export function useOrderSubmit() {
     const navigate = useNavigate();
@@ -55,7 +56,7 @@ export function useOrderSubmit() {
                             newItem[key] = publicUrl;
                         } catch (err) {
                             console.error(`Failed to upload file for item ${item.productName}:`, err);
-                            throw new Error('圖片上傳失敗，請稍後再試');
+                            throw new Error(MESSAGES.UPLOAD.FAILED);
                         }
                     }
                 }
@@ -142,7 +143,7 @@ export function useOrderSubmit() {
 
         } catch (error) {
             console.error('Error submitting order:', error);
-            alert(error.message || '送出失敗，請稍後再試或直接聯繫我們。');
+            alert(error.message || MESSAGES.ORDER.SUBMIT_FAILED);
         } finally {
             setIsSubmitting(false);
         }

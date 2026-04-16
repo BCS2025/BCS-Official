@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { MESSAGES } from '../constants/messages';
 
 /**
  * Submits an order to the Supabase 'orders' table.
@@ -38,7 +39,7 @@ export async function submitOrder(orderData) {
         console.error('Order Submission Error:', error);
         // Translate DB Constraint Error to User Friendly Message
         if (error.message?.includes('check_positive_stock') || error.details?.includes('check_positive_stock')) {
-            throw new Error('庫存不足！有商品已被搶購一空，請檢查購物車數量。');
+            throw new Error(MESSAGES.ORDER.STOCK_INSUFFICIENT);
         }
         throw error;
     }

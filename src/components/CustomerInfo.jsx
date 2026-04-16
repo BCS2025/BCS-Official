@@ -8,6 +8,7 @@ import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import ShippingMethodSelector from './ShippingMethodSelector';
 import ProofSelector from './ProofSelector';
 import PickupScheduler from './PickupScheduler';
+import { MESSAGES } from '../constants/messages';
 
 export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity }) {
     const [city, setCity] = useState(data.city || '');
@@ -54,12 +55,12 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
 
     const validateField = (id, value) => {
         if (id === 'phone') {
-            if (!value) return '請輸入電話號碼';
-            if (!/^09\d{8}$/.test(value)) return '請輸入有效的台灣手機號碼 (09xxxxxxxx)';
+            if (!value) return MESSAGES.VALIDATION.PHONE_REQUIRED;
+            if (!/^09\d{8}$/.test(value)) return MESSAGES.VALIDATION.PHONE_FORMAT;
         }
         if (id === 'email') {
-            if (!value) return '請輸入 Email';
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return '請輸入有效的 Email 格式';
+            if (!value) return MESSAGES.VALIDATION.EMAIL_REQUIRED;
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return MESSAGES.VALIDATION.EMAIL_FORMAT;
         }
         return '';
     };
@@ -154,7 +155,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 </a>
                             </div>
                             <p className="text-xs text-wood-500 pl-1">
-                                建議填寫完整「門市名稱」與「店號」以避免寄送錯誤。
+                                {MESSAGES.VALIDATION.STORE_NAME_HINT}
                                 <br />請點擊上方按鈕查詢門市資訊後複製貼上。
                             </p>
                         </div>

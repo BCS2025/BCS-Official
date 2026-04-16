@@ -7,8 +7,8 @@ import { Button } from './ui/Button';
 import { Send, ArrowLeft, X } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
-import { getProductById } from '../data/products';
 import { couponService } from '../lib/couponService'; // New Coupon Service
+import { MESSAGES } from '../constants/messages';
 import { Input } from './ui/Input';
 import { Loader2 } from 'lucide-react';
 
@@ -111,7 +111,7 @@ export default function Cart({
             }
         } catch (err) {
             console.error(err);
-            setCouponError('驗證失敗，請稍後再試');
+            setCouponError(MESSAGES.CART.COUPON_VALIDATE_FAILED);
         } finally {
             setIsValidatingCoupon(false);
         }
@@ -171,7 +171,7 @@ export default function Cart({
             {isFreeShipping && itemsTotal > 0 && (
                 <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-center gap-2 text-sm text-green-800">
                     <span className="bg-green-100 p-1 rounded-full">🎉</span>
-                    <span className="font-bold">恭喜！您已符合免運資格</span>
+                    <span className="font-bold">{MESSAGES.CART.FREE_SHIPPING_QUALIFIED}</span>
                 </div>
             )}
 
