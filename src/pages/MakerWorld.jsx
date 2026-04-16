@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, ChevronRight, GraduationCap } from 'lucide-react';
+import { Calendar, Clock, Users, ChevronRight, GraduationCap, Instagram } from 'lucide-react';
 import { fetchCourses } from '../lib/courseService';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { SkeletonCourseCard } from '../components/ui/Skeleton';
+import Reveal from '../components/ui/Reveal';
+
+const STATUS_TABS = ['全部', '可報名', '名額已滿', '已結束'];
+
+function getStatus(course) {
+    if (course.status === 'closed') return 'closed';
+    const remaining = course.capacity - course.enrolled;
+    if (course.status === 'full' || remaining <= 0) return 'full';
+    return 'open';
+}
 
 function CourseCard({ course }) {
     const date = new Date(course.date);
@@ -22,7 +32,6 @@ function CourseCard({ course }) {
                         <GraduationCap size={48} className="text-maker-200" />
                     </div>
                 )}
-                {/* 狀態 badge */}
                 {isFull && !isClosed && (
                     <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                         名額已滿
@@ -100,6 +109,7 @@ export default function MakerWorld() {
     usePageMeta('創客世界', '比創空間・創客世界——STEAM 教育工作坊、Arduino、3D 列印、雷射切割，週末兒童實作課程，台南永康。');
     const [courses, setCourses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeFilter, setActiveFilter] = useState('全部');
 
     useEffect(() => {
         fetchCourses()
@@ -108,8 +118,21 @@ export default function MakerWorld() {
             .finally(() => setIsLoading(false));
     }, []);
 
-    const upcoming = courses.filter(c => c.status !== 'closed');
-    const past = courses.filter(c => c.status === 'closed');
+    const filteredCourses = courses.filter(c => {
+        if (activeFilter === '全部') return true;
+        const s = getStatus(c);
+        if (activeFilter === '可報名') return s === 'open';
+        if (activeFilter === '名額已滿') return s === 'full';
+        if (activeFilter === '已結束') return s === 'closed';
+        return true;
+    });
+
+    const counts = STATUS_TABS.reduce((acc, tab) => {
+        if (tab === '全部') { acc[tab] = courses.length; return acc; }
+        const s = tab === '可報名' ? 'open' : tab === '名額已滿' ? 'full' : 'closed';
+        acc[tab] = courses.filter(c => getStatus(c) === s).length;
+        return acc;
+    }, {});
 
     return (
         <div className="min-h-screen bg-white">
@@ -130,44 +153,99 @@ export default function MakerWorld() {
                 </div>
             </section>
 
-            <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="max-w-7xl mx-auto px-6 py-12">
 
-                {isLoading && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3].map(i => (
-                            <SkeletonCourseCard key={i} />
+                {/* ── 篩選 Tabs ── */}
+                {!isLoading && courses.length > 0 && (
+                    <div className="flex gap-2 flex-wrap mb-8">
+                        {STATUS_TABS.map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveFilter(tab)}
+                                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${
+                                    activeFilter === tab
+                                        ? 'bg-maker-500 text-white'
+                                        : 'bg-white border border-bcs-border text-bcs-muted hover:border-maker-300 hover:text-maker-600'
+                                }`}
+                            >
+                                {tab}
+                                {counts[tab] > 0 && (
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                        activeFilter === tab ? 'bg-white/20 text-white' : 'bg-bcs-gray text-bcs-muted'
+                                    }`}>
+                                        {counts[tab]}
+                                    </span>
+                                )}
+                            </button>
                         ))}
                     </div>
                 )}
 
-                {!isLoading && upcoming.length === 0 && past.length === 0 && (
+                {isLoading && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3].map(i => <SkeletonCourseCard key={i} />)}
+                    </div>
+                )}
+
+                {!isLoading && courses.length === 0 && (
                     <div className="text-center py-20">
                         <GraduationCap size={48} className="text-maker-200 mx-auto mb-4" />
                         <h2 className="text-2xl font-black text-bcs-black mb-2">課程籌備中</h2>
-                        <p className="text-bcs-muted">敬請期待即將推出的 STEAM 課程，歡迎追蹤我們的 Instagram 掌握最新消息！</p>
+                        <p className="text-bcs-muted mb-6">敬請期待即將推出的 STEAM 課程！</p>
+                        <a
+                            href="https://www.instagram.com/sr2026space/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-maker inline-flex items-center gap-2"
+                        >
+                            <Instagram size={16} />
+                            追蹤 IG 掌握最新課程消息
+                        </a>
                     </div>
                 )}
 
-                {/* 即將開始 */}
-                {!isLoading && upcoming.length > 0 && (
-                    <div className="mb-16">
-                        <h2 className="text-2xl font-black text-bcs-black mb-6">即將開班</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {upcoming.map(c => <CourseCard key={c.id} course={c} />)}
-                        </div>
+                {!isLoading && courses.length > 0 && filteredCourses.length === 0 && (
+                    <div className="text-center py-16 text-bcs-muted">
+                        <p className="font-semibold mb-1">此分類目前沒有課程</p>
+                        <button onClick={() => setActiveFilter('全部')} className="text-maker-500 font-bold text-sm mt-2 hover:underline">
+                            查看全部課程
+                        </button>
                     </div>
                 )}
 
-                {/* 已結束 */}
-                {!isLoading && past.length > 0 && (
-                    <div>
-                        <h2 className="text-2xl font-black text-bcs-black mb-6 text-gray-400">過往課程</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {past.map(c => <CourseCard key={c.id} course={c} />)}
-                        </div>
+                {!isLoading && filteredCourses.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredCourses.map((c, i) => (
+                            <Reveal key={c.id} delay={i * 60}>
+                                <CourseCard course={c} />
+                            </Reveal>
+                        ))}
                     </div>
                 )}
             </div>
+
+            {/* ── Instagram CTA ── */}
+            <Reveal className="border-t border-maker-100 bg-maker-50 py-14 px-6 text-center">
+                <div className="max-w-xl mx-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-maker-500 flex items-center justify-center mx-auto mb-4">
+                        <Instagram size={22} className="text-white" />
+                    </div>
+                    <h2 className="text-2xl font-black text-bcs-black mb-2">追蹤 Instagram 掌握最新動態</h2>
+                    <p className="text-bcs-muted mb-6 leading-relaxed">
+                        課程花絮、學員作品、新課預告——都在 IG 第一手公布。
+                    </p>
+                    <a
+                        href="https://www.instagram.com/sr2026space/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-maker inline-flex items-center gap-2"
+                    >
+                        <Instagram size={16} />
+                        @sr2026space
+                    </a>
+                </div>
+            </Reveal>
+
         </div>
     );
 }

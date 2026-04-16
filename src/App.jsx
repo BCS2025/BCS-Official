@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { ChevronUp } from 'lucide-react';
 import { fetchProducts } from './lib/productService';
 import { useCart } from './hooks/useCart';
 import { useOrderSubmit } from './hooks/useOrderSubmit';
@@ -51,6 +52,14 @@ function App() {
         needProof: 'yes',
     });
     const [shippingCost, setShippingCost] = useState(60);
+
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => setShowScrollTop(window.scrollY > 500);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const { cart, setCart, handleAddToCart, handleDeleteItem } = useCart();
     const { submitOrder, isSubmitting, successData, clearSuccessData } = useOrderSubmit();
@@ -200,6 +209,17 @@ function App() {
             </Routes>
             </div>
             {!isAdminPage && <Footer />}
+
+            {/* 回到頂部按鈕 */}
+            {!isAdminPage && showScrollTop && (
+                <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="fixed bottom-6 right-6 z-40 w-11 h-11 bg-bcs-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-neutral-700 transition-all duration-200 hover:scale-110"
+                    aria-label="回到頂部"
+                >
+                    <ChevronUp size={20} />
+                </button>
+            )}
         </div>
     );
 }

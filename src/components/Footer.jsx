@@ -57,7 +57,7 @@ export default function Footer() {
                     <div className="lg:col-span-1">
                         <div className="flex items-center gap-3 mb-4">
                             <img
-                                src={`${import.meta.env.BASE_URL}WebsiteLogoIcon.png`}
+                                src={`${import.meta.env.BASE_URL}WebsiteTopLogoIcon.png`}
                                 alt="比創空間"
                                 className="h-9 w-auto object-contain brightness-0 invert"
                             />

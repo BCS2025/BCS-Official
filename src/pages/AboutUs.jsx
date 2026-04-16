@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Sparkles, Hammer, GraduationCap, ChevronRight } from 'lucide-react';
 import { usePageMeta } from '../hooks/usePageMeta';
+import Reveal from '../components/ui/Reveal';
 
 export default function AboutUs() {
     usePageMeta('關於我們', '比創空間——兩人一貓的創客工坊，台南在地，融合工程師視角與設計師美感，打造三個子品牌：販創所、鍛造工坊、創客世界。');
@@ -39,8 +40,8 @@ export default function AboutUs() {
             <section className="w-full bg-bcs-gray py-20 border-y border-bcs-border">
                 <div className="max-w-6xl mx-auto px-6 flex flex-col gap-24">
 
-                    {/* Block A: Story */}
-                    <div className="flex flex-col md:flex-row items-center gap-16">
+                    {/* Block A: 品牌故事 */}
+                    <Reveal className="flex flex-col md:flex-row items-center gap-16">
                         <div className="md:w-1/2 order-2 md:order-1">
                             <h2 className="text-3xl md:text-4xl font-black mb-6 leading-tight">
                                 從愛好到具現化，<br />把好玩的東西做出來。
@@ -53,17 +54,53 @@ export default function AboutUs() {
                             </p>
                         </div>
                         <div className="md:w-1/2 order-1 md:order-2 flex justify-center">
-                            <div className="w-full aspect-square max-w-md bg-white rounded-[2rem] flex items-center justify-center relative overflow-hidden border border-bcs-border shadow-card">
-                                <Sparkles className="w-28 h-28 text-store-300 drop-shadow-sm" strokeWidth={1} />
+                            {/* 三品牌視覺化卡片 */}
+                            <div className="w-full aspect-square max-w-md rounded-[2rem] overflow-hidden border border-bcs-border shadow-card bg-white">
+                                <div className="grid grid-cols-3 h-2/3">
+                                    <div className="bg-store-50 flex flex-col items-center justify-center gap-3 border-r border-bcs-border">
+                                        <Sparkles size={28} className="text-store-400" strokeWidth={1.5} />
+                                        <span className="text-xs font-black text-store-600 tracking-wide">販創所</span>
+                                    </div>
+                                    <div className="bg-forge-50 flex flex-col items-center justify-center gap-3 border-r border-bcs-border">
+                                        <Hammer size={28} className="text-forge-400" strokeWidth={1.5} />
+                                        <span className="text-xs font-black text-forge-600 tracking-wide">鍛造工坊</span>
+                                    </div>
+                                    <div className="bg-maker-50 flex flex-col items-center justify-center gap-3">
+                                        <GraduationCap size={28} className="text-maker-400" strokeWidth={1.5} />
+                                        <span className="text-xs font-black text-maker-600 tracking-wide">創客世界</span>
+                                    </div>
+                                </div>
+                                <div className="h-1/3 flex flex-col items-center justify-center border-t border-bcs-border px-6 gap-1">
+                                    <div className="text-xs font-bold tracking-widest text-bcs-muted uppercase">一個空間，三種可能</div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="w-2 h-2 rounded-full bg-store-500" />
+                                        <div className="w-2 h-2 rounded-full bg-forge-500" />
+                                        <div className="w-2 h-2 rounded-full bg-maker-500" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </Reveal>
 
-                    {/* Block B: Manifesto */}
-                    <div className="flex flex-col md:flex-row items-center gap-16">
+                    {/* Block B: 實體溫度宣言 */}
+                    <Reveal className="flex flex-col md:flex-row items-center gap-16">
                         <div className="md:w-1/2 flex justify-center">
-                            <div className="w-full aspect-square max-w-md bg-white rounded-[2rem] flex items-center justify-center relative overflow-hidden border border-bcs-border shadow-card">
-                                <Hammer className="w-28 h-28 text-forge-300 drop-shadow-sm" strokeWidth={1} />
+                            {/* 宣言卡片 */}
+                            <div className="w-full aspect-square max-w-md rounded-[2rem] overflow-hidden bg-bcs-black shadow-card flex flex-col justify-between p-10">
+                                <div className="text-[80px] font-black text-white/5 leading-none select-none -mt-4 -ml-2">"</div>
+                                <div className="text-center -mt-8">
+                                    <p className="text-white font-black text-2xl leading-snug tracking-tight">
+                                        雙手觸碰的溫度，<br />是 AI 無法複製的靈魂。
+                                    </p>
+                                    <div className="flex justify-center gap-2.5 mt-6">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-store-500" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-forge-500" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-maker-500" />
+                                    </div>
+                                </div>
+                                <div className="text-right text-white/20 text-xs font-bold tracking-widest uppercase">
+                                    Be Creative Space
+                                </div>
                             </div>
                         </div>
                         <div className="md:w-1/2">
@@ -77,73 +114,79 @@ export default function AboutUs() {
                                 我們擁抱 AI 作為工具，但我們更堅持透過雙手與機器，把冰冷的數據，轉化為有溫度的實體作品。這份堅持，是我們賦予每一個作品靈魂的儀式。
                             </p>
                         </div>
-                    </div>
+                    </Reveal>
 
                 </div>
             </section>
 
             {/* ── Three Business Pillars ── */}
             <section className="max-w-7xl mx-auto px-6 py-20 lg:py-28">
-                <div className="text-center mb-12">
+                <Reveal className="text-center mb-12">
                     <h2 className="text-4xl font-black mb-3 tracking-tight">我們的三大核心</h2>
                     <p className="text-bcs-muted">從概念到實踐，全面涵蓋創意的每個維度</p>
-                </div>
+                </Reveal>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                    {/* 販創所 */}
-                    <div className="card card-hover p-8 flex flex-col">
-                        <div className="w-14 h-14 rounded-2xl bg-store-50 flex items-center justify-center mb-6">
-                            <Sparkles size={28} className="text-store-500" strokeWidth={1.5} />
+                    <Reveal delay={0} className="flex flex-col">
+                        <div className="card card-hover p-8 flex flex-col h-full overflow-hidden relative">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-store-500 rounded-t-card" />
+                            <div className="w-14 h-14 rounded-2xl bg-store-50 flex items-center justify-center mb-6">
+                                <Sparkles size={28} className="text-store-500" strokeWidth={1.5} />
+                            </div>
+                            <span className="badge-store mb-3 self-start">販創所</span>
+                            <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
+                                販賣好點子
+                            </h3>
+                            <p className="text-bcs-muted leading-relaxed text-sm flex-grow">
+                                從文創商品到創意教材，這裡展示了我們親自開發、設計並製造的專屬物件。每一個商品背後，都有一個有趣的故事。
+                            </p>
+                            <Link to="/store/products" className="mt-8 btn-store w-full justify-center group">
+                                去逛逛
+                                <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                            </Link>
                         </div>
-                        <span className="badge-store mb-3 self-start">販創所</span>
-                        <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
-                            販賣好點子
-                        </h3>
-                        <p className="text-bcs-muted leading-relaxed text-sm flex-grow">
-                            從文創商品到創意教材，這裡展示了我們親自開發、設計並製造的專屬物件。每一個商品背後，都有一個有趣的故事。
-                        </p>
-                        <Link to="/store/products" className="mt-8 btn-store w-full justify-center group">
-                            去逛逛
-                            <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                    </div>
+                    </Reveal>
 
-                    {/* 鍛造工坊 */}
-                    <div className="card card-hover p-8 flex flex-col">
-                        <div className="w-14 h-14 rounded-2xl bg-forge-50 flex items-center justify-center mb-6">
-                            <Hammer size={28} className="text-forge-500" strokeWidth={1.5} />
+                    <Reveal delay={100} className="flex flex-col">
+                        <div className="card card-hover p-8 flex flex-col h-full overflow-hidden relative">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-forge-500 rounded-t-card" />
+                            <div className="w-14 h-14 rounded-2xl bg-forge-50 flex items-center justify-center mb-6">
+                                <Hammer size={28} className="text-forge-500" strokeWidth={1.5} />
+                            </div>
+                            <span className="badge-forge mb-3 self-start">鍛造工坊</span>
+                            <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
+                                讓創意落地
+                            </h3>
+                            <p className="text-bcs-muted leading-relaxed text-sm flex-grow">
+                                結合專業與設備（雷射切割 / FDM 3D 列印），為您的專案提供專家級的代工與打樣顧問服務。讓我們做你堅強的後盾。
+                            </p>
+                            <Link to="/forge" className="mt-8 btn-forge w-full justify-center group">
+                                申請專業報價
+                                <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                            </Link>
                         </div>
-                        <span className="badge-forge mb-3 self-start">鍛造工坊</span>
-                        <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
-                            讓創意落地
-                        </h3>
-                        <p className="text-bcs-muted leading-relaxed text-sm flex-grow">
-                            結合專業與設備（雷射切割 / FDM 3D 列印），為您的專案提供專家級的代工與打樣顧問服務。讓我們做你堅強的後盾。
-                        </p>
-                        <Link to="/forge" className="mt-8 btn-forge w-full justify-center group">
-                            申請專業報價
-                            <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                    </div>
+                    </Reveal>
 
-                    {/* 創客世界 */}
-                    <div className="card card-hover p-8 flex flex-col">
-                        <div className="w-14 h-14 rounded-2xl bg-maker-50 flex items-center justify-center mb-6">
-                            <GraduationCap size={28} className="text-maker-500" strokeWidth={1.5} />
+                    <Reveal delay={200} className="flex flex-col">
+                        <div className="card card-hover p-8 flex flex-col h-full overflow-hidden relative">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-maker-500 rounded-t-card" />
+                            <div className="w-14 h-14 rounded-2xl bg-maker-50 flex items-center justify-center mb-6">
+                                <GraduationCap size={28} className="text-maker-500" strokeWidth={1.5} />
+                            </div>
+                            <span className="badge-maker mb-3 self-start">創客世界</span>
+                            <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
+                                動手做的力量
+                            </h3>
+                            <p className="text-bcs-muted leading-relaxed text-sm flex-grow">
+                                結合 STEAM 教育理念，透過手作、科學、機械與程式課程，不僅激發大小朋友的創造力，更訓練日常邏輯思維能力。
+                            </p>
+                            <Link to="/makerworld" className="mt-8 btn-maker w-full justify-center group">
+                                查看課程
+                                <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                            </Link>
                         </div>
-                        <span className="badge-maker mb-3 self-start">創客世界</span>
-                        <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
-                            動手做的力量
-                        </h3>
-                        <p className="text-bcs-muted leading-relaxed text-sm flex-grow">
-                            結合 STEAM 教育理念，透過手作、科學、機械與程式課程，不僅激發大小朋友的創造力，更訓練日常邏輯思維能力。
-                        </p>
-                        <Link to="/makerworld" className="mt-8 btn-maker w-full justify-center group">
-                            查看課程
-                            <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                    </div>
+                    </Reveal>
 
                 </div>
             </section>

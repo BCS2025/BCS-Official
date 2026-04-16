@@ -37,7 +37,7 @@ export default function Store() {
                         <ShoppingBag size={14} />
                         販創所
                     </div>
-                    <h1 className="text-5xl font-serif font-bold text-bcs-black mb-4 leading-tight">
+                    <h1 className="text-5xl font-black text-bcs-black mb-4 leading-tight">
                         創意，從這裡開始
                     </h1>
                     <p className="text-bcs-muted text-lg max-w-xl mx-auto mb-8">
@@ -55,7 +55,7 @@ export default function Store() {
 
             {/* Category Cards */}
             <section className="max-w-5xl mx-auto px-4 py-16">
-                <h2 className="text-2xl font-serif font-bold text-bcs-black text-center mb-10">商品分類</h2>
+                <h2 className="text-2xl font-black text-bcs-black text-center mb-10">商品分類</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {CATEGORIES.map(cat => (
                         <Link
@@ -79,7 +79,7 @@ export default function Store() {
             {/* Features */}
             <section className="bg-bcs-gray border-t border-bcs-border">
                 <div className="max-w-5xl mx-auto px-4 py-16">
-                    <h2 className="text-2xl font-serif font-bold text-bcs-black text-center mb-10">為什麼選擇販創所</h2>
+                    <h2 className="text-2xl font-black text-bcs-black text-center mb-10">為什麼選擇販創所</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {FEATURES.map(f => (
                             <div key={f.title} className="bg-white rounded-card p-6 border border-bcs-border">
@@ -94,7 +94,7 @@ export default function Store() {
 
             {/* CTA */}
             <section className="max-w-5xl mx-auto px-4 py-16 text-center">
-                <h2 className="text-3xl font-serif font-bold text-bcs-black mb-4">找不到想要的款式？</h2>
+                <h2 className="text-3xl font-black text-bcs-black mb-4">找不到想要的款式？</h2>
                 <p className="text-bcs-muted mb-6">鍛造工坊提供完整的客製代工服務，雷射切割、3D 列印都能做。</p>
                 <Link
                     to="/forge"

@@ -66,7 +66,7 @@ function PortfolioGallery() {
                 <span className="inline-flex items-center gap-2 bg-forge-100 text-forge-700 text-sm font-bold px-4 py-1.5 rounded-full mb-4">
                     <Zap size={14} /> 作品集
                 </span>
-                <h2 className="text-3xl font-serif font-bold text-bcs-black">過去製作實績</h2>
+                <h2 className="text-3xl font-black text-bcs-black">過去製作實績</h2>
             </div>
 
             {/* Tag filter */}
@@ -524,7 +524,7 @@ export default function Forge() {
                     <div className="inline-flex items-center gap-2 bg-forge-500/10 text-forge-700 text-sm font-bold px-4 py-1.5 rounded-full mb-6">
                         <Hammer size={14} /> 鍛造工坊
                     </div>
-                    <h1 className="text-5xl font-serif font-bold text-bcs-black mb-4 leading-tight">
+                    <h1 className="text-5xl font-black text-bcs-black mb-4 leading-tight">
                         想法交給我們，<br className="hidden sm:block" />你專注在設計
                     </h1>
                     <p className="text-bcs-muted text-lg max-w-xl mx-auto mb-8">
@@ -541,7 +541,7 @@ export default function Forge() {
 
             {/* Services */}
             <section className="max-w-5xl mx-auto px-4 py-20">
-                <h2 className="text-2xl font-serif font-bold text-bcs-black text-center mb-12">提供服務</h2>
+                <h2 className="text-2xl font-black text-bcs-black text-center mb-12">提供服務</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {SERVICES.map(svc => (
                         <div key={svc.title} className="bg-white border border-bcs-border rounded-card p-7 hover:border-forge-300 hover:shadow-card-hover transition-all">
@@ -566,7 +566,7 @@ export default function Forge() {
             {/* Process Steps */}
             <section className="bg-forge-50 border-y border-forge-100">
                 <div className="max-w-5xl mx-auto px-4 py-16">
-                    <h2 className="text-2xl font-serif font-bold text-bcs-black text-center mb-12">服務流程</h2>
+                    <h2 className="text-2xl font-black text-bcs-black text-center mb-12">服務流程</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {STEPS.map((s, i) => (
                             <div key={s.step} className="flex gap-5 items-start">
@@ -598,7 +598,7 @@ export default function Forge() {
                         <span className="inline-flex items-center gap-2 bg-forge-100 text-forge-700 text-sm font-bold px-4 py-1.5 rounded-full mb-4">
                             <ClipboardList size={14} /> 申請報價
                         </span>
-                        <h2 className="text-3xl font-serif font-bold text-bcs-black mb-3">填寫客製化評估表單</h2>
+                        <h2 className="text-3xl font-black text-bcs-black mb-3">填寫客製化評估表單</h2>
                         <p className="text-bcs-muted max-w-md mx-auto">3 個工作天內由工程師回覆報價，填表約 3 分鐘。</p>
                     </div>
                     <QuoteForm />
