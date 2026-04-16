@@ -6,6 +6,7 @@ import { getProductLabel } from '../lib/productService';
 import { supabase } from '../lib/supabaseClient';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
+import { notifyGAS } from '../lib/webhookService';
 
 export function useOrderSubmit() {
     const navigate = useNavigate();
@@ -105,13 +106,7 @@ export function useOrderSubmit() {
             await submitOrderService(orderData);
 
             // 4. GAS webhook — order notification
-            const GAS_URL = import.meta.env.VITE_GAS_WEBHOOK_URL;
-            fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...orderData, items: readableItems }),
-            }).catch(e => console.error('GAS Email Trigger Error:', e));
+            notifyGAS({ ...orderData, items: readableItems }, 'order_notify');
 
             // 5. Low stock alert
             try {
@@ -134,12 +129,7 @@ export function useOrderSubmit() {
                         ).join('\n')}`;
                     }
 
-                    fetch(GAS_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: 'system_alert', message: alertMessage }),
-                    }).catch(e => console.error('GAS Alert Error:', e));
+                    notifyGAS({ type: 'system_alert', message: alertMessage }, 'low_stock_alert');
                 }
             } catch (err) {
                 console.error('Failed to check low stock:', err);

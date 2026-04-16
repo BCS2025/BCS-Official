@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, ChevronRight, ChevronLeft, CheckCircle, Package, Blocks, Loader2 } from 'lucide-react';
 import { uploadFile } from '../lib/storageService';
 import { submitCustomQuote, getQuoteMaterials } from '../lib/quoteService';
+import { notifyGAS } from '../lib/webhookService';
 
 export default function CustomQuote() {
     const [step, setStep] = useState(1);
@@ -162,17 +163,7 @@ export default function CustomQuote() {
             await submitCustomQuote(quoteData);
 
             // 4. Send to Google Apps Script (GAS) for Email and Line Notify
-            const GAS_URL = import.meta.env.VITE_GAS_WEBHOOK_URL;
-
-            fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'custom_quote',
-                    ...quoteData
-                })
-            }).catch(err => console.error("GAS Notification Error:", err));
+            notifyGAS({ type: 'custom_quote', ...quoteData }, 'custom_quote');
 
             // 5. Show Success Screen
             setIsSubmitted(true);
