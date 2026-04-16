@@ -141,8 +141,8 @@ export default function Cart({
                 <div className="mb-6">
                     <span className="text-6xl">🛒</span>
                 </div>
-                <h2 className="text-2xl font-bold text-wood-900 mb-4">購物車是空的</h2>
-                <p className="text-wood-600 mb-8">看起來您還沒有選購任何商品。</p>
+                <h2 className="text-2xl font-bold text-bcs-black mb-4">購物車是空的</h2>
+                <p className="text-bcs-muted mb-8">看起來您還沒有選購任何商品。</p>
                 <Link to="/store/products">
                     <Button>前往逛逛</Button>
                 </Link>
@@ -157,7 +157,7 @@ export default function Cart({
                 繼續購物
             </Link>
 
-            <h1 className="text-3xl font-serif font-bold text-wood-900 border-b border-wood-200 pb-4">
+            <h1 className="text-3xl font-serif font-bold text-bcs-black border-b border-bcs-border pb-4">
                 結帳
             </h1>
 
@@ -175,8 +175,8 @@ export default function Cart({
                 </div>
             )}
 
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-wood-100">
-                <h3 className="text-lg font-serif font-bold text-wood-900 mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-bcs-border">
+                <h3 className="text-lg font-serif font-bold text-bcs-black mb-4">
                     商品清單
                 </h3>
                 {/* 
@@ -191,7 +191,7 @@ export default function Cart({
                     onDelete={onDelete}
                 // getLabel passed from App or handled inside
                 />
-                <div className="mt-6 pt-4 border-t border-wood-100 flex justify-between items-center text-lg font-bold text-wood-900">
+                <div className="mt-6 pt-4 border-t border-bcs-border flex justify-between items-center text-lg font-bold text-bcs-black">
                     <span>商品小計</span>
                     <span>{formatCurrency(itemsTotal)}</span>
                 </div>
@@ -206,8 +206,8 @@ export default function Cart({
             />
 
             {/* Coupon Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-wood-100">
-                <h3 className="text-lg font-serif font-bold text-wood-900 mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-bcs-border">
+                <h3 className="text-lg font-serif font-bold text-bcs-black mb-4">
                     優惠代碼
                 </h3>
 
@@ -240,7 +240,7 @@ export default function Cart({
                             onClick={handleApplyCoupon}
                             disabled={!couponCode || isValidatingCoupon}
                             variant="outline"
-                            className="bg-wood-50 hover:bg-wood-100"
+                            className="bg-store-50 hover:bg-store-100"
                         >
                             {isValidatingCoupon ? <Loader2 className="animate-spin w-4 h-4" /> : '套用'}
                         </Button>
@@ -248,8 +248,8 @@ export default function Cart({
                 )}
             </div>
 
-            <div className="bg-wood-50 p-6 rounded-lg border border-wood-200">
-                <div className="flex justify-between mb-2 text-wood-600">
+            <div className="bg-store-50 p-6 rounded-lg border border-bcs-border">
+                <div className="flex justify-between mb-2 text-bcs-muted">
                     <span>商品總計</span>
                     <span>{formatCurrency(itemsTotal)}</span>
                 </div>
@@ -262,19 +262,19 @@ export default function Cart({
                     </div>
                 )}
 
-                <div className="flex justify-between mb-4 text-wood-600">
+                <div className="flex justify-between mb-4 text-bcs-muted">
                     <span>運費 ({customer.shippingMethod === 'store' ? '超商' : customer.shippingMethod === 'post' ? '郵寄' : '自取'})</span>
                     <span className={isFreeShipping || isCouponFreeShipping ? "text-red-500 font-bold" : ""}>
                         {isFreeShipping || isCouponFreeShipping ? '免運' : formatCurrency(shippingCost)}
                     </span>
                 </div>
-                <div className="border-t border-wood-200 pt-4 flex justify-between text-xl font-bold text-wood-900">
+                <div className="border-t border-bcs-border pt-4 flex justify-between text-xl font-bold text-bcs-black">
                     <span>結帳總金額</span>
                     <span>{formatCurrency(finalTotal)}</span>
                 </div>
 
                 {/* Estimated Date */}
-                <div className="mt-4 pt-4 border-t border-wood-200 text-sm text-wood-700">
+                <div className="mt-4 pt-4 border-t border-bcs-border text-sm text-bcs-black">
                     <div className="flex justify-between">
                         <span>預計出貨/取貨日期</span>
                         <span className="font-bold">
@@ -322,7 +322,7 @@ export default function Cart({
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="absolute top-4 right-4 z-10">
-                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(null)} className="h-8 w-8 p-0 rounded-full bg-white/80 hover:bg-wood-100">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(null)} className="h-8 w-8 p-0 rounded-full bg-white/80 hover:bg-store-100">
                                 <X size={20} />
                             </Button>
                         </div>

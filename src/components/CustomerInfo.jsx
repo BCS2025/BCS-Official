@@ -100,7 +100,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                     onChange={(val) => onChange('needProof', val)}
                 />
 
-                <div className="border-t border-wood-100 pt-4 grid gap-4 md:grid-cols-2">
+                <div className="border-t border-bcs-border pt-4 grid gap-4 md:grid-cols-2">
 
                     {/* Common contact fields */}
                     <Input
@@ -139,7 +139,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     href="https://emap.pcsc.com.tw/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-wood-700 bg-wood-50 border border-wood-300 rounded hover:bg-wood-100 transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-bcs-black bg-store-50 border border-bcs-border rounded hover:bg-store-100 transition-colors"
                                 >
                                     <Store size={14} />
                                     查詢 7-11 門市
@@ -148,13 +148,13 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     href="https://www.family.com.tw/marketing/inquiry.aspx"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-wood-700 bg-wood-50 border border-wood-300 rounded hover:bg-wood-100 transition-colors"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-bcs-black bg-store-50 border border-bcs-border rounded hover:bg-store-100 transition-colors"
                                 >
                                     <Store size={14} />
                                     查詢全家門市
                                 </a>
                             </div>
-                            <p className="text-xs text-wood-500 pl-1">
+                            <p className="text-xs text-bcs-muted pl-1">
                                 {MESSAGES.VALIDATION.STORE_NAME_HINT}
                                 <br />請點擊上方按鈕查詢門市資訊後複製貼上。
                             </p>
@@ -184,12 +184,12 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 error={errors.district}
                             />
                             <div className="md:col-span-2 space-y-1">
-                                <label htmlFor="address" className="block text-sm font-medium text-wood-800">
+                                <label htmlFor="address" className="block text-sm font-medium text-bcs-black">
                                     詳細地址
                                 </label>
                                 <textarea
                                     id="address"
-                                    className="flex min-h-[80px] w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex min-h-[80px] w-full rounded-md border border-bcs-border bg-white px-3 py-2 text-sm placeholder:text-bcs-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-store-300 disabled:cursor-not-allowed disabled:opacity-50"
                                     placeholder="請輸入街道巷弄號樓..."
                                     value={data.address || ''}
                                     onChange={handleChange}

@@ -2,7 +2,7 @@ import { cn } from './Button';
 
 export function Card({ className, children, ...props }) {
     return (
-        <div className={cn("rounded-lg border border-wood-100 bg-white shadow-sm text-wood-950", className)} {...props}>
+        <div className={cn("rounded-lg border border-bcs-border bg-white shadow-sm text-bcs-black", className)} {...props}>
             {children}
         </div>
     );
@@ -13,7 +13,7 @@ export function CardHeader({ className, ...props }) {
 }
 
 export function CardTitle({ className, ...props }) {
-    return <h3 className={cn("font-serif text-2xl font-semibold leading-none tracking-tight text-wood-900", className)} {...props} />;
+    return <h3 className={cn("font-serif text-2xl font-semibold leading-none tracking-tight text-bcs-black", className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }) {

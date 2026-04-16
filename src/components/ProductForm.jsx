@@ -186,9 +186,9 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
 
     return (
-        <Card className={`w-full transition-all duration-300 ${isEditing ? 'ring-2 ring-wood-500 shadow-lg bg-wood-50/50' : ''}`}>
+        <Card className={`w-full transition-all duration-300 ${isEditing ? 'ring-2 ring-store-500 shadow-lg bg-store-50/50' : ''}`}>
             {isEditing && (
-                <div className="bg-wood-600 text-white text-xs font-bold px-4 py-1 rounded-t text-center uppercase tracking-wider">
+                <div className="bg-store-500 text-white text-xs font-bold px-4 py-1 rounded-t text-center uppercase tracking-wider">
                     正在修改訂單項目
                 </div>
             )}
@@ -202,7 +202,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                         </div>
                     )}
                     {product.priceDescription && (
-                        <p className={`text-sm text-wood-600 font-medium ${isEditing ? 'mt-2' : ''}`}>
+                        <p className={`text-sm text-bcs-muted font-medium ${isEditing ? 'mt-2' : ''}`}>
                             {product.priceDescription}
                         </p>
                     )}
@@ -246,7 +246,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                         if (field.type === 'file') {
                             return (
                                 <div key={field.name} className="space-y-2">
-                                    <label htmlFor={field.name} className="text-sm font-medium text-wood-700 block">
+                                    <label htmlFor={field.name} className="text-sm font-medium text-bcs-black block">
                                         {field.label} {field.required && <span className="text-red-500">*</span>}
                                     </label>
                                     <Input
@@ -255,7 +255,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                                         accept="image/*"
                                         onChange={handleChange}
                                         required={field.required}
-                                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-wood-50 file:text-wood-700 hover:file:bg-wood-100 cursor-pointer"
+                                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-store-50 file:text-store-700 hover:file:bg-store-100 cursor-pointer"
                                     />
                                     {formData[field.name] && (
                                         <p className="text-xs text-green-600">
@@ -298,7 +298,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                         />
                         <div className="flex items-center gap-2 text-xs">
                             {isLoadingStock ? (
-                                <span className="flex items-center text-wood-500">
+                                <span className="flex items-center text-bcs-muted">
                                     <Loader2 className="w-3 h-3 animate-spin mr-1" />
                                     庫存確認中...
                                 </span>
@@ -307,7 +307,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                                     ⚠️ 目前缺貨中
                                 </span>
                             ) : showExactStock ? (
-                                <span className="text-wood-600">
+                                <span className="text-bcs-muted">
                                     庫存剩餘: {remainingStock}
                                 </span>
                             ) : (
@@ -318,9 +318,9 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                         </div>
                     </div>
 
-                    <div className="flex justify-between items-center rounded-lg bg-wood-50 p-3 mt-4 border border-wood-100">
-                        <span className="text-sm font-medium text-wood-600">預估金額</span>
-                        <span className="text-xl font-bold text-wood-800">{formatCurrency(estimatedPrice)}</span>
+                    <div className="flex justify-between items-center rounded-lg bg-store-50 p-3 mt-4 border border-store-100">
+                        <span className="text-sm font-medium text-bcs-muted">預估金額</span>
+                        <span className="text-xl font-bold text-bcs-black">{formatCurrency(estimatedPrice)}</span>
                     </div>
                 </CardContent>
                 <CardFooter className="flex justify-between gap-3">

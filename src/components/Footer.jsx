@@ -34,14 +34,14 @@ const BRAND_LINKS = [
 
 const SOCIAL_LINKS = [
     {
-        label: 'IG @bcsmakerspace',
-        href: 'https://www.instagram.com/bcsmakerspace',
+        label: 'IG @sr2026space',
+        href: 'https://www.instagram.com/sr2026space/',
         icon: <Instagram size={18} />,
         color: 'hover:text-pink-500',
     },
     {
         label: '蝦皮 販創所',
-        href: 'https://shopee.tw/bcs_store',
+        href: 'https://shopee.tw/royshrimp?categoryId=100636&entryPoint=ShopByPDP&itemId=45756384233&upstream=search',
         icon: <ShoppingBag size={18} />,
         color: 'hover:text-store-500',
     },

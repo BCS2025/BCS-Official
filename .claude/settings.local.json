@@ -5,7 +5,14 @@
       "Bash(wc -l /c/Users/roylo/Documents/YI_Area/Antigravity_project/CustomizedProductWebsite/src/components/*.jsx /c/Users/roylo/Documents/YI_Area/Antigravity_project/CustomizedProductWebsite/src/pages/*.jsx)",
       "Bash(npm install:*)",
       "Bash(npm test:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Read(//c/Users/roylo/.claude/**)",
+      "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/anthropic-agent-skills/skills/frontend-design/*.md)",
+      "Bash(xargs grep:*)",
+      "Bash(xargs cat:*)",
+      "Bash(python3 -c \"import sys,json; data=sys.stdin.read\\(\\); print\\(data[:3000]\\)\")",
+      "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/*.json)",
+      "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/claude-plugins-official/plugins/security-guidance/hooks/*.md)"
     ]
   }
 }

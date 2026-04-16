@@ -14,7 +14,7 @@ export default function ProofSelector({ value, onChange }) {
 
     return (
         <div className="space-y-3">
-            <label className="block text-sm font-medium text-wood-800">
+            <label className="block text-sm font-medium text-bcs-black">
                 製作前是否需要對稿 (確認排版圖片)
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -27,16 +27,16 @@ export default function ProofSelector({ value, onChange }) {
                             className={`
                                 relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
                                 ${isSelected
-                                    ? 'border-wood-600 bg-wood-50 ring-1 ring-wood-600'
-                                    : 'border-wood-200 hover:border-wood-300 bg-white'}
+                                    ? 'border-store-500 bg-store-50 ring-1 ring-store-500'
+                                    : 'border-bcs-border hover:border-bcs-border bg-white'}
                             `}
                         >
-                            <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-wood-600' : 'border-gray-400'}`}>
-                                {isSelected && <div className="w-2 h-2 rounded-full bg-wood-600" />}
+                            <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-store-500' : 'border-gray-400'}`}>
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-store-500" />}
                             </div>
                             <div>
-                                <span className="font-bold text-wood-900 block text-sm">{opt.label}</span>
-                                <span className="text-xs text-wood-500">{opt.desc}</span>
+                                <span className="font-bold text-bcs-black block text-sm">{opt.label}</span>
+                                <span className="text-xs text-bcs-muted">{opt.desc}</span>
                             </div>
                         </div>
                     );

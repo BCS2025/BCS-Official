@@ -70,7 +70,7 @@ export default function PickupScheduler({ pickupLocation, pickupDate, pickupTime
             </div>
 
             <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-wood-800 mb-1">
+                <label className="block text-sm font-medium text-bcs-black mb-1">
                     預計取貨日期
                 </label>
                 <input
@@ -79,10 +79,10 @@ export default function PickupScheduler({ pickupLocation, pickupDate, pickupTime
                     value={pickupDate || ''}
                     min={minDate}
                     onChange={(e) => onChange('pickupDate', e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-bcs-border bg-white px-3 py-2 text-sm placeholder:text-bcs-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-store-300 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                 />
-                <p className="text-xs text-wood-500 mt-1">
+                <p className="text-xs text-bcs-muted mt-1">
                     {totalQuantity > 50
                         ? '大量訂購需約 21 個工作天 (實際交期將主動聯繫確認)'
                         : `預計備貨需 ${leadDays} 個工作天`}
@@ -90,7 +90,7 @@ export default function PickupScheduler({ pickupLocation, pickupDate, pickupTime
             </div>
 
             <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-wood-800 mb-1">
+                <label className="block text-sm font-medium text-bcs-black mb-1">
                     預計取貨時間
                 </label>
                 <select
@@ -98,7 +98,7 @@ export default function PickupScheduler({ pickupLocation, pickupDate, pickupTime
                     value={pickupTime || ''}
                     onChange={(e) => onChange('pickupTime', e.target.value)}
                     disabled={!pickupDate}
-                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-bcs-border bg-white px-3 py-2 text-sm placeholder:text-bcs-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-store-300 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                 >
                     <option value="" disabled>請選擇時間</option>
@@ -106,7 +106,7 @@ export default function PickupScheduler({ pickupLocation, pickupDate, pickupTime
                         <option key={slot.value} value={slot.value}>{slot.label}</option>
                     ))}
                 </select>
-                <p className="text-xs text-wood-500 mt-1">平日 19:00-22:00 / 假日 09:00-22:00</p>
+                <p className="text-xs text-bcs-muted mt-1">平日 19:00-22:00 / 假日 09:00-22:00</p>
             </div>
         </>
     );

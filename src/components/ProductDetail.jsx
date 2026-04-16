@@ -12,7 +12,7 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
     if (!product) {
         return (
             <div className="text-center py-20">
-                <h2 className="text-2xl font-bold text-wood-900">找不到此商品</h2>
+                <h2 className="text-2xl font-bold text-bcs-black">找不到此商品</h2>
                 <Link to="/store/products" className="text-store-500 hover:underline mt-4 inline-block">返回商品列表</Link>
             </div>
         );
@@ -28,24 +28,24 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
 
             <div className="grid md:grid-cols-2 gap-12 items-start">
                 {/* Product Image */}
-                <div className="rounded-2xl overflow-hidden shadow-sm border border-wood-100 bg-white p-2">
+                <div className="rounded-2xl overflow-hidden shadow-sm border border-bcs-border bg-white p-2">
                     <ProductImageCarousel
                         images={product.images && product.images.length > 0 ? product.images : [product.image]}
                         productName={product.name}
                     />
-                    <div className="p-4 bg-wood-50 rounded-lg mt-2">
-                        <h1 className="text-2xl font-serif font-bold text-wood-900 mb-2">{product.name}</h1>
+                    <div className="p-4 bg-store-50 rounded-lg mt-2">
+                        <h1 className="text-2xl font-serif font-bold text-bcs-black mb-2">{product.name}</h1>
                         {product.slogan && (
                             <p className="text-sm font-bold text-amber-700 mb-4 bg-amber-50 inline-block px-3 py-1 rounded border border-amber-200">
                                 ✨ {product.slogan}
                             </p>
                         )}
-                        <div className="text-wood-600 text-sm leading-relaxed space-y-2">
+                        <div className="text-bcs-muted text-sm leading-relaxed space-y-2">
                             {(product.detailedDescription || product.description || '').split('\n').map((line, index) => (
                                 <p key={index}
-                                    className={line.trim().startsWith('---') ? "border-t border-wood-200 my-4" : "min-h-[1.5em]"}
+                                    className={line.trim().startsWith('---') ? "border-t border-bcs-border my-4" : "min-h-[1.5em]"}
                                     dangerouslySetInnerHTML={{
-                                        __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-wood-800">$1</strong>')
+                                        __html: line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-bcs-black">$1</strong>')
                                     }}
                                 />
                             ))}

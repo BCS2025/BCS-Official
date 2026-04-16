@@ -31,7 +31,7 @@ export default function ProductImageCarousel({ images, productName }) {
     return (
         <div className="flex flex-col gap-4">
             {/* Main Image Stage */}
-            <div className="relative group rounded-2xl overflow-hidden shadow-sm border border-wood-100 bg-white p-2">
+            <div className="relative group rounded-2xl overflow-hidden shadow-sm border border-bcs-border bg-white p-2">
                 <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
                     <img
                         src={getImageUrl(validImages[currentIndex])}
@@ -44,14 +44,14 @@ export default function ProductImageCarousel({ images, productName }) {
                         <>
                             <button
                                 onClick={handlePrev}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-wood-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-bcs-black p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                                 aria-label="Previous image"
                             >
                                 <ChevronLeft size={24} />
                             </button>
                             <button
                                 onClick={handleNext}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-wood-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-bcs-black p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                                 aria-label="Next image"
                             >
                                 <ChevronRight size={24} />
@@ -80,8 +80,8 @@ export default function ProductImageCarousel({ images, productName }) {
                             key={idx}
                             onClick={() => setCurrentIndex(idx)}
                             className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all p-1 bg-white snap-start ${idx === currentIndex
-                                    ? 'border-wood-600 ring-1 ring-wood-600'
-                                    : 'border-transparent hover:border-wood-300'
+                                    ? 'border-store-500 ring-1 ring-store-500'
+                                    : 'border-transparent hover:border-bcs-border'
                                 }`}
                         >
                             <img
