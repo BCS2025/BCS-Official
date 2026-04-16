@@ -9,19 +9,34 @@ export default function Home() {
 
             {/* ── Hero ── */}
             <section className="max-w-7xl mx-auto px-6 pt-20 pb-24 text-center">
-                <div className="inline-block px-4 py-1.5 bg-bcs-gray text-bcs-muted rounded-full text-xs font-semibold tracking-widest uppercase mb-8">
+                {/* 細節：Hero 背景圓暈光暈 */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-16 w-[600px] h-[300px] bg-gradient-to-b from-store-50 via-forge-50 to-maker-50 opacity-40 blur-3xl rounded-full pointer-events-none -z-10" />
+
+                <div
+                    className="inline-block px-4 py-1.5 bg-bcs-gray text-bcs-muted rounded-full text-xs font-semibold tracking-widest uppercase mb-8 animate-fade-up"
+                    style={{ animationDelay: '0ms' }}
+                >
                     比創空間 · Be Creative Space
                 </div>
-                <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tight mb-6">
+                <h1
+                    className="text-5xl md:text-7xl font-black leading-tight tracking-tight mb-6 animate-fade-up"
+                    style={{ animationDelay: '100ms' }}
+                >
                     創意的工坊，<br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-store-500 via-forge-500 to-maker-500">
                         無限的可能。
                     </span>
                 </h1>
-                <p className="text-lg md:text-xl text-bcs-muted max-w-2xl mx-auto mb-12 leading-relaxed">
+                <p
+                    className="text-lg md:text-xl text-bcs-muted max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-up"
+                    style={{ animationDelay: '200ms' }}
+                >
                     一個由工程師與設計師共同打造的創客空間——文創商品、代工製作、STEAM 教育，一次滿足。
                 </p>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div
+                    className="flex flex-wrap justify-center gap-3 animate-fade-up"
+                    style={{ animationDelay: '300ms' }}
+                >
                     <Link to="/store/products" className="btn-store flex items-center gap-2 group">
                         逛逛販創所
                         <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -48,7 +63,8 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                         {/* 販創所 */}
-                        <div className="card card-hover p-8 border-store-100 flex flex-col">
+                        <div className="card card-hover p-8 flex flex-col overflow-hidden relative">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-store-500 rounded-t-card" />
                             <div className="w-14 h-14 rounded-2xl bg-store-50 flex items-center justify-center mb-6 flex-shrink-0">
                                 <Sparkles size={28} className="text-store-500" strokeWidth={1.5} />
                             </div>
@@ -68,7 +84,8 @@ export default function Home() {
                         </div>
 
                         {/* 鍛造工坊 */}
-                        <div className="card card-hover p-8 border-forge-100 flex flex-col">
+                        <div className="card card-hover p-8 flex flex-col overflow-hidden relative">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-forge-500 rounded-t-card" />
                             <div className="w-14 h-14 rounded-2xl bg-forge-50 flex items-center justify-center mb-6 flex-shrink-0">
                                 <Hammer size={28} className="text-forge-500" strokeWidth={1.5} />
                             </div>
@@ -88,7 +105,8 @@ export default function Home() {
                         </div>
 
                         {/* 創客世界 */}
-                        <div className="card card-hover p-8 border-maker-100 flex flex-col">
+                        <div className="card card-hover p-8 flex flex-col overflow-hidden relative">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-maker-500 rounded-t-card" />
                             <div className="w-14 h-14 rounded-2xl bg-maker-50 flex items-center justify-center mb-6 flex-shrink-0">
                                 <GraduationCap size={28} className="text-maker-500" strokeWidth={1.5} />
                             </div>
@@ -139,7 +157,7 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* ── Simple Footer placeholder ── */}
+            {/* ── Footer ── */}
             <footer className="border-t border-bcs-border bg-bcs-gray mt-8 py-10">
                 <div className="max-w-7xl mx-auto px-6 text-center text-bcs-muted text-sm">
                     <p className="font-semibold text-bcs-black mb-1">比創空間 Be Creative Space</p>
