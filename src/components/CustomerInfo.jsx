@@ -1,44 +1,31 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { TAIWAN_DATA } from '../lib/taiwanData';
-import { Truck, MapPin, Store, Users, Calendar, Clock } from 'lucide-react';
-import { formatCurrency } from '../lib/pricing';
+import { Store, Truck, Calendar } from 'lucide-react';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
-
-const SHIPPING_METHODS = [
-    { id: 'store', name: '超商一般店到店', price: 60, icon: Store, description: '需提供超商門市' },
-    { id: 'post', name: '郵局掛號 (小包)', price: 40, icon: Truck, description: '需提供詳細地址' },
-    { id: 'pickup', name: '自取', price: 0, icon: MapPin, description: '全家永康勝華店 / 7-11 北園門市' },
-    { id: 'friend', name: '親友代領', price: 0, icon: Users, description: '需填寫代領人姓名' },
-];
-
-const PICKUP_LOCATIONS = [
-    { value: '全家永康勝華店', label: '全家便利商店 永康勝華店' },
-    { value: '7-11北園門市', label: '7-ELEVEN 北園門市' },
-];
+import ShippingMethodSelector from './ShippingMethodSelector';
+import ProofSelector from './ProofSelector';
+import PickupScheduler from './PickupScheduler';
 
 export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
+    const [errors, setErrors] = useState({});
 
-
-
-    // Calculate Estimated Shipping Date
+    // Estimated ship date display
     const processingDays = calculateLeadDays(totalQuantity);
-    // getEstimatedShipDate returns YYYY-MM-DD
-    const estDateStr = getEstimatedShipDate(processingDays);
-    const formattedShipDate = estDateStr.replace(/-/g, '/');
+    const formattedShipDate = getEstimatedShipDate(processingDays).replace(/-/g, '/');
 
-    // Initialize needProof if not present
+    // Default needProof if absent
     useEffect(() => {
         if (data.needProof === undefined) {
-            onChange('needProof', 'yes'); // Default to yes
+            onChange('needProof', 'yes');
         }
     }, [data.needProof, onChange]);
 
-    // Reset district when city changes
+    // Sync city/district from parent
     useEffect(() => {
         if (data.city !== city) {
             setCity(data.city);
@@ -46,25 +33,15 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         }
     }, [data.city, data.district, city]);
 
-    // Fix Default Pickup Location logic
-    useEffect(() => {
-        if (data.shippingMethod === 'pickup' && !data.pickupLocation) {
-            onChange('pickupLocation', PICKUP_LOCATIONS[0].value);
-        }
-    }, [data.shippingMethod, data.pickupLocation, onChange]);
-
-    const handleMethodChange = (methodId) => {
-        const method = SHIPPING_METHODS.find(m => m.id === methodId);
+    const handleMethodChange = (methodId, methodPrice) => {
         onChange('shippingMethod', methodId);
-        if (onShippingCostChange) {
-            onShippingCostChange(method.price);
-        }
+        onShippingCostChange?.(methodPrice);
     };
 
     const handleCityChange = (e) => {
         const newCity = e.target.value;
         setCity(newCity);
-        setDistrict(''); // Reset district
+        setDistrict('');
         onChange('city', newCity);
         onChange('district', '');
     };
@@ -75,76 +52,24 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         onChange('district', newDistrict);
     };
 
-    const [errors, setErrors] = useState({});
-
-    // Validation Logic
     const validateField = (id, value) => {
-        let error = '';
         if (id === 'phone') {
-            const phoneRegex = /^09\d{8}$/;
-            if (!value) error = '請輸入電話號碼';
-            else if (!phoneRegex.test(value)) error = '請輸入有效的台灣手機號碼 (09xxxxxxxx)';
+            if (!value) return '請輸入電話號碼';
+            if (!/^09\d{8}$/.test(value)) return '請輸入有效的台灣手機號碼 (09xxxxxxxx)';
         }
         if (id === 'email') {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!value) error = '請輸入 Email';
-            else if (!emailRegex.test(value)) error = '請輸入有效的 Email 格式';
+            if (!value) return '請輸入 Email';
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return '請輸入有效的 Email 格式';
         }
-        return error;
+        return '';
     };
 
     const handleChange = (e) => {
         const { id, value } = e.target;
         onChange(id, value);
-
-        // Real-time validation
         const error = validateField(id, value);
         setErrors(prev => ({ ...prev, [id]: error }));
     };
-
-    // Generate time slots logic
-    const generateTimeSlots = (isWeekend) => {
-        const startHour = isWeekend ? 9 : 19;
-        const endHour = 22;
-        const slots = [];
-        for (let h = startHour; h <= endHour; h++) {
-            const time = `${h.toString().padStart(2, '0')}:00`;
-            slots.push({ value: time, label: time });
-            if (h !== endHour) {
-                const time30 = `${h.toString().padStart(2, '0')}:30`;
-                slots.push({ value: time30, label: time30 });
-            }
-        }
-        return slots;
-    };
-
-    // Calculate time slots based on selected date
-    const timeSlots = useMemo(() => {
-        if (!data.pickupDate) return [];
-        const date = new Date(data.pickupDate);
-        const day = date.getDay();
-        const isWeekend = day === 0 || day === 6; // Sun or Sat
-        return generateTimeSlots(isWeekend);
-    }, [data.pickupDate]);
-
-    // Fix Default Pickup Time logic
-    useEffect(() => {
-        // If we have slots, checking if current time is valid or empty
-        if (timeSlots.length > 0) {
-            const currentTimeIsValid = timeSlots.some(t => t.value === data.pickupTime);
-            if (!data.pickupTime || !currentTimeIsValid) {
-                onChange('pickupTime', timeSlots[0].value);
-            }
-        }
-    }, [timeSlots, data.pickupTime, onChange]);
-
-    // Update pickupTime if it becomes invalid for the new date? 
-    // Maybe better to just let user re-select if needed, 
-    // but if the range changes drastically (e.g. weekday to weekend) 
-    // the previous time might still be valid (e.g. 19:00).
-    // Use effect to clear time if invalid? For simplicity, we keep it, user can change.
-
-    const currentMethod = SHIPPING_METHODS.find(m => m.id === data.shippingMethod) || SHIPPING_METHODS[0];
 
     return (
         <Card>
@@ -160,102 +85,23 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                     </div>
                 </div>
             </CardHeader>
+
             <CardContent className="space-y-6">
 
-                {/* Shipping Method Selection */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-wood-800">選擇運送方式</label>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        {SHIPPING_METHODS.map((method) => {
-                            const Icon = method.icon;
-                            const isSelected = data.shippingMethod === method.id;
+                <ShippingMethodSelector
+                    selectedMethod={data.shippingMethod}
+                    onSelect={handleMethodChange}
+                    isFreeShipping={isFreeShipping}
+                />
 
-                            // Determine display price
-                            const originalPrice = method.price;
-                            const isFree = isFreeShipping && originalPrice > 0;
-
-                            return (
-                                <div
-                                    key={method.id}
-                                    onClick={() => handleMethodChange(method.id)}
-                                    className={`
-                                        relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
-                                        ${isSelected
-                                            ? 'border-wood-600 bg-wood-50 ring-1 ring-wood-600'
-                                            : 'border-wood-200 hover:border-wood-300 bg-white'}
-                                    `}
-                                >
-                                    <div className={`p-2 rounded-full ${isSelected ? 'bg-wood-600 text-white' : 'bg-wood-100 text-wood-600'}`}>
-                                        <Icon size={20} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold text-wood-900">{method.name}</span>
-                                            <div className="text-right">
-                                                {isFree ? (
-                                                    <>
-                                                        <span className="text-xs text-wood-400 line-through mr-1">${originalPrice}</span>
-                                                        <span className="text-sm font-bold text-red-500">免運</span>
-                                                    </>
-                                                ) : (
-                                                    <span className={`text-sm font-bold ${originalPrice > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                                                        {originalPrice > 0 ? `+${formatCurrency(originalPrice)}` : '免運'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-wood-500 mt-1">{method.description}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Design Proof Selection */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-wood-800">製作前是否需要對稿 (確認排版圖片)</label>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div
-                            onClick={() => onChange('needProof', 'yes')}
-                            className={`
-                                relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
-                                ${data.needProof === 'yes'
-                                    ? 'border-wood-600 bg-wood-50 ring-1 ring-wood-600'
-                                    : 'border-wood-200 hover:border-wood-300 bg-white'}
-                            `}
-                        >
-                            <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${data.needProof === 'yes' ? 'border-wood-600' : 'border-gray-400'}`}>
-                                {data.needProof === 'yes' && <div className="w-2 h-2 rounded-full bg-wood-600" />}
-                            </div>
-                            <div>
-                                <span className="font-bold text-wood-900 block text-sm">需要對稿</span>
-                                <span className="text-xs text-wood-500">我們會先製作示意圖給您確認，安心有保障</span>
-                            </div>
-                        </div>
-
-                        <div
-                            onClick={() => onChange('needProof', 'no')}
-                            className={`
-                                relative flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
-                                ${data.needProof === 'no'
-                                    ? 'border-wood-600 bg-wood-50 ring-1 ring-wood-600'
-                                    : 'border-wood-200 hover:border-wood-300 bg-white'}
-                            `}
-                        >
-                            <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center ${data.needProof === 'no' ? 'border-wood-600' : 'border-gray-400'}`}>
-                                {data.needProof === 'no' && <div className="w-2 h-2 rounded-full bg-wood-600" />}
-                            </div>
-                            <div>
-                                <span className="font-bold text-wood-900 block text-sm">直接製作 (不需對稿)</span>
-                                <span className="text-xs text-wood-500">相信專業，請先確認文字無誤，加快出貨速度</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <ProofSelector
+                    value={data.needProof}
+                    onChange={(val) => onChange('needProof', val)}
+                />
 
                 <div className="border-t border-wood-100 pt-4 grid gap-4 md:grid-cols-2">
-                    {/* Common Fields */}
+
+                    {/* Common contact fields */}
                     <Input
                         id="name"
                         label="訂購人姓名"
@@ -275,10 +121,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         error={errors.phone}
                     />
 
-
-                    {/* Dynamic Fields based on Shipping Method */}
-
-                    {/* Store to Store */}
+                    {/* Store-to-store */}
                     {data.shippingMethod === 'store' && (
                         <div className="md:col-span-2 space-y-2">
                             <Input
@@ -290,8 +133,6 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 required
                                 error={errors.storeName}
                             />
-
-                            {/* Map Links */}
                             <div className="flex flex-wrap gap-2">
                                 <a
                                     href="https://emap.pcsc.com.tw/"
@@ -312,7 +153,6 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                     查詢全家門市
                                 </a>
                             </div>
-
                             <p className="text-xs text-wood-500 pl-1">
                                 建議填寫完整「門市名稱」與「店號」以避免寄送錯誤。
                                 <br />請點擊上方按鈕查詢門市資訊後複製貼上。
@@ -320,7 +160,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         </div>
                     )}
 
-                    {/* Post Office - Address */}
+                    {/* Postal address */}
                     {data.shippingMethod === 'post' && (
                         <>
                             <Select
@@ -343,7 +183,9 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                                 error={errors.district}
                             />
                             <div className="md:col-span-2 space-y-1">
-                                <label htmlFor="address" className="block text-sm font-medium text-wood-800">詳細地址</label>
+                                <label htmlFor="address" className="block text-sm font-medium text-wood-800">
+                                    詳細地址
+                                </label>
                                 <textarea
                                     id="address"
                                     className="flex min-h-[80px] w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
@@ -357,75 +199,18 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         </>
                     )}
 
-                    {/* Pickup */}
+                    {/* Pickup scheduling */}
                     {data.shippingMethod === 'pickup' && (
-                        <>
-                            <div className="md:col-span-2">
-                                <Select
-                                    id="pickupLocation"
-                                    label="取貨地點"
-                                    value={data.pickupLocation || ''}
-                                    onChange={handleChange}
-                                    options={PICKUP_LOCATIONS}
-                                    required
-                                    error={errors.pickupLocation}
-                                />
-                            </div>
-                            <div className="md:col-span-1">
-                                <label className="block text-sm font-medium text-wood-800 mb-1">
-                                    預計取貨日期
-                                </label>
-                                <input
-                                    type="date"
-                                    id="pickupDate"
-                                    value={data.pickupDate || ''}
-                                    min={(() => {
-                                        const today = new Date();
-                                        const leadDays = calculateLeadDays(totalQuantity);
-                                        const minDate = new Date(today);
-                                        minDate.setDate(today.getDate() + leadDays);
-                                        return minDate.toISOString().split('T')[0];
-                                    })()}
-                                    onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
-                                    required
-                                />
-                                <p className="text-xs text-wood-500 mt-1">
-                                    {(typeof totalQuantity !== 'undefined' && totalQuantity > 50)
-                                        ? '大量訂購需約 21 個工作天 (實際交期將主動聯繫確認)'
-                                        : (
-                                            (() => {
-                                                const leadDays = calculateLeadDays(totalQuantity);
-                                                return `預計備貨需 ${leadDays} 個工作天`;
-                                            })()
-                                        )}
-                                </p>
-                            </div>
-                            <div className="md:col-span-1">
-                                <label className="block text-sm font-medium text-wood-800 mb-1">
-                                    預計取貨時間
-                                </label>
-                                <select
-                                    id="pickupTime"
-                                    value={data.pickupTime || ''}
-                                    onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-wood-200 bg-white px-3 py-2 text-sm placeholder:text-wood-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wood-400 disabled:cursor-not-allowed disabled:opacity-50"
-                                    required
-                                    disabled={!data.pickupDate}
-                                >
-                                    <option value="" disabled>請選擇時間</option>
-                                    {timeSlots.map(slot => (
-                                        <option key={slot.value} value={slot.value}>{slot.label}</option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-wood-500 mt-1">
-                                    平日 19:00-22:00 / 假日 09:00-22:00
-                                </p>
-                            </div>
-                        </>
+                        <PickupScheduler
+                            pickupLocation={data.pickupLocation}
+                            pickupDate={data.pickupDate}
+                            pickupTime={data.pickupTime}
+                            onChange={onChange}
+                            totalQuantity={totalQuantity}
+                        />
                     )}
 
-                    {/* Friend Pickup */}
+                    {/* Friend pickup */}
                     {data.shippingMethod === 'friend' && (
                         <div className="md:col-span-2">
                             <Input
@@ -457,13 +242,3 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         </Card>
     );
 }
-
-// Function to help construct cn for classnames if not imported, 
-// but since we are replacing the whole file, we should import utility or define it.
-// The original file didn't import 'cn'. But we used it in the snippet above.
-// Checking previous file content, 'cn' was NOT used in CustomerInfo.
-// I should remove 'cn' usage or duplicate it.
-function cn(...classes) {
-    return classes.filter(Boolean).join(" ");
-}
-
