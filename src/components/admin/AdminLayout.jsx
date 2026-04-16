@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { LayoutDashboard, Package, Box, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, Box, LogOut, Settings, Tag, FlaskConical } from 'lucide-react';
 
 export const AdminLayout = () => {
     const [session, setSession] = useState(null);
@@ -38,7 +38,7 @@ export const AdminLayout = () => {
     };
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading Admin...</div>;
+        return <div className="min-h-screen flex items-center justify-center text-gray-500">驗證登入中...</div>;
     }
 
     if (!session) {
@@ -48,10 +48,10 @@ export const AdminLayout = () => {
     // Navigation Items
     const navItems = [
         { path: '/admin', icon: LayoutDashboard, label: '總覽 (Dashboard)', exact: true },
-        { path: '/admin/orders', icon: Package, label: '訂單管理 (Orders)' }, // Changed Icon for visual distinction
+        { path: '/admin/orders', icon: Package, label: '訂單管理 (Orders)' },
         { path: '/admin/products', icon: Box, label: '商品管理 (Products)' },
-        { path: '/admin/coupons', icon: Box, label: '優惠券管理 (Coupons)' },
-        { path: '/admin/inventory', icon: Box, label: '庫存管理 (Inventory)' },
+        { path: '/admin/coupons', icon: Tag, label: '優惠券管理 (Coupons)' },
+        { path: '/admin/inventory', icon: FlaskConical, label: '原料庫存 (Materials)' },
         { path: '/admin/quote-materials', icon: Settings, label: '報價材質 (Quote Materials)' },
     ];
 
