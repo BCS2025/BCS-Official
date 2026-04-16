@@ -24,6 +24,7 @@ import Footer from './components/Footer';
 import MakerWorld from './pages/MakerWorld';
 import CourseDetail from './pages/CourseDetail';
 import { AdminCourses } from './pages/admin/AdminCourses';
+import { AdminLocations } from './pages/admin/AdminLocations';
 import { AdminRegistrations } from './pages/admin/AdminRegistrations';
 import { AdminForgePortfolio } from './pages/admin/AdminForgePortfolio';
 import { AdminNotificationFailures } from './pages/admin/AdminNotificationFailures';
@@ -201,6 +202,7 @@ function App() {
                     <Route path="inventory" element={<AdminInventory />} />
                     <Route path="quote-materials" element={<AdminQuoteMaterials />} />
                     <Route path="courses" element={<AdminCourses />} />
+                    <Route path="locations" element={<AdminLocations />} />
                     <Route path="registrations" element={<AdminRegistrations />} />
                     <Route path="forge-portfolio" element={<AdminForgePortfolio />} />
                     <Route path="notification-failures" element={<AdminNotificationFailures />} />

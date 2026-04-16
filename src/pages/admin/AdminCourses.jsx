@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Upload, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Upload, Users, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import {
@@ -9,6 +9,7 @@ import {
     deleteCourse,
     uploadCourseImage,
 } from '../../lib/courseService';
+import { fetchLocations } from '../../lib/locationService';
 
 const STATUS_LABELS = {
     open: { label: '開放報名', color: 'text-green-700 bg-green-50' },
@@ -30,6 +31,7 @@ function getInitialForm() {
         enrolled: 0,
         price: 0,
         status: 'open',
+        location_id: '',
     };
 }
 
@@ -42,6 +44,7 @@ function formatLocalDatetime(isoString) {
 
 export const AdminCourses = () => {
     const [courses, setCourses] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -56,7 +59,9 @@ export const AdminCourses = () => {
     async function load() {
         setIsLoading(true);
         try {
-            setCourses(await fetchCourses());
+            const [c, l] = await Promise.all([fetchCourses(), fetchLocations()]);
+            setCourses(c);
+            setLocations(l);
         } catch (e) {
             alert('載入失敗：' + e.message);
         } finally {
@@ -72,12 +77,14 @@ export const AdminCourses = () => {
     }
 
     function handleOpenEdit(course) {
+        const { location, ...rest } = course;
         setFormData({
-            ...course,
+            ...rest,
             date: formatLocalDatetime(course.date),
             gallery_urls: course.gallery_urls || [],
             min_age: course.min_age ?? '',
             max_age: course.max_age ?? '',
+            location_id: course.location_id || '',
         });
         setIsEditMode(true);
         setEditId(course.id);
@@ -101,14 +108,22 @@ export const AdminCourses = () => {
     }
 
     async function handleGalleryUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        e.target.value = '';
         setIsUploadingGallery(true);
         try {
-            const url = await uploadCourseImage(file);
-            set('gallery_urls', [...(formData.gallery_urls || []), url]);
-        } catch (err) {
-            alert('圖片上傳失敗：' + err.message);
+            const urls = [];
+            for (const file of files) {
+                try {
+                    urls.push(await uploadCourseImage(file));
+                } catch (err) {
+                    alert(`「${file.name}」上傳失敗：${err.message}`);
+                }
+            }
+            if (urls.length > 0) {
+                set('gallery_urls', [...(formData.gallery_urls || []), ...urls]);
+            }
         } finally {
             setIsUploadingGallery(false);
         }
@@ -138,6 +153,7 @@ export const AdminCourses = () => {
                 capacity: parseInt(formData.capacity) || 10,
                 price: parseInt(formData.price) || 0,
                 status: formData.status,
+                location_id: formData.location_id || null,
             };
 
             if (isEditMode) {
@@ -184,6 +200,7 @@ export const AdminCourses = () => {
                                 <tr>
                                     <th className="p-4">課程</th>
                                     <th className="p-4">日期</th>
+                                    <th className="p-4">地點</th>
                                     <th className="p-4">報名 / 名額</th>
                                     <th className="p-4">狀態</th>
                                     <th className="p-4 text-right">操作</th>
@@ -192,7 +209,7 @@ export const AdminCourses = () => {
                             <tbody className="divide-y divide-gray-100">
                                 {courses.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-gray-400">尚無課程，點選右上角新增</td>
+                                        <td colSpan={6} className="p-8 text-center text-gray-400">尚無課程，點選右上角新增</td>
                                     </tr>
                                 )}
                                 {courses.map(c => {
@@ -214,6 +231,16 @@ export const AdminCourses = () => {
                                             </td>
                                             <td className="p-4 text-sm text-gray-700">
                                                 {new Date(c.date).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className="p-4 text-sm text-gray-700">
+                                                {c.location?.name ? (
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <MapPin size={12} className="text-maker-500" />
+                                                        {c.location.name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-300">未設定</span>
+                                                )}
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-1 text-sm">
@@ -314,6 +341,25 @@ export const AdminCourses = () => {
                             </div>
 
                             <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">上課地點</label>
+                                <select
+                                    value={formData.location_id || ''}
+                                    onChange={e => set('location_id', e.target.value)}
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-maker-500"
+                                >
+                                    <option value="">— 未設定 —</option>
+                                    {locations.map(loc => (
+                                        <option key={loc.id} value={loc.id}>
+                                            {loc.name}{loc.is_active ? '' : '（已停用）'}
+                                        </option>
+                                    ))}
+                                </select>
+                                {locations.length === 0 && (
+                                    <p className="text-xs text-amber-600">尚無地點，請先至「上課地點管理」新增。</p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700">課程說明</label>
                                 <textarea
                                     value={formData.description}
@@ -343,7 +389,10 @@ export const AdminCourses = () => {
 
                             {/* 課堂照片 Gallery */}
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-700">課堂照片 Gallery</label>
+                                <label className="text-sm font-bold text-gray-700">
+                                    課堂照片 Gallery
+                                    <span className="ml-2 text-xs font-normal text-gray-400">（可一次選多張）</span>
+                                </label>
                                 <div className="flex flex-wrap gap-3">
                                     {(formData.gallery_urls || []).map((url, idx) => (
                                         <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border group">
@@ -359,8 +408,8 @@ export const AdminCourses = () => {
                                     ))}
                                     <label className="w-20 h-20 border border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 text-gray-400 text-xs gap-1">
                                         <Upload size={18} />
-                                        {isUploadingGallery ? '...' : '新增'}
-                                        <input type="file" accept="image/*" onChange={handleGalleryUpload} className="hidden" disabled={isUploadingGallery} />
+                                        {isUploadingGallery ? '上傳中' : '新增'}
+                                        <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" disabled={isUploadingGallery} />
                                     </label>
                                 </div>
                             </div>

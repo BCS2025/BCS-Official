@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, Users, ArrowLeft, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users, ArrowLeft, GraduationCap, ChevronLeft, ChevronRight, MapPin, ExternalLink, MessageCircle } from 'lucide-react';
+import { LOCATION_TYPE_META } from '../lib/locationService';
+
+const LINE_URL = 'https://lin.ee/vt7kVvG';
 import { fetchCourseById } from '../lib/courseService';
 import { createRegistration } from '../lib/registrationService';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -296,6 +299,38 @@ export default function CourseDetail() {
                                         剩餘 <span className={`font-bold ${remaining <= 3 && canRegister ? 'text-red-500' : 'text-maker-600'}`}>{Math.max(0, remaining)}</span> / {course.capacity} 位名額
                                     </span>
                                 </div>
+                                {course.location && (
+                                    <div className="flex items-start gap-3">
+                                        <MapPin size={15} className="text-maker-500 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0">
+                                            <div className="font-semibold text-bcs-black flex items-center gap-2 flex-wrap">
+                                                <span>{course.location.name}</span>
+                                                {(() => {
+                                                    const meta = LOCATION_TYPE_META[course.location.type] || LOCATION_TYPE_META.other;
+                                                    return (
+                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${meta.bg} ${meta.text}`}>
+                                                            {meta.label}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </div>
+                                            {course.location.address && (
+                                                <div className="text-xs mt-0.5">{course.location.address}</div>
+                                            )}
+                                            {course.location.map_url && (
+                                                <a
+                                                    href={course.location.map_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-1 inline-flex items-center gap-1 text-xs text-maker-600 hover:text-maker-700 font-semibold"
+                                                >
+                                                    Google Maps 開啟
+                                                    <ExternalLink size={11} />
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {isClosed && (
@@ -316,6 +351,25 @@ export default function CourseDetail() {
                                 <h2 className="text-lg font-black text-bcs-black mb-4">立即報名</h2>
                                 <RegistrationForm course={course} onSuccess={() => setIsSuccess(true)} />
                             </div>
+                        )}
+
+                        {/* 改用 LINE 詢問 */}
+                        {!isSuccess && (
+                            <a
+                                href={LINE_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="card p-5 flex items-center gap-3 hover:shadow-md transition-shadow"
+                            >
+                                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#06C755' }}>
+                                    <MessageCircle size={20} className="text-white" />
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <div className="font-bold text-bcs-black text-sm">想直接詢問？</div>
+                                    <div className="text-xs text-bcs-muted">加入創客世界官方 LINE，快速聯繫。</div>
+                                </div>
+                                <ChevronRight size={16} className="text-bcs-muted flex-shrink-0" />
+                            </a>
                         )}
 
                         {isSuccess && (

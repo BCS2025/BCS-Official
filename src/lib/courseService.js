@@ -1,21 +1,23 @@
 import { supabase } from './supabaseClient';
 import { uploadFile } from './storageService';
 
-/** 取得所有課程（前台：依日期升冪） */
+const COURSE_SELECT = '*, location:class_locations(id,name,type,address,map_url)';
+
+/** 取得所有課程（前台：依日期升冪，含地點 join） */
 export async function fetchCourses() {
     const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select(COURSE_SELECT)
         .order('date', { ascending: true });
     if (error) throw error;
     return data;
 }
 
-/** 取得單一課程 */
+/** 取得單一課程（含地點 join） */
 export async function fetchCourseById(id) {
     const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select(COURSE_SELECT)
         .eq('id', id)
         .single();
     if (error) throw error;
