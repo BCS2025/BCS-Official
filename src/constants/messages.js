@@ -30,6 +30,9 @@ export const MESSAGES = {
     // ── 訂單送出 ──────────────────────────────────────────────
     ORDER: {
         SUBMIT_FAILED: '送出失敗，請稍後再試或直接聯繫我們。',
+        // RPC 回傳逐項錯誤（含商品名稱動態插值）
+        STOCK_DETAIL: (lines) => `庫存不足，無法結帳：\n${lines}`,
+        // DB check_positive_stock 約束觸發的泛用訊息
         STOCK_INSUFFICIENT: '庫存不足！有商品已被搶購一空，請檢查購物車數量。',
     },
 

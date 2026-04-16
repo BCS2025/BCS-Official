@@ -16,8 +16,8 @@ export async function submitOrder(orderData) {
         // Fallback: Proceed to try insert anyway if RPC fails (network/code issue), let constraints handle it
     } else if (validationErrors && validationErrors.length > 0) {
         // Validation Failed - Construct detailed message
-        const messages = validationErrors.map(e => `• ${e.product_name}: ${e.reason}`).join('\n');
-        throw new Error(`庫存不足，無法結帳：\n${messages}`);
+        const lines = validationErrors.map(e => `• ${e.product_name}: ${e.reason}`).join('\n');
+        throw new Error(MESSAGES.ORDER.STOCK_DETAIL(lines));
     }
 
     // 2. SUBMIT ORDER
