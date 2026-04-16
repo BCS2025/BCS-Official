@@ -13,7 +13,7 @@ import { fetchLocations } from '../../lib/locationService';
 
 const STATUS_LABELS = {
     open: { label: '開放報名', color: 'text-green-700 bg-green-50' },
-    full: { label: '名額已滿', color: 'text-orange-700 bg-orange-50' },
+    full: { label: '報名截止', color: 'text-gray-700 bg-gray-100' },
     closed: { label: '已結束', color: 'text-gray-500 bg-gray-100' },
 };
 
@@ -306,26 +306,31 @@ export const AdminCourses = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">名額上限</label>
-                                    <Input type="number" value={formData.capacity} onChange={e => set('capacity', e.target.value)} min={1} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">費用（NT$）</label>
-                                    <Input type="number" value={formData.price} onChange={e => set('price', e.target.value)} min={0} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">課程狀態</label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={e => set('status', e.target.value)}
-                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-maker-500"
-                                    >
-                                        <option value="open">開放報名</option>
-                                        <option value="full">名額已滿</option>
-                                        <option value="closed">已結束</option>
-                                    </select>
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                                <p className="text-xs text-amber-800 font-semibold">
+                                    ⓘ 以下欄位僅供後台追蹤，<strong className="underline">不會顯示於公開前台</strong>。
+                                </p>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-700">名額上限</label>
+                                        <Input type="number" value={formData.capacity} onChange={e => set('capacity', e.target.value)} min={1} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-700">費用（NT$）</label>
+                                        <Input type="number" value={formData.price} onChange={e => set('price', e.target.value)} min={0} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-700">課程狀態</label>
+                                        <select
+                                            value={formData.status}
+                                            onChange={e => set('status', e.target.value)}
+                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-maker-500"
+                                        >
+                                            <option value="open">開放報名</option>
+                                            <option value="full">報名截止</option>
+                                            <option value="closed">已結束</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 

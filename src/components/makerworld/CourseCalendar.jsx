@@ -34,14 +34,13 @@ function buildGrid(monthStart) {
 
 function statusOf(course) {
     if (course.status === 'closed') return 'closed';
-    const remaining = course.capacity - course.enrolled;
-    if (course.status === 'full' || remaining <= 0) return 'full';
+    if (course.status === 'full') return 'paused';
     return 'open';
 }
 
 const STATUS_STYLES = {
     open:   'bg-maker-500 text-white hover:bg-maker-700',
-    full:   'bg-orange-500 text-white hover:bg-orange-600',
+    paused: 'bg-gray-500 text-white hover:bg-gray-600',
     closed: 'bg-gray-300 text-gray-700 hover:bg-gray-400',
 };
 
@@ -176,8 +175,8 @@ export default function CourseCalendar({ courses }) {
                     可報名
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-3 h-3 rounded bg-orange-500"></span>
-                    名額已滿
+                    <span className="inline-block w-3 h-3 rounded bg-gray-500"></span>
+                    報名截止
                 </span>
                 <span className="flex items-center gap-1.5">
                     <span className="inline-block w-3 h-3 rounded bg-gray-300"></span>

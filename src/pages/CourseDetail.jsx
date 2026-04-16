@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Clock, Users, ArrowLeft, GraduationCap, ChevronLeft, ChevronRight, MapPin, ExternalLink, MessageCircle } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, GraduationCap, ChevronLeft, ChevronRight, MapPin, ExternalLink, MessageCircle } from 'lucide-react';
 import { LOCATION_TYPE_META } from '../lib/locationService';
 
 const LINE_URL = 'https://lin.ee/vt7kVvG';
@@ -158,10 +158,11 @@ function RegistrationForm({ course, onSuccess }) {
                 disabled={isSubmitting}
                 className="w-full btn-maker justify-center py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isSubmitting ? '送出中...' : '確認報名'}
+                {isSubmitting ? '送出中...' : '送出報名意願'}
             </button>
-            <p className="text-xs text-bcs-muted text-center">
-                提交後將以 Line 及 Email 通知比創空間，我們會再次確認您的報名。
+            <p className="text-xs text-bcs-muted text-center leading-relaxed">
+                送出後我們將主動聯繫您確認費用、名額與上課細節。<br />
+                填寫此表並不代表已完成報名。
             </p>
         </form>
     );
@@ -171,9 +172,9 @@ function SuccessScreen({ course, onBack }) {
     return (
         <div className="text-center py-12">
             <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-2xl font-black text-bcs-black mb-3">報名成功！</h2>
+            <h2 className="text-2xl font-black text-bcs-black mb-3">已收到您的意願！</h2>
             <p className="text-bcs-muted mb-6 leading-relaxed">
-                已收到您的報名申請，我們會盡快與您聯繫確認。<br />
+                我們會盡快與您聯繫，確認費用、名額與上課細節。<br />
                 請保持電話暢通，謝謝！
             </p>
             <div className="inline-block bg-maker-50 border border-maker-100 rounded-2xl p-4 text-left mb-8">
@@ -227,10 +228,9 @@ export default function CourseDetail() {
     }
 
     const date = new Date(course.date);
-    const remaining = course.capacity - course.enrolled;
-    const isFull = course.status === 'full' || remaining <= 0;
+    const isPaused = course.status === 'full';
     const isClosed = course.status === 'closed';
-    const canRegister = !isFull && !isClosed;
+    const canRegister = !isPaused && !isClosed;
 
     // 組合圖片（封面 + gallery）
     const allImages = [
@@ -269,11 +269,7 @@ export default function CourseDetail() {
                     <div className="lg:col-span-2 space-y-6">
                         {/* 課程資訊卡 */}
                         <div className="card p-6 space-y-4">
-                            <div className="text-2xl font-black text-bcs-black">
-                                {course.price > 0 ? `NT$ ${course.price.toLocaleString()}` : '免費'}
-                            </div>
-
-                            <div className="space-y-3 text-sm text-bcs-muted border-t border-bcs-border pt-4">
+                            <div className="space-y-3 text-sm text-bcs-muted">
                                 <div className="flex items-start gap-3">
                                     <Calendar size={15} className="text-maker-500 mt-0.5 flex-shrink-0" />
                                     <div>
@@ -293,12 +289,6 @@ export default function CourseDetail() {
                                         <span>適合 {course.min_age || 0}{course.max_age ? `–${course.max_age}` : '+'} 歲</span>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-3">
-                                    <Users size={15} className="text-maker-500 flex-shrink-0" />
-                                    <span>
-                                        剩餘 <span className={`font-bold ${remaining <= 3 && canRegister ? 'text-red-500' : 'text-maker-600'}`}>{Math.max(0, remaining)}</span> / {course.capacity} 位名額
-                                    </span>
-                                </div>
                                 {course.location && (
                                     <div className="flex items-start gap-3">
                                         <MapPin size={15} className="text-maker-500 mt-0.5 flex-shrink-0" />
@@ -338,17 +328,20 @@ export default function CourseDetail() {
                                     此課程已結束
                                 </div>
                             )}
-                            {!isClosed && isFull && (
-                                <div className="bg-orange-50 text-orange-600 text-sm font-bold text-center py-2 rounded-lg">
-                                    名額已滿，歡迎關注下次開班
+                            {isPaused && (
+                                <div className="bg-gray-100 text-gray-600 text-sm font-bold text-center py-2 rounded-lg">
+                                    報名已截止，歡迎詢問下次開課
                                 </div>
                             )}
                         </div>
 
-                        {/* 報名表單 */}
+                        {/* 報名意願表 */}
                         {canRegister && !isSuccess && (
                             <div className="card p-6">
-                                <h2 className="text-lg font-black text-bcs-black mb-4">立即報名</h2>
+                                <h2 className="text-lg font-black text-bcs-black mb-1">想參加？留下聯絡方式</h2>
+                                <p className="text-xs text-bcs-muted mb-4 leading-relaxed">
+                                    我們會主動聯繫您，告知費用與上課細節，再由您決定是否報名。
+                                </p>
                                 <RegistrationForm course={course} onSuccess={() => setIsSuccess(true)} />
                             </div>
                         )}

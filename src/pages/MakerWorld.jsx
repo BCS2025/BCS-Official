@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    Calendar, Clock, Users, ChevronRight, GraduationCap, Instagram,
+    Calendar, Clock, ChevronRight, GraduationCap, Instagram,
     MessageCircle, MapPin, ExternalLink, List, CalendarDays, ChevronLeft,
 } from 'lucide-react';
 import { fetchCourses } from '../lib/courseService';
@@ -14,10 +14,11 @@ import CourseCalendar from '../components/makerworld/CourseCalendar';
 const IG_URL = 'https://www.instagram.com/sr2026space/';
 const LINE_URL = 'https://lin.ee/vt7kVvG';
 
+/** 對外三態：open（可報名）| paused（報名截止）| closed（已結束）
+ *  對外不透露「人數」，full 只當作「停止接受報名」處理。 */
 function getStatus(course) {
     if (course.status === 'closed') return 'closed';
-    const remaining = course.capacity - course.enrolled;
-    if (course.status === 'full' || remaining <= 0) return 'full';
+    if (course.status === 'full') return 'paused';
     return 'open';
 }
 
@@ -31,9 +32,9 @@ function formatCourseDate(iso) {
 
 function CourseCard({ course }) {
     const { date, time } = formatCourseDate(course.date);
-    const remaining = course.capacity - course.enrolled;
-    const isFull = course.status === 'full' || remaining <= 0;
-    const isClosed = course.status === 'closed';
+    const s = getStatus(course);
+    const isClosed = s === 'closed';
+    const isPaused = s === 'paused';
 
     return (
         <div className={`card card-hover flex flex-col overflow-hidden h-full ${isClosed ? 'opacity-75' : ''}`}>
@@ -45,16 +46,11 @@ function CourseCard({ course }) {
                         <GraduationCap size={48} className="text-maker-200" />
                     </div>
                 )}
-                {isFull && !isClosed && (
-                    <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">名額已滿</div>
+                {isPaused && (
+                    <div className="absolute top-3 right-3 bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full">報名截止</div>
                 )}
                 {isClosed && (
                     <div className="absolute top-3 right-3 bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded-full">已結束</div>
-                )}
-                {!isFull && !isClosed && remaining <= 3 && (
-                    <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                        僅剩 {remaining} 位
-                    </div>
                 )}
             </div>
 
@@ -80,33 +76,20 @@ function CourseCard({ course }) {
                             <span className="truncate">{course.location.name}</span>
                         </div>
                     )}
-                    <div className="flex items-center gap-2">
-                        <Users size={14} className="text-maker-500 flex-shrink-0" />
-                        <span>
-                            剩餘 <span className={`font-bold ${remaining <= 3 && !isFull ? 'text-red-500' : 'text-maker-600'}`}>{Math.max(0, remaining)}</span> / {course.capacity} 位
-                        </span>
-                    </div>
                 </div>
 
                 {course.description && (
                     <p className="text-sm text-bcs-muted leading-relaxed mb-4 line-clamp-2">{course.description}</p>
                 )}
 
-                <div className="mt-auto flex items-center justify-between pt-4 border-t border-bcs-border">
-                    <div className="text-xl font-black text-bcs-black">
-                        {course.price > 0 ? `NT$ ${course.price.toLocaleString()}` : '免費'}
-                    </div>
-                    {!isClosed ? (
-                        <Link
-                            to={`/makerworld/${course.id}`}
-                            className={`btn-maker flex items-center gap-1 group text-sm ${isFull ? 'opacity-50 pointer-events-none' : ''}`}
-                        >
-                            {isFull ? '額滿' : '查看 / 報名'}
-                            {!isFull && <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />}
-                        </Link>
-                    ) : (
-                        <Link to={`/makerworld/${course.id}`} className="btn-outline text-sm">查看花絮</Link>
-                    )}
+                <div className="mt-auto pt-4 border-t border-bcs-border">
+                    <Link
+                        to={`/makerworld/${course.id}`}
+                        className={`${isClosed || isPaused ? 'btn-outline' : 'btn-maker'} w-full justify-center group text-sm`}
+                    >
+                        {isClosed ? '查看花絮' : isPaused ? '查看詳情' : '查看詳情 / 報名'}
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
                 </div>
             </div>
         </div>
@@ -325,7 +308,7 @@ function ContactCta() {
     );
 }
 
-const STATUS_TABS = ['全部', '可報名', '名額已滿', '已結束'];
+const STATUS_TABS = ['全部', '可報名', '報名截止', '已結束'];
 
 export default function MakerWorld() {
     usePageMeta('創客世界', '比創空間・創客世界——STEAM 教育工作坊、Arduino、3D 列印、雷射切割，週末兒童實作課程，台南永康。');
@@ -345,11 +328,11 @@ export default function MakerWorld() {
         }).finally(() => setIsLoading(false));
     }, []);
 
-    // 即將開課（未過期、非已結束）取前 3 筆
+    // 即將開課（未過期、仍開放報名）取前 3 筆
     const upcomingCourses = useMemo(() => {
         const now = new Date();
         return courses
-            .filter(c => new Date(c.date) >= now && c.status !== 'closed')
+            .filter(c => new Date(c.date) >= now && getStatus(c) === 'open')
             .slice(0, 3);
     }, [courses]);
 
@@ -358,7 +341,7 @@ export default function MakerWorld() {
             if (activeFilter === '全部') return true;
             const s = getStatus(c);
             if (activeFilter === '可報名') return s === 'open';
-            if (activeFilter === '名額已滿') return s === 'full';
+            if (activeFilter === '報名截止') return s === 'paused';
             if (activeFilter === '已結束') return s === 'closed';
             return true;
         });
@@ -366,7 +349,7 @@ export default function MakerWorld() {
 
     const counts = STATUS_TABS.reduce((acc, tab) => {
         if (tab === '全部') { acc[tab] = courses.length; return acc; }
-        const s = tab === '可報名' ? 'open' : tab === '名額已滿' ? 'full' : 'closed';
+        const s = tab === '可報名' ? 'open' : tab === '報名截止' ? 'paused' : 'closed';
         acc[tab] = courses.filter(c => getStatus(c) === s).length;
         return acc;
     }, {});
