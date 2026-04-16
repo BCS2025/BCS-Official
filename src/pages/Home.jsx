@@ -76,7 +76,7 @@ export default function Home() {
                                         文創商品<br />創意教材
                                     </h3>
                                     <p className="text-bcs-muted leading-relaxed text-sm">
-                                        親自開發、設計並製造的專屬物件，每件商品背後都有一個故事。涵蓋壓克力燈、雷切雷雕、3D 列印文創品，以及蝦皮獨家商品。
+                                        親自開發、設計並製造的專屬物件，每件商品背後都有一個故事。涵蓋壓克力燈、雷切雷雕、3D 列印文創品，歡迎透過 LINE 或 IG 直接詢問。
                                     </p>
                                 </div>
                                 <Link to="/store/products" className="mt-8 btn-store w-full justify-center group">

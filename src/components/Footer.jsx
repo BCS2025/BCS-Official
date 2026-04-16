@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Instagram, ShoppingBag, Mail, MapPin } from 'lucide-react';
+import { Instagram, MessageCircle, MapPin } from 'lucide-react';
 
 const BRAND_LINKS = [
     {
@@ -32,21 +32,6 @@ const BRAND_LINKS = [
     },
 ];
 
-const SOCIAL_LINKS = [
-    {
-        label: 'IG @sr2026space',
-        href: 'https://www.instagram.com/sr2026space/',
-        icon: <Instagram size={18} />,
-        color: 'hover:text-pink-500',
-    },
-    {
-        label: '蝦皮 販創所',
-        href: 'https://shopee.tw/royshrimp?categoryId=100636&entryPoint=ShopByPDP&itemId=45756384233&upstream=search',
-        icon: <ShoppingBag size={18} />,
-        color: 'hover:text-store-500',
-    },
-];
-
 export default function Footer() {
     return (
         <footer className="bg-bcs-black text-white mt-auto">
@@ -66,21 +51,27 @@ export default function Footer() {
                             比創空間是由工程師與設計師共同打造的創客空間，整合文創電商、代工製作與 STEAM 教育。
                         </p>
 
-                        {/* Social */}
-                        <div className="flex gap-3">
-                            {SOCIAL_LINKS.map(s => (
-                                <a
-                                    key={s.label}
-                                    href={s.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={s.label}
-                                    className={`flex items-center gap-1.5 text-gray-400 transition-colors text-sm ${s.color}`}
-                                >
-                                    {s.icon}
-                                    <span className="hidden sm:inline">{s.label}</span>
-                                </a>
-                            ))}
+                        {/* 聯絡按鈕 */}
+                        <div className="flex flex-col gap-2">
+                            <a
+                                href="https://lin.ee/NlEipWt"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors text-white hover:text-white"
+                                style={{ backgroundColor: '#06C755' }}
+                            >
+                                <MessageCircle size={16} />
+                                加入 LINE 好友
+                            </a>
+                            <a
+                                href="https://www.instagram.com/sr2026space/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-white/10 hover:bg-white/20 transition-colors text-gray-300 hover:text-white"
+                            >
+                                <Instagram size={16} />
+                                IG @sr2026space
+                            </a>
                         </div>
                     </div>
 
@@ -108,15 +99,14 @@ export default function Footer() {
 
                 {/* Divider */}
                 <div className="border-t border-white/10 mt-10 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    {/* Contact info */}
                     <div className="flex flex-col sm:flex-row gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1.5">
-                            <Mail size={13} />
-                            聯絡請透過 IG DM 或蝦皮站內信
+                            <MessageCircle size={13} />
+                            聯絡請透過 LINE 加好友或 IG DM
                         </span>
                         <span className="flex items-center gap-1.5">
                             <MapPin size={13} />
-                            台南市永康區新興街 34 巷 2-2 號
+                            台南市永康區新興街 34 巷 2 號
                         </span>
                     </div>
                     <p className="text-xs text-gray-600">
