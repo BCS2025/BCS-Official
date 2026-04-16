@@ -34,7 +34,8 @@ export const AdminProducts = () => {
             config_schema: '[]', // Stringified JSON
             pricing_logic: {},   // New Pricing Logic
             sort_order: 10,
-            is_active: true
+            is_active: true,
+            category: 'creative' // 'creative'（創作商品）| 'materials'（創客材料）
         };
     }
 
@@ -91,7 +92,8 @@ export const AdminProducts = () => {
             slogan: product.slogan || '',
             config_schema: JSON.stringify(product.config_schema, null, 2),
             pricing_logic: product.pricing_logic || {},
-            images: initialImages
+            images: initialImages,
+            category: product.category || 'creative'
         });
         setJsonError(null);
         setIsModalOpen(true);
@@ -196,7 +198,8 @@ export const AdminProducts = () => {
                 sort_order: parseInt(formData.sort_order),
                 is_active: formData.is_active,
                 config_schema: parsedSchema,
-                pricing_logic: formData.pricing_logic // Save Pricing Logic
+                pricing_logic: formData.pricing_logic,
+                category: formData.category || 'creative'
             };
 
             // A. Upsert Product
@@ -281,6 +284,7 @@ export const AdminProducts = () => {
                         <thead className="bg-gray-50 text-gray-600 border-b">
                             <tr>
                                 <th className="p-4">商品資訊 (Name/ID)</th>
+                                <th className="p-4">分類</th>
                                 <th className="p-4">售價</th>
                                 <th className="p-4">排序/狀態</th>
                                 <th className="p-4 text-right">操作</th>
@@ -299,6 +303,11 @@ export const AdminProducts = () => {
                                                 {p.id}
                                             </div>
                                         </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${p.category === 'materials' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                                            {p.category === 'materials' ? '創客材料' : '創作商品'}
+                                        </span>
                                     </td>
                                     <td className="p-4">
                                         {p.is_on_sale ? (
@@ -380,6 +389,17 @@ export const AdminProducts = () => {
                                         disabled={products.some(p => p.id === formData.id && p.id !== '') && formData.config_schema !== '{}'} // Disable only if editing existing logic
                                     />
                                     <p className="text-xs text-gray-500">格式強制：prod_小寫英文 (例: prod_dragon)</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">商品分類</label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                                        className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                    >
+                                        <option value="creative">創作商品（文創、燈、鑰匙圈等）</option>
+                                        <option value="materials">創客材料（Arduino、零件、材料包等）</option>
+                                    </select>
                                 </div>
                             </div>
 

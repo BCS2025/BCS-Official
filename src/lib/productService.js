@@ -57,6 +57,7 @@ function transformProduct(dbProduct) {
             detailedDescription: dbProduct.detailed_description || (staticConfig ? staticConfig.detailedDescription : ''),
             priceDescription: dbProduct.price_description || (staticConfig ? staticConfig.priceDescription : ''),
             fields: fields,
+            category: dbProduct.category || 'creative',
             createdAt: dbProduct.created_at,
             sortOrder: dbProduct.sort_order,
             calculatePrice: calculatePrice
@@ -73,6 +74,7 @@ function transformProduct(dbProduct) {
             originalPrice: dbProduct.sale_price ? dbProduct.price : null,
             name: dbProduct.name,
             uuid: dbProduct.id,
+            category: dbProduct.category || 'creative',
             createdAt: dbProduct.created_at,
             sortOrder: dbProduct.sort_order
         };
@@ -93,7 +95,7 @@ function transformProduct(dbProduct) {
         description: dbProduct.description,
         detailedDescription: dbProduct.detailed_description || '',
         priceDescription: dbProduct.price_description || '',
-
+        category: dbProduct.category || 'creative',
         fields: [],
         createdAt: dbProduct.created_at,
         sortOrder: dbProduct.sort_order,

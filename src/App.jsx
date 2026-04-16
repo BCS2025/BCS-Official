@@ -17,6 +17,7 @@ import { AdminQuoteMaterials } from './pages/admin/AdminQuoteMaterials';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
+import Store from './pages/Store';
 import CustomQuote from './pages/CustomQuote';
 import MakerWorld from './pages/MakerWorld';
 import CourseDetail from './pages/CourseDetail';
@@ -115,6 +116,7 @@ function App() {
                 <Route path="/" element={<Home />} />
 
                 {/* 販創所（/store/*） */}
+                <Route path="/store" element={<Store />} />
                 <Route path="/store/products" element={<ProductGallery products={products} />} />
                 <Route path="/store/product/:id" element={
                     <ProductDetail

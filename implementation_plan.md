@@ -422,10 +422,10 @@ CREATE POLICY "admin write" ON forge_portfolio FOR ALL USING (auth.role() = 'aut
 ### Phase 3：販創所強化
 > 在現有購物系統上新增分類功能，影響最小。
 
-- [ ] AdminProducts 新增 `category` 欄位（下拉選擇）
-- [ ] `ProductGallery` 改版為 `/store/products`，加入 Tab 篩選
-- [ ] 新建 `src/pages/Store.jsx`：販創所品牌落地頁
-- [ ] 套用新設計系統（橘色系強調）
+- [x] AdminProducts 新增 `category` 欄位（下拉選擇）
+- [x] `ProductGallery` 改版為 `/store/products`，加入 Tab 篩選
+- [x] 新建 `src/pages/Store.jsx`：販創所品牌落地頁
+- [x] 套用新設計系統（橘色系強調）
 
 **預估工作量：** 1 天
 
