@@ -19,7 +19,7 @@ export default function Navbar({ cartCount }) {
                 <div className="flex items-center gap-8">
                     <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" onClick={closeMobileMenu}>
                         <img
-                            src={`${import.meta.env.BASE_URL}WebsiteLogoIcon.png`}
+                            src={`${import.meta.env.BASE_URL}WebsiteTopLogoIcon.png`}
                             alt="比創空間 Logo"
                             className="h-10 sm:h-12 w-auto object-contain"
                         />
