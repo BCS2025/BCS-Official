@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "anthropic-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "frontend-design@anthropic-skills": true
+  }
+}

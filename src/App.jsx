@@ -260,7 +260,7 @@ function App() {
             await submitOrder(orderData);
 
             // 3. Send to Google Sheets (Use READABLE version for Email/Line)
-            const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
+            const GAS_URL = import.meta.env.VITE_GAS_WEBHOOK_URL;
 
             // Send Order Notification
             fetch(GAS_URL, {

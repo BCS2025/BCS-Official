@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /c/Users/roylo/Documents/YI_Area/Antigravity_project/CustomizedProductWebsite/.github/workflows/*.yml)",
+      "Bash(wc -l /c/Users/roylo/Documents/YI_Area/Antigravity_project/CustomizedProductWebsite/src/components/*.jsx /c/Users/roylo/Documents/YI_Area/Antigravity_project/CustomizedProductWebsite/src/pages/*.jsx)"
+    ]
+  }
+}

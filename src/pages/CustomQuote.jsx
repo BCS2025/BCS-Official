@@ -162,7 +162,7 @@ export default function CustomQuote() {
             await submitCustomQuote(quoteData);
 
             // 4. Send to Google Apps Script (GAS) for Email and Line Notify
-            const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
+            const GAS_URL = import.meta.env.VITE_GAS_WEBHOOK_URL;
 
             fetch(GAS_URL, {
                 method: 'POST',

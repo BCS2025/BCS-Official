@@ -130,7 +130,7 @@ export const AdminInventory = () => {
                     </Button>
                 </div>
                 <Button onClick={async () => {
-                    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyO90PCWLiKQHvCn_tuBTHL4X-SdGYutHnepLKPLzKudSXP6A0E8Jix8MKKL_syyuGw/exec';
+                    const GAS_URL = import.meta.env.VITE_GAS_WEBHOOK_URL;
                     try {
                         alert('正在測試檢測庫存...');
                         const { data: criticalMaterials, error: rpcError } = await supabase.rpc('check_low_stock');
