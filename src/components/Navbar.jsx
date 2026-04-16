@@ -1,76 +1,103 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, Menu, X } from 'lucide-react';
 
 export default function Navbar({ cartCount }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const location = useLocation();
+    const isStorePage = location.pathname.startsWith('/store');
 
-    const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     return (
-        <header className="bg-white shadow-sm sticky top-0 z-50">
-            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-8">
-                    <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" onClick={closeMobileMenu}>
+        <header className="bg-white border-b border-bcs-border sticky top-0 z-50">
+            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+                {/* Logo + Desktop Nav */}
+                <div className="flex items-center gap-6">
+                    <Link to="/" className="flex items-center hover:opacity-80 transition-opacity" onClick={closeMobileMenu}>
                         <img
                             src={`${import.meta.env.BASE_URL}WebsiteLogoIcon.png`}
                             alt="比創空間 Logo"
-                            className="h-12 sm:h-14 w-auto object-contain"
+                            className="h-10 sm:h-12 w-auto object-contain"
                         />
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <nav className="hidden md:flex items-center gap-6 font-medium text-wood-700">
-                        <Link to="/about" className="hover:text-wood-900 transition-colors">關於比創</Link>
-                        <Link to="/quote" className="text-amber-700 hover:text-amber-800 transition-colors font-bold px-3 py-1 bg-amber-50 rounded-md border border-amber-200">鍛造工坊</Link>
+                    <nav className="hidden md:flex items-center gap-1 font-medium">
+                        <Link to="/store/products" className="px-3 py-2 rounded-lg text-store-500 hover:bg-store-50 transition-colors font-semibold text-sm">
+                            販創所
+                        </Link>
+                        <Link to="/forge" className="px-3 py-2 rounded-lg text-forge-500 hover:bg-forge-50 transition-colors font-semibold text-sm">
+                            鍛造工坊
+                        </Link>
+                        <Link to="/makerworld" className="px-3 py-2 rounded-lg text-maker-500 hover:bg-maker-50 transition-colors font-semibold text-sm">
+                            創客世界
+                        </Link>
+                        <Link to="/about" className="px-3 py-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors text-sm">
+                            關於我們
+                        </Link>
                     </nav>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-6">
-                    {/* Cart Icon */}
-                    <Link to="/cart" className="relative group cursor-pointer" onClick={closeMobileMenu}>
-                        <div className="flex items-center gap-2 text-wood-600 group-hover:text-wood-800 transition-colors p-2 md:p-0">
-                            <div className="relative">
-                                <ShoppingCart size={24} />
-                                {cartCount > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
-                                        {cartCount}
-                                    </span>
-                                )}
+                {/* Right side */}
+                <div className="flex items-center gap-2">
+                    {/* Cart: 僅在 /store/* 頁面顯眼顯示 */}
+                    {isStorePage ? (
+                        <Link to="/store/cart" className="relative group cursor-pointer" onClick={closeMobileMenu}>
+                            <div className="flex items-center gap-2 text-store-500 hover:text-store-700 transition-colors px-3 py-2">
+                                <div className="relative">
+                                    <ShoppingCart size={22} />
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-store-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+                                            {cartCount > 9 ? '9+' : cartCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="font-semibold text-sm hidden sm:inline">購物車</span>
                             </div>
-                            <span className="font-medium hidden sm:inline">購物車</span>
-                        </div>
-                    </Link>
+                        </Link>
+                    ) : (
+                        cartCount > 0 && (
+                            <Link to="/store/cart" className="relative cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors" onClick={closeMobileMenu} title={`購物車（${cartCount}）`}>
+                                <ShoppingCart size={20} className="text-gray-400" />
+                                <span className="absolute top-0.5 right-0.5 bg-store-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                                    {cartCount > 9 ? '9+' : cartCount}
+                                </span>
+                            </Link>
+                        )
+                    )}
 
-                    {/* Mobile Hamburger Button */}
-                    <button 
-                        className="md:hidden p-2 text-wood-700 hover:text-wood-900 hover:bg-wood-100 rounded-lg transition-colors"
-                        onClick={toggleMobileMenu}
+                    {/* Mobile Hamburger */}
+                    <button
+                        className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                        onClick={() => setIsMobileMenuOpen(v => !v)}
                         aria-label="開啟選單"
                     >
-                        {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+                        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                 </div>
             </div>
 
             {/* Mobile Navigation Dropdown */}
             {isMobileMenuOpen && (
-                <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-wood-100 shadow-lg py-2 px-4 flex flex-col gap-2">
-                    <Link 
-                        to="/about" 
-                        className="p-3 text-wood-700 font-medium hover:bg-wood-50 rounded-lg transition-colors flex items-center"
-                        onClick={closeMobileMenu}
-                    >
-                        關於比創
+                <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-bcs-border shadow-lg py-3 px-4 flex flex-col gap-1">
+                    <Link to="/store/products" className="p-3 text-store-500 font-semibold hover:bg-store-50 rounded-lg transition-colors" onClick={closeMobileMenu}>
+                        販創所
                     </Link>
-                    <Link 
-                        to="/quote" 
-                        className="p-3 text-amber-800 font-bold bg-amber-50 border border-amber-100 rounded-lg hover:bg-amber-100 transition-colors flex items-center"
-                        onClick={closeMobileMenu}
-                    >
-                        鍛造工坊 (客製化專區)
+                    <Link to="/forge" className="p-3 text-forge-500 font-semibold hover:bg-forge-50 rounded-lg transition-colors" onClick={closeMobileMenu}>
+                        鍛造工坊
                     </Link>
+                    <Link to="/makerworld" className="p-3 text-maker-500 font-semibold hover:bg-maker-50 rounded-lg transition-colors" onClick={closeMobileMenu}>
+                        創客世界
+                    </Link>
+                    <Link to="/about" className="p-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" onClick={closeMobileMenu}>
+                        關於我們
+                    </Link>
+                    {cartCount > 0 && (
+                        <Link to="/store/cart" className="p-3 text-store-500 font-semibold hover:bg-store-50 rounded-lg transition-colors flex items-center gap-2 border-t border-bcs-border mt-1 pt-4" onClick={closeMobileMenu}>
+                            <ShoppingCart size={18} />
+                            購物車（{cartCount}）
+                        </Link>
+                    )}
                 </div>
             )}
         </header>

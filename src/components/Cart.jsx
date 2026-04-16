@@ -143,7 +143,7 @@ export default function Cart({
                 </div>
                 <h2 className="text-2xl font-bold text-wood-900 mb-4">購物車是空的</h2>
                 <p className="text-wood-600 mb-8">看起來您還沒有選購任何商品。</p>
-                <Link to="/">
+                <Link to="/store/products">
                     <Button>前往逛逛</Button>
                 </Link>
             </div>
@@ -152,7 +152,7 @@ export default function Cart({
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
-            <Link to="/" className="inline-flex items-center gap-2 text-wood-600 hover:text-wood-800 transition-colors">
+            <Link to="/store/products" className="inline-flex items-center gap-2 text-store-500 hover:text-store-700 transition-colors">
                 <ArrowLeft size={20} />
                 繼續購物
             </Link>

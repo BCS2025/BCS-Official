@@ -13,7 +13,7 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
         return (
             <div className="text-center py-20">
                 <h2 className="text-2xl font-bold text-wood-900">找不到此商品</h2>
-                <Link to="/" className="text-wood-600 hover:underline mt-4 inline-block">返回首頁</Link>
+                <Link to="/store/products" className="text-store-500 hover:underline mt-4 inline-block">返回商品列表</Link>
             </div>
         );
     }
@@ -21,7 +21,7 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <Link to="/" className="inline-flex items-center gap-2 text-wood-600 hover:text-wood-800 mb-6 transition-colors">
+            <Link to="/store/products" className="inline-flex items-center gap-2 text-store-500 hover:text-store-700 mb-6 transition-colors">
                 <ArrowLeft size={20} />
                 回到商品列表
             </Link>

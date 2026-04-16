@@ -6,6 +6,68 @@
 
 @layer base {
   body {
-    @apply bg-muji-white text-muji-text font-sans antialiased;
+    @apply bg-white text-bcs-black font-sans antialiased;
+  }
+
+  /* 統一 heading 字重 */
+  h1, h2, h3 {
+    @apply font-bold tracking-tight;
+  }
+
+  /* 統一連結基底 */
+  a {
+    @apply transition-colors duration-200;
+  }
+}
+
+@layer components {
+  /* 品牌通用卡片 */
+  .card {
+    @apply bg-white rounded-card shadow-card border border-bcs-border;
+  }
+  .card-hover {
+    @apply hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200;
+  }
+
+  /* 各品牌 Badge */
+  .badge-store {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider bg-store-50 text-store-700 border border-store-100;
+  }
+  .badge-forge {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider bg-forge-50 text-forge-700 border border-forge-100;
+  }
+  .badge-maker {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider bg-maker-50 text-maker-700 border border-maker-100;
+  }
+
+  /* 各品牌主要按鈕 */
+  .btn-store {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-btn bg-store-500 text-white font-semibold hover:bg-store-700 transition-colors duration-200;
+  }
+  .btn-forge {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-btn bg-forge-500 text-white font-semibold hover:bg-forge-700 transition-colors duration-200;
+  }
+  .btn-maker {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-btn bg-maker-500 text-white font-semibold hover:bg-maker-700 transition-colors duration-200;
+  }
+
+  /* 通用黑色主按鈕 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-btn bg-bcs-black text-white font-semibold hover:bg-neutral-800 transition-colors duration-200;
+  }
+
+  /* 通用次要按鈕（外框線）*/
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-btn border border-bcs-border text-bcs-black font-semibold hover:border-bcs-black transition-colors duration-200;
+  }
+
+  /* 頁面容器 */
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Section 間距 */
+  .section {
+    @apply py-16 lg:py-24;
   }
 }

@@ -139,7 +139,7 @@ export function useOrderSubmit() {
             // 6. Success
             setSuccessData({ orderId, needProof, estimatedDate, totalAmount: finalTotal });
             onSuccess?.();
-            navigate('/thank-you');
+            navigate('/store/thank-you');
 
         } catch (error) {
             console.error('Error submitting order:', error);

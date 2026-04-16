@@ -105,7 +105,7 @@ export default function ProductGallery({ products = [] }) {
                                     )}
                                 </span>
                                 <Link
-                                    to={`/product/${product.id}`}
+                                    to={`/store/product/${product.id}`}
                                     className="bg-wood-600 hover:bg-wood-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                                 >
                                     查看詳情
