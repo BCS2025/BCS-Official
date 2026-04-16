@@ -1,5 +1,5 @@
 /**
- * Resolves the correct URL for an image, accounting for the base path (GitHub Pages).
+ * Resolves the correct URL for an image, accounting for the base path.
  * @param {string} path - The absolute path to the image (e.g., "/image.png")
  * @returns {string} - The resolved URL
  */
