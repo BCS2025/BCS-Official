@@ -9,19 +9,30 @@ import { Loader2 } from 'lucide-react';
 
 import { supabase } from '../lib/supabaseClient';
 
+// Select 欄位沒有 defaultValue 時，自動補第一個 option 的 value。
+// 避免 React state 為空字串（""）卻在 UI 上顯示第一個選項的假象，
+// 導致 RPC 的 match_condition 永遠匹配不到 recipe → 誤回 9999「庫存充足」。
+function getFieldDefault(field) {
+    if (field.defaultValue) return field.defaultValue;
+    if (field.type === 'select' && field.options?.length > 0) {
+        return field.options[0].value;
+    }
+    return '';
+}
+
+function buildFormDefaults(product) {
+    const defaults = { quantity: 1, price: 0 };
+    product.fields.forEach(field => {
+        defaults[field.name] = getFieldDefault(field);
+    });
+    return defaults;
+}
+
 export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit, cart = [] }) {
 
     const [formData, setFormData] = useState(() => {
         if (initialData) return { ...initialData };
-
-        const defaults = {
-            quantity: 1,
-            price: 0
-        };
-        product.fields.forEach(field => {
-            defaults[field.name] = field.defaultValue || '';
-        });
-        return defaults;
+        return buildFormDefaults(product);
     });
 
     const [estimatedPrice, setEstimatedPrice] = useState(0);
@@ -118,14 +129,7 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
         if (initialData) {
             setFormData({ ...initialData });
         } else {
-            const defaults = {
-                quantity: 1,
-                price: 0
-            };
-            product.fields.forEach(field => {
-                defaults[field.name] = field.defaultValue || '';
-            });
-            setFormData(defaults);
+            setFormData(buildFormDefaults(product));
         }
     }, [initialData, product]);
 
