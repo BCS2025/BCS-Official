@@ -12,7 +12,10 @@
       "Bash(xargs cat:*)",
       "Bash(python3 -c \"import sys,json; data=sys.stdin.read\\(\\); print\\(data[:3000]\\)\")",
       "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/*.json)",
-      "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/claude-plugins-official/plugins/security-guidance/hooks/*.md)"
+      "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/claude-plugins-official/plugins/security-guidance/hooks/*.md)",
+      "Bash(gh repo *)",
+      "Bash(where gh *)",
+      "Read(//c/Program Files/**)"
     ]
   }
 }
