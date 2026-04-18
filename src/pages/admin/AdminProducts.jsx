@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Edit, Trash2, X, Save, Upload, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Upload, AlertCircle, RefreshCw, Search, ChevronsUp, ChevronsDown } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { uploadFile } from '../../lib/storageService';
@@ -11,6 +11,8 @@ export const AdminProducts = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [savingSortIds, setSavingSortIds] = useState(new Set()); // Tracks which row is saving sort_order
 
     // Data for dropdowns
     const [materials, setMaterials] = useState([]);
@@ -33,7 +35,7 @@ export const AdminProducts = () => {
             description: '',
             config_schema: '[]', // Stringified JSON
             pricing_logic: {},   // New Pricing Logic
-            sort_order: 10,
+            sort_order: 5,
             is_active: true,
             category: 'creative' // 'creative'（創作商品）| 'materials'（創客材料）
         };
@@ -268,6 +270,55 @@ export const AdminProducts = () => {
         }));
     };
 
+    // Inline update sort_order — optimistic UI then persist
+    const updateSortOrder = async (productId, nextValue) => {
+        const sanitized = parseInt(nextValue, 10);
+        if (Number.isNaN(sanitized)) return;
+        const target = products.find(p => p.id === productId);
+        if (!target || target.sort_order === sanitized) return;
+
+        // Optimistic update
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, sort_order: sanitized } : p));
+        setSavingSortIds(prev => new Set(prev).add(productId));
+
+        const { error } = await supabase
+            .from('products')
+            .update({ sort_order: sanitized })
+            .eq('id', productId);
+
+        setSavingSortIds(prev => {
+            const next = new Set(prev);
+            next.delete(productId);
+            return next;
+        });
+
+        if (error) {
+            alert('權重更新失敗：' + error.message);
+            fetchProducts(); // Rollback by refetching
+        }
+    };
+
+    const sendToTop = (productId) => {
+        const maxSort = products.reduce((max, p) => Math.max(max, p.sort_order || 0), 0);
+        updateSortOrder(productId, maxSort + 1);
+    };
+
+    const sendToBottom = (productId) => {
+        const minSort = products.reduce((min, p) => Math.min(min, p.sort_order || 0), products[0]?.sort_order || 0);
+        updateSortOrder(productId, minSort - 1);
+    };
+
+    // Filtered view (search by name / id / category label)
+    const filteredProducts = useMemo(() => {
+        const keyword = searchTerm.trim().toLowerCase();
+        if (!keyword) return products;
+        return products.filter(p => {
+            const categoryLabel = p.category === 'materials' ? '創客材料 materials' : '創作商品 creative';
+            const haystack = [p.name, p.id, p.slogan, categoryLabel].filter(Boolean).join(' ').toLowerCase();
+            return haystack.includes(keyword);
+        });
+    }, [products, searchTerm]);
+
     return (
         <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -275,6 +326,36 @@ export const AdminProducts = () => {
                 <Button onClick={handleOpenCreate} className="flex items-center gap-2">
                     <Plus size={16} /> 新增商品
                 </Button>
+            </div>
+
+            {/* Search + Summary */}
+            <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div className="relative flex-1 max-w-md">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                        type="search"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="搜尋商品名稱、系統代號或分類..."
+                        className="w-full pl-9 pr-9 py-2 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                            aria-label="清除搜尋"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+                <div className="text-sm text-gray-500">
+                    {searchTerm
+                        ? <>符合條件：<span className="font-bold text-gray-800">{filteredProducts.length}</span> / {products.length}</>
+                        : <>共 <span className="font-bold text-gray-800">{products.length}</span> 項商品</>
+                    }
+                </div>
             </div>
 
             {/* List View */}
@@ -286,12 +367,20 @@ export const AdminProducts = () => {
                                 <th className="p-4">商品資訊 (Name/ID)</th>
                                 <th className="p-4">分類</th>
                                 <th className="p-4">售價</th>
-                                <th className="p-4">排序/狀態</th>
+                                <th className="p-4 w-56">排序權重 ↓ (大在前)</th>
+                                <th className="p-4">狀態</th>
                                 <th className="p-4 text-right">操作</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {products.map(p => (
+                            {filteredProducts.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="p-10 text-center text-gray-400">
+                                        {searchTerm ? `找不到符合「${searchTerm}」的商品` : '尚無商品資料'}
+                                    </td>
+                                </tr>
+                            )}
+                            {filteredProducts.map(p => (
                                 <tr key={p.id} className="hover:bg-gray-50">
                                     <td className="p-4 flex gap-4 items-center">
                                         <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
@@ -324,7 +413,46 @@ export const AdminProducts = () => {
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <div className="text-sm">排序: {p.sort_order}</div>
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                type="number"
+                                                defaultValue={p.sort_order ?? 0}
+                                                key={`${p.id}-${p.sort_order}`}
+                                                onBlur={(e) => updateSortOrder(p.id, e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') e.target.blur();
+                                                    if (e.key === 'Escape') {
+                                                        e.target.value = p.sort_order ?? 0;
+                                                        e.target.blur();
+                                                    }
+                                                }}
+                                                className="w-16 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                title="修改後按 Enter 或移開游標即儲存"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => sendToTop(p.id)}
+                                                disabled={savingSortIds.has(p.id)}
+                                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-40"
+                                                title="置頂（設為最大權重 + 1）"
+                                            >
+                                                <ChevronsUp size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => sendToBottom(p.id)}
+                                                disabled={savingSortIds.has(p.id)}
+                                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-40"
+                                                title="置底（設為最小權重 - 1）"
+                                            >
+                                                <ChevronsDown size={16} />
+                                            </button>
+                                            {savingSortIds.has(p.id) && (
+                                                <span className="text-[10px] text-blue-500 animate-pulse">儲存中</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
                                         <div className={`text-xs font-bold ${p.is_active ? 'text-green-600' : 'text-gray-400'}`}>
                                             {p.is_active ? '上架中' : '已隱藏'}
                                         </div>

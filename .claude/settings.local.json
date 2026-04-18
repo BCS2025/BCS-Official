@@ -15,7 +15,8 @@
       "Bash(cat /c/Users/roylo/.claude/plugins/marketplaces/claude-plugins-official/plugins/security-guidance/hooks/*.md)",
       "Bash(gh repo *)",
       "Bash(where gh *)",
-      "Read(//c/Program Files/**)"
+      "Read(//c/Program Files/**)",
+      "Bash(npx vite *)"
     ]
   }
 }
