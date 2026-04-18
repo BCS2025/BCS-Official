@@ -29,6 +29,7 @@ import { AdminLocations } from './pages/admin/AdminLocations';
 import { AdminRegistrations } from './pages/admin/AdminRegistrations';
 import { AdminForgePortfolio } from './pages/admin/AdminForgePortfolio';
 import { AdminNotificationFailures } from './pages/admin/AdminNotificationFailures';
+import { AdminPublish } from './pages/admin/AdminPublish';
 
 const FREE_SHIPPING_THRESHOLD = 599;
 
@@ -79,6 +80,16 @@ function App() {
         }
         loadProducts();
     }, []);
+
+    // 通知預渲染工具：首屏資料已就緒。
+    // 等 1 秒讓 path-specific component（ProductDetail / CourseDetail）也完成自身 fetch。
+    useEffect(() => {
+        if (isLoading) return;
+        const t = setTimeout(() => {
+            document.dispatchEvent(new Event('render-complete'));
+        }, 1000);
+        return () => clearTimeout(t);
+    }, [isLoading, location.pathname]);
 
     const itemsTotal = cart.reduce((sum, i) => sum + i.price, 0);
     const isFreeShipping = itemsTotal >= FREE_SHIPPING_THRESHOLD;
@@ -207,6 +218,7 @@ function App() {
                     <Route path="registrations" element={<AdminRegistrations />} />
                     <Route path="forge-portfolio" element={<AdminForgePortfolio />} />
                     <Route path="notification-failures" element={<AdminNotificationFailures />} />
+                    <Route path="publish" element={<AdminPublish />} />
                 </Route>
                 <Route path="/admin/login" element={<AdminLogin />} />
             </Routes>

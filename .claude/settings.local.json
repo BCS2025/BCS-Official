@@ -17,7 +17,13 @@
       "Bash(where gh *)",
       "Read(//c/Program Files/**)",
       "Bash(npx vite *)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm view *)",
+      "WebFetch(domain:github.com)",
+      "Bash(SKIP_PRERENDER=false npm run build)",
+      "Bash(grep -o 'id=\"root\"><[^\"]*\"[^>]*>[^<]\\\\{0,200\\\\}' dist/store/product/prod_keychain_custom/index.html)"
     ]
   }
 }
