@@ -41,9 +41,23 @@ export default defineConfig(async ({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const isBuild = command === 'build'
   const skipPrerender = process.env.SKIP_PRERENDER === 'true'
+  const isServerlessBuild = !!process.env.VERCEL
 
   const dynamicRoutes = isBuild && !skipPrerender ? await fetchDynamicRoutes(env) : []
   const allPublicRoutes = [...STATIC_PUBLIC_ROUTES, ...dynamicRoutes]
+
+  // 在 Vercel 的 serverless Linux 容器（缺 libnspr4 等系統函式庫）改用 @sparticuz/chromium，
+  // 它自帶一份完整的 Chromium binary + 必要 shared libs。本機 build 仍用 puppeteer 預設 Chrome。
+  let serverlessLaunchOptions = null
+  if (isBuild && !skipPrerender && isServerlessBuild) {
+    const { default: chromium } = await import('@sparticuz/chromium')
+    serverlessLaunchOptions = {
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    }
+    console.log('[prerender] using @sparticuz/chromium for serverless build')
+  }
 
   if (isBuild) {
     console.log(`[prerender] routes to prerender: ${allPublicRoutes.length}`)
@@ -69,7 +83,7 @@ export default defineConfig(async ({ mode, command }) => {
                 renderAfterDocumentEvent: 'render-complete',
                 maxConcurrentRoutes: 4,
                 timeout: 60000,
-                launchOptions: {
+                launchOptions: serverlessLaunchOptions || {
                   headless: true,
                   args: ['--no-sandbox', '--disable-setuid-sandbox'],
                 },
