@@ -11,6 +11,7 @@ import { couponService } from '../lib/couponService'; // New Coupon Service
 import { MESSAGES } from '../constants/messages';
 import { Input } from './ui/Input';
 import { Loader2 } from 'lucide-react';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function Cart({
     cart,
@@ -27,6 +28,7 @@ export default function Cart({
     FREE_SHIPPING_THRESHOLD,
     itemsTotal
 }) {
+    usePageMeta('購物車・販創所', '比創空間・販創所購物車——檢視訂購商品、選擇運送方式、填寫聯絡資訊。', { noindex: true });
     const [editingItem, setEditingItem] = useState(null);
 
     const [couponCode, setCouponCode] = useState('');

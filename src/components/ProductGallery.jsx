@@ -3,6 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '../lib/pricing';
 import { getImageUrl } from '../lib/imageUtils';
 import { ArrowUpDown, Search, X } from 'lucide-react';
+import { usePageMeta } from '../hooks/usePageMeta';
+
+const TAB_META = {
+    all: { title: '所有商品・販創所', desc: '比創空間・販創所全商品——文創設計、壓克力燈、雷射雕刻、客製鑰匙圈、創客材料，台南在地設計師親手製作。' },
+    creative: { title: '創作商品・販創所', desc: '比創空間・販創所創作商品——壓克力燈、雷射雕刻、客製鑰匙圈，文創設計的生活好物。' },
+    materials: { title: '創客材料・販創所', desc: '比創空間・販創所創客材料——Arduino 套件、電子零件、材料包，動手做的起點。' },
+};
 
 const TABS = [
     { key: 'all', label: '全部' },
@@ -18,6 +25,9 @@ export default function ProductGallery({ products = [] }) {
     const [sortBy, setSortBy] = useState('featured');
     const [activeTab, setActiveTab] = useState(VALID_TABS.has(initialCat) ? initialCat : 'all');
     const [searchTerm, setSearchTerm] = useState('');
+
+    const meta = TAB_META[activeTab] || TAB_META.all;
+    usePageMeta(meta.title, meta.desc);
 
     // Sync activeTab ↔ ?cat= URL 參數（讓使用者分享連結能保留分類狀態）
     useEffect(() => {

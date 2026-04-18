@@ -23,7 +23,20 @@
       "Bash(npm view *)",
       "WebFetch(domain:github.com)",
       "Bash(SKIP_PRERENDER=false npm run build)",
-      "Bash(grep -o 'id=\"root\"><[^\"]*\"[^>]*>[^<]\\\\{0,200\\\\}' dist/store/product/prod_keychain_custom/index.html)"
+      "Bash(grep -o 'id=\"root\"><[^\"]*\"[^>]*>[^<]\\\\{0,200\\\\}' dist/store/product/prod_keychain_custom/index.html)",
+      "WebFetch(domain:www.bcs.tw)",
+      "Bash(curl -sI -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" https://www.bcs.tw/)",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" https://www.bcs.tw/ -o /tmp/bcs_home.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" https://www.bcs.tw/store -o /tmp/bcs_store.html)",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" https://www.bcs.tw/makerworld -o /tmp/bcs_mw.html)",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" https://www.bcs.tw/store/cart -o /tmp/bcs_cart.html)",
+      "Bash(curl -s https://www.bcs.tw/sitemap.xml)",
+      "Bash(python -c \"import sys,re; t=sys.stdin.read\\(\\); locs=re.findall\\(r'<loc>\\\\s*\\([^<\\\\s]+\\)', t\\); [print\\(l\\) for l in locs]\")",
+      "Bash(curl -sI -A \"Mozilla/5.0\" https://www.bcs.tw/store/product/prod_nightlight_tile)",
+      "Bash(curl -s -A \"Mozilla/5.0\" https://www.bcs.tw/store/product/prod_nightlight_tile -o /tmp/bcs_prod.html)",
+      "Bash(python -c \"import re; html=open\\('/tmp/bcs_prod.html',encoding='utf-8'\\).read\\(\\); m=re.search\\(r'id=\\\\\"root\\\\\">\\(.+?\\)</body>', html, re.S\\); body=m.group\\(1\\) if m else ''; text=re.sub\\(r'<[^>]+>','|',body\\); text=re.sub\\(r'\\\\|+','|',text\\); print\\(text[:800]\\)\")",
+      "Bash(grep -oE '>[^<>]{4,}<')"
     ]
   }
 }

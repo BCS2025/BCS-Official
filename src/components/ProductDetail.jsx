@@ -4,10 +4,35 @@ import ProductForm from './ProductForm';
 import { getImageUrl } from '../lib/imageUtils';
 import { ArrowLeft } from 'lucide-react';
 import ProductImageCarousel from './ProductImageCarousel';
+import { usePageMeta } from '../hooks/usePageMeta';
+
+const SITE_ORIGIN = 'https://bcs.tw';
+
+function buildProductDescription(product) {
+    if (!product) return undefined;
+    const raw = product.slogan || product.description || product.detailedDescription || '';
+    const plain = raw.replace(/\s+/g, ' ').replace(/\*\*/g, '').trim();
+    if (!plain) return undefined;
+    return plain.length > 140 ? `${plain.slice(0, 137)}...` : plain;
+}
+
+function buildAbsoluteImage(path) {
+    if (!path) return undefined;
+    if (path.startsWith('http')) return path;
+    const resolved = getImageUrl(path);
+    if (resolved.startsWith('http')) return resolved;
+    return `${SITE_ORIGIN}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
+}
 
 export default function ProductDetail({ products, cart, onAddToCart }) {
     const { id } = useParams();
     const product = products.find(p => p.id === id);
+
+    usePageMeta(
+        product ? `${product.name}・販創所` : '商品詳情・販創所',
+        product ? buildProductDescription(product) : undefined,
+        product ? { image: buildAbsoluteImage((product.images && product.images[0]) || product.image) } : undefined,
+    );
 
     if (!product) {
         return (

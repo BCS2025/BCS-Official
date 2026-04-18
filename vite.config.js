@@ -5,7 +5,8 @@ import Sitemap from 'vite-plugin-sitemap'
 import prerender from '@prerenderer/rollup-plugin'
 import { createClient } from '@supabase/supabase-js'
 
-const STATIC_PUBLIC_ROUTES = [
+// 公開、且希望被索引的靜態路由。送 sitemap + 預渲染。
+const INDEXED_STATIC_ROUTES = [
   '/',
   '/about',
   '/store',
@@ -13,6 +14,11 @@ const STATIC_PUBLIC_ROUTES = [
   '/forge',
   '/makerworld',
 ]
+
+// 會被預渲染但不該被索引。寫 robots noindex，避免被當成首頁重複內容。
+// Why: Vercel 對找不到的靜態檔走 rewrite → /index.html（=首頁預渲染 HTML），
+// 結果 /store/cart 會被爬蟲誤當成首頁。替它產一份專屬 HTML 即可解決。
+const NOINDEX_PRERENDER_ROUTES = ['/store/cart']
 
 async function fetchDynamicRoutes(env) {
   const url = env.VITE_SUPABASE_URL
@@ -44,7 +50,8 @@ export default defineConfig(async ({ mode, command }) => {
   const isServerlessBuild = !!process.env.VERCEL
 
   const dynamicRoutes = isBuild && !skipPrerender ? await fetchDynamicRoutes(env) : []
-  const allPublicRoutes = [...STATIC_PUBLIC_ROUTES, ...dynamicRoutes]
+  const sitemapRoutes = [...INDEXED_STATIC_ROUTES, ...dynamicRoutes]
+  const prerenderRoutes = [...INDEXED_STATIC_ROUTES, ...NOINDEX_PRERENDER_ROUTES, ...dynamicRoutes]
 
   // 在 Vercel 的 serverless Linux 容器（缺 libnspr4 等系統函式庫）改用 @sparticuz/chromium，
   // 它自帶一份完整的 Chromium binary + 必要 shared libs。本機 build 仍用 puppeteer 預設 Chrome。
@@ -60,7 +67,7 @@ export default defineConfig(async ({ mode, command }) => {
   }
 
   if (isBuild) {
-    console.log(`[prerender] routes to prerender: ${allPublicRoutes.length}`)
+    console.log(`[prerender] routes to prerender: ${prerenderRoutes.length}（其中 sitemap: ${sitemapRoutes.length}）`)
   }
 
   return {
@@ -68,7 +75,7 @@ export default defineConfig(async ({ mode, command }) => {
       react(),
       Sitemap({
         hostname: 'https://bcs.tw',
-        dynamicRoutes: allPublicRoutes,
+        dynamicRoutes: sitemapRoutes,
         readable: true,
         lastmod: new Date(),
         generateRobotsTxt: false,
@@ -77,7 +84,7 @@ export default defineConfig(async ({ mode, command }) => {
       ...(isBuild && !skipPrerender
         ? [
             prerender({
-              routes: allPublicRoutes,
+              routes: prerenderRoutes,
               renderer: '@prerenderer/renderer-puppeteer',
               rendererOptions: {
                 renderAfterDocumentEvent: 'render-complete',
