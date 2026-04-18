@@ -23,6 +23,7 @@ import Forge from './pages/Forge';
 import Footer from './components/Footer';
 import MakerWorld from './pages/MakerWorld';
 import CourseDetail from './pages/CourseDetail';
+import InquiryWidget from './components/InquiryWidget';
 import { AdminCourses } from './pages/admin/AdminCourses';
 import { AdminLocations } from './pages/admin/AdminLocations';
 import { AdminRegistrations } from './pages/admin/AdminRegistrations';
@@ -212,16 +213,19 @@ function App() {
             </div>
             {!isAdminPage && <Footer />}
 
-            {/* 回到頂部按鈕 */}
+            {/* 回到頂部按鈕（避開右下浮動客服按鈕） */}
             {!isAdminPage && showScrollTop && (
                 <button
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className="fixed bottom-6 right-6 z-40 w-11 h-11 bg-bcs-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-neutral-700 transition-all duration-200 hover:scale-110"
+                    className="fixed bottom-24 right-6 z-40 w-11 h-11 bg-bcs-black text-white rounded-full flex items-center justify-center shadow-lg hover:bg-neutral-700 transition-all duration-200 hover:scale-110"
                     aria-label="回到頂部"
                 >
                     <ChevronUp size={20} />
                 </button>
             )}
+
+            {/* 客服詢問 Widget（admin 後台不顯示） */}
+            {!isAdminPage && <InquiryWidget products={products} />}
         </div>
     );
 }

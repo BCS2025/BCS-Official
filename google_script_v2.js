@@ -47,7 +47,18 @@ function doPost(e) {
             return ContentService.createTextOutput(JSON.stringify({ status: 'success', id: data.quote_id }));
         }
 
-        // --- CASE 3: NEW ORDER ---
+        // --- CASE 3: CUSTOMER INQUIRY (網頁客服詢問) ---
+        if (data.type === 'inquiry') {
+            try {
+                const inquiryFlex = createInquiryFlexMessage(data);
+                sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [inquiryFlex]);
+            } catch (err) {
+                console.error("Inquiry Line Error:", err);
+            }
+            return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'inquiry' }));
+        }
+
+        // --- CASE 4: NEW ORDER ---
         // 1. Send Beautiful Email to Customer
         if (data.customer && data.customer.email) {
             try {
@@ -315,6 +326,76 @@ function createQuoteFlexMessage(quote) {
                 type: "box",
                 layout: "vertical",
                 contents: contents
+            }
+        }
+    };
+}
+
+// --- HELPER: Create Flex Message for Customer Inquiry ---
+function createInquiryFlexMessage(inquiry) {
+    const BRAND_COLORS = {
+        '販創所':   '#EA580C',
+        '鍛造工坊': '#1D4ED8',
+        '創客世界': '#16A34A',
+        '比創空間': '#111111'
+    };
+    const brandColor = BRAND_COLORS[inquiry.brand] || '#111111';
+
+    const ts = inquiry.submitted_at ? new Date(inquiry.submitted_at) : new Date();
+    const timeStr = Utilities.formatDate(ts, 'Asia/Taipei', 'MM/dd HH:mm');
+
+    // 客戶可能連續傳多則訊息，每則一行
+    const messages = (inquiry.messages && inquiry.messages.length)
+        ? inquiry.messages
+        : [inquiry.question || ''];
+    const messageContents = messages.map(function (msg) {
+        return {
+            type: "text",
+            text: "💬 " + msg,
+            size: "sm",
+            color: "#333333",
+            wrap: true,
+            margin: "sm"
+        };
+    });
+
+    // 來源頁面：商品頁顯示商品名，其他顯示 path
+    const pageLabel = inquiry.product_name
+        ? "📦 " + inquiry.product_name
+        : "📍 " + (inquiry.page_path || '/');
+
+    return {
+        type: "flex",
+        altText: "[" + inquiry.brand + "] 新詢問: " + (messages[0] || '').slice(0, 30),
+        contents: {
+            type: "bubble",
+            body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    { type: "text", text: "NEW INQUIRY", weight: "bold", color: brandColor, size: "sm" },
+                    { type: "text", text: inquiry.brand + " 客服詢問", weight: "bold", size: "lg", margin: "md" },
+                    { type: "text", text: pageLabel, size: "xs", color: "#888888", wrap: true, margin: "sm" },
+                    { type: "separator", margin: "lg" },
+                    {
+                        type: "box",
+                        layout: "vertical",
+                        margin: "lg",
+                        spacing: "xs",
+                        contents: messageContents
+                    },
+                    { type: "separator", margin: "lg" },
+                    {
+                        type: "box",
+                        layout: "vertical",
+                        margin: "lg",
+                        spacing: "sm",
+                        contents: [
+                            { type: "text", text: "📞 " + inquiry.contact, size: "md", weight: "bold", color: brandColor, wrap: true },
+                            { type: "text", text: timeStr, size: "xs", color: "#aaaaaa", margin: "xs" }
+                        ]
+                    }
+                ]
             }
         }
     };

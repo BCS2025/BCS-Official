@@ -16,7 +16,8 @@
       "Bash(gh repo *)",
       "Bash(where gh *)",
       "Read(//c/Program Files/**)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
