@@ -53,6 +53,11 @@ export default defineConfig(async ({ mode, command }) => {
   const sitemapRoutes = [...INDEXED_STATIC_ROUTES, ...dynamicRoutes]
   const prerenderRoutes = [...INDEXED_STATIC_ROUTES, ...NOINDEX_PRERENDER_ROUTES, ...dynamicRoutes]
 
+  // vite-plugin-sitemap 會自動掃描 build 輸出的 HTML 發現靜態路由。預渲染開啟時它已經能掃到
+  // INDEXED_STATIC_ROUTES，再把同一批傳進 dynamicRoutes 會造成重複條目 → 只補動態部分。
+  // 跳過預渲染時 build 輸出只剩 dist/index.html，靜態路由掃不到，才要傳完整清單。
+  const sitemapDynamicRoutes = skipPrerender ? sitemapRoutes : dynamicRoutes
+
   // 在 Vercel 的 serverless Linux 容器（缺 libnspr4 等系統函式庫）改用 @sparticuz/chromium，
   // 它自帶一份完整的 Chromium binary + 必要 shared libs。本機 build 仍用 puppeteer 預設 Chrome。
   let serverlessLaunchOptions = null
@@ -75,7 +80,7 @@ export default defineConfig(async ({ mode, command }) => {
       react(),
       Sitemap({
         hostname: 'https://bcs.tw',
-        dynamicRoutes: sitemapRoutes,
+        dynamicRoutes: sitemapDynamicRoutes,
         readable: true,
         lastmod: new Date(),
         generateRobotsTxt: false,
