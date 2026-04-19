@@ -103,34 +103,66 @@ function transformProduct(dbProduct) {
     };
 }
 
-export async function fetchProducts() {
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: false }) // Primary Sort: High priority first
-        .order('created_at', { ascending: false }); // Secondary Sort: Newest first
+// Supabase 免費方案閒置後會 auto-pause，首次請求可能需要 spin-up。
+// 提供 timeout 避免無限等待、retry 吸收冷啟動與偶發網路抖動。
+const FETCH_TIMEOUT_MS = 8000;
+const FETCH_MAX_ATTEMPTS = 3;
+const FETCH_RETRY_BASE_MS = 800;
 
-    if (error) {
-        console.error('Error fetching products:', error);
-        return [];
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runWithRetry(label, run) {
+    let lastError;
+    for (let attempt = 1; attempt <= FETCH_MAX_ATTEMPTS; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        try {
+            const { data, error } = await run(controller.signal);
+            clearTimeout(timeoutId);
+            if (error) throw error;
+            return { data, error: null };
+        } catch (err) {
+            clearTimeout(timeoutId);
+            lastError = err;
+            if (attempt < FETCH_MAX_ATTEMPTS) {
+                const delay = FETCH_RETRY_BASE_MS * attempt;
+                console.warn(`[${label}] attempt ${attempt} failed, retrying in ${delay}ms`, err?.message || err);
+                await sleep(delay);
+            }
+        }
     }
+    console.error(`[${label}] all ${FETCH_MAX_ATTEMPTS} attempts failed`, lastError);
+    return { data: null, error: lastError };
+}
 
+export async function fetchProducts() {
+    const { data, error } = await runWithRetry('fetchProducts', (signal) =>
+        supabase
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: false }) // Primary Sort: High priority first
+            .order('created_at', { ascending: false }) // Secondary Sort: Newest first
+            .abortSignal(signal)
+    );
+
+    if (error || !data) return [];
     return data.map(transformProduct);
 }
 
 export async function fetchProductBySlug(slug) {
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', slug) // Use 'id' column instead of 'slug'
-        .single();
+    const { data, error } = await runWithRetry('fetchProductBySlug', (signal) =>
+        supabase
+            .from('products')
+            .select('*')
+            .eq('id', slug) // Use 'id' column instead of 'slug'
+            .abortSignal(signal)
+            .single()
+    );
 
-    if (error) {
-        console.error('Error fetching product by slug:', slug, error);
-        return null;
-    }
-
+    if (error || !data) return null;
     return transformProduct(data);
 }
 

@@ -70,23 +70,27 @@ function App() {
     const { submitOrder, isSubmitting, successData, clearSuccessData } = useOrderSubmit();
 
     useEffect(() => {
+        let cancelled = false;
         async function loadProducts() {
             try {
                 const data = await fetchProducts();
-                setProducts(data);
+                if (!cancelled) setProducts(data);
             } catch (error) {
                 console.error('Failed to load products:', error);
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         }
         loadProducts();
+        return () => { cancelled = true; };
     }, []);
 
     // 通知預渲染工具：首屏資料已就緒。
+    // 非 /store/* 的路由不需要 products，直接視為就緒。
     // 等 1 秒讓 path-specific component（ProductDetail / CourseDetail）也完成自身 fetch。
     useEffect(() => {
-        if (isLoading) return;
+        const needsProducts = location.pathname.startsWith('/store');
+        if (needsProducts && isLoading) return;
         const t = setTimeout(() => {
             document.dispatchEvent(new Event('render-complete'));
         }, 1000);
@@ -128,14 +132,6 @@ function App() {
         });
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-bcs-gray text-bcs-muted">
-                載入中...
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-white font-sans flex flex-col">
             <Navbar cartCount={cart.length} />
@@ -147,10 +143,11 @@ function App() {
 
                 {/* 販創所（/store/*） */}
                 <Route path="/store" element={<Store />} />
-                <Route path="/store/products" element={<ProductGallery products={products} />} />
+                <Route path="/store/products" element={<ProductGallery products={products} isLoading={isLoading} />} />
                 <Route path="/store/product/:id" element={
                     <ProductDetail
                         products={products}
+                        isLoading={isLoading}
                         cart={cart}
                         onAddToCart={(item) => handleAddToCart(item, products)}
                     />

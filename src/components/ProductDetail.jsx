@@ -24,7 +24,7 @@ function buildAbsoluteImage(path) {
     return `${SITE_ORIGIN}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
 }
 
-export default function ProductDetail({ products, cart, onAddToCart }) {
+export default function ProductDetail({ products, cart, onAddToCart, isLoading = false }) {
     const { id } = useParams();
     const product = products.find(p => p.id === id);
 
@@ -35,6 +35,28 @@ export default function ProductDetail({ products, cart, onAddToCart }) {
     );
 
     if (!product) {
+        if (isLoading) {
+            return (
+                <div className="container mx-auto px-4 py-8 max-w-4xl" aria-busy="true" aria-label="載入商品中">
+                    <div className="grid md:grid-cols-2 gap-12 items-start animate-pulse">
+                        <div className="rounded-2xl overflow-hidden border border-bcs-border bg-white p-2">
+                            <div className="aspect-square w-full bg-bcs-gray rounded-lg" />
+                            <div className="p-4 mt-2 space-y-3">
+                                <div className="h-6 bg-bcs-gray rounded w-2/3" />
+                                <div className="h-4 bg-bcs-gray rounded w-full" />
+                                <div className="h-4 bg-bcs-gray rounded w-5/6" />
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="h-8 bg-bcs-gray rounded w-1/2" />
+                            <div className="h-10 bg-bcs-gray rounded w-full" />
+                            <div className="h-10 bg-bcs-gray rounded w-full" />
+                            <div className="h-12 bg-bcs-gray rounded w-full" />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="text-center py-20">
                 <h2 className="text-2xl font-bold text-bcs-black">找不到此商品</h2>

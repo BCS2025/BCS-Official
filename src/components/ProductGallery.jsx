@@ -19,7 +19,7 @@ const TABS = [
 
 const VALID_TABS = new Set(TABS.map(t => t.key));
 
-export default function ProductGallery({ products = [] }) {
+export default function ProductGallery({ products = [], isLoading = false }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const initialCat = searchParams.get('cat');
     const [sortBy, setSortBy] = useState('featured');
@@ -154,7 +154,24 @@ export default function ProductGallery({ products = [] }) {
             </div>
 
             {/* Product Grid */}
-            {sortedProducts.length === 0 ? (
+            {isLoading && products.length === 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="載入商品中">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="bg-white rounded-card border border-bcs-border overflow-hidden animate-pulse">
+                            <div className="aspect-square w-full bg-bcs-gray" />
+                            <div className="p-5 space-y-3">
+                                <div className="h-4 bg-bcs-gray rounded w-3/4" />
+                                <div className="h-3 bg-bcs-gray rounded w-full" />
+                                <div className="h-3 bg-bcs-gray rounded w-5/6" />
+                                <div className="flex justify-between items-center pt-4 border-t border-bcs-border">
+                                    <div className="h-5 bg-bcs-gray rounded w-16" />
+                                    <div className="h-8 bg-bcs-gray rounded w-20" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : sortedProducts.length === 0 ? (
                 <div className="text-center py-20 text-bcs-muted">
                     {searchTerm ? (
                         <>
