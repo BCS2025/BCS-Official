@@ -4,6 +4,7 @@ import { ChevronUp } from 'lucide-react';
 import { fetchProducts } from './lib/productService';
 import { useCart } from './hooks/useCart';
 import { useOrderSubmit } from './hooks/useOrderSubmit';
+import { useGA4PageView } from './hooks/useAnalytics';
 import Navbar from './components/Navbar';
 import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
@@ -37,6 +38,7 @@ function App() {
     const navigate = useNavigate();
     const location = useLocation();
     const isAdminPage = location.pathname.startsWith('/admin');
+    useGA4PageView();
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [customer, setCustomer] = useState({
