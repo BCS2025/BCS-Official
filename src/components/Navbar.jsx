@@ -28,12 +28,12 @@ export default function Navbar({ cartCount }) {
 
                     <nav className="hidden md:flex items-center gap-1">
                         <Link
-                            to="/store/products"
-                            className={`px-4 py-2.5 rounded-lg text-store-500 font-semibold text-base transition-colors ${
-                                isStorePage ? 'bg-store-100' : 'hover:bg-store-50'
+                            to="/makerworld"
+                            className={`px-4 py-2.5 rounded-lg text-maker-500 font-semibold text-base transition-colors ${
+                                isMaker ? 'bg-maker-100' : 'hover:bg-maker-50'
                             }`}
                         >
-                            販創所
+                            創客世界
                         </Link>
                         <Link
                             to="/forge"
@@ -44,12 +44,12 @@ export default function Navbar({ cartCount }) {
                             鍛造工坊
                         </Link>
                         <Link
-                            to="/makerworld"
-                            className={`px-4 py-2.5 rounded-lg text-maker-500 font-semibold text-base transition-colors ${
-                                isMaker ? 'bg-maker-100' : 'hover:bg-maker-50'
+                            to="/store/products"
+                            className={`px-4 py-2.5 rounded-lg text-store-500 font-semibold text-base transition-colors ${
+                                isStorePage ? 'bg-store-100' : 'hover:bg-store-50'
                             }`}
                         >
-                            創客世界
+                            販創所
                         </Link>
                         <Link
                             to="/about"
@@ -106,11 +106,11 @@ export default function Navbar({ cartCount }) {
             {isMobileMenuOpen && (
                 <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-bcs-border shadow-lg py-3 px-4 flex flex-col gap-1">
                     <Link
-                        to="/store/products"
-                        className={`p-3 text-store-500 font-semibold text-base rounded-lg transition-colors ${isStorePage ? 'bg-store-50' : 'hover:bg-store-50'}`}
+                        to="/makerworld"
+                        className={`p-3 text-maker-500 font-semibold text-base rounded-lg transition-colors ${isMaker ? 'bg-maker-50' : 'hover:bg-maker-50'}`}
                         onClick={closeMobileMenu}
                     >
-                        販創所
+                        創客世界
                     </Link>
                     <Link
                         to="/forge"
@@ -120,11 +120,11 @@ export default function Navbar({ cartCount }) {
                         鍛造工坊
                     </Link>
                     <Link
-                        to="/makerworld"
-                        className={`p-3 text-maker-500 font-semibold text-base rounded-lg transition-colors ${isMaker ? 'bg-maker-50' : 'hover:bg-maker-50'}`}
+                        to="/store/products"
+                        className={`p-3 text-store-500 font-semibold text-base rounded-lg transition-colors ${isStorePage ? 'bg-store-50' : 'hover:bg-store-50'}`}
                         onClick={closeMobileMenu}
                     >
-                        創客世界
+                        販創所
                     </Link>
                     <Link
                         to="/about"

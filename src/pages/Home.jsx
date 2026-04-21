@@ -11,7 +11,7 @@ export default function Home() {
             {/* ── Hero ── */}
             <section className="relative max-w-7xl mx-auto px-6 pt-20 pb-24 text-center overflow-hidden">
                 {/* 暈光背景 */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[700px] h-[320px] bg-gradient-to-b from-store-50 via-forge-50 to-maker-50 opacity-50 blur-3xl rounded-full pointer-events-none -z-10" />
+                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[700px] h-[320px] bg-gradient-to-b from-maker-50 via-forge-50 to-store-50 opacity-50 blur-3xl rounded-full pointer-events-none -z-10" />
 
                 <div
                     className="inline-block px-4 py-1.5 bg-bcs-gray text-bcs-muted rounded-full text-xs font-semibold tracking-widest uppercase mb-8 animate-fade-up"
@@ -24,7 +24,7 @@ export default function Home() {
                     style={{ animationDelay: '100ms' }}
                 >
                     創意的工坊，<br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-store-500 via-forge-500 to-maker-500">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-maker-500 via-forge-500 to-store-500">
                         無限的可能。
                     </span>
                 </h1>
@@ -38,16 +38,16 @@ export default function Home() {
                     className="flex flex-wrap justify-center gap-3 animate-fade-up"
                     style={{ animationDelay: '300ms' }}
                 >
-                    <Link to="/store/products" className="btn-store flex items-center gap-2 group">
-                        逛逛販創所
+                    <Link to="/makerworld" className="btn-maker flex items-center gap-2 group">
+                        探索創客世界
                         <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
                     <Link to="/forge" className="btn-forge flex items-center gap-2 group">
                         委託鍛造工坊
                         <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
-                    <Link to="/makerworld" className="btn-maker flex items-center gap-2 group">
-                        探索創客世界
+                    <Link to="/store/products" className="btn-store flex items-center gap-2 group">
+                        逛逛販創所
                         <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </div>
@@ -63,24 +63,24 @@ export default function Home() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        {/* 販創所 */}
+                        {/* 創客世界 */}
                         <Reveal delay={0} className="flex flex-col">
                             <div className="card card-hover p-8 flex flex-col h-full overflow-hidden relative">
-                                <div className="absolute top-0 left-0 right-0 h-1 bg-store-500 rounded-t-card" />
-                                <div className="w-14 h-14 rounded-2xl bg-store-50 flex items-center justify-center mb-6 flex-shrink-0">
-                                    <Sparkles size={28} className="text-store-500" strokeWidth={1.5} />
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-maker-500 rounded-t-card" />
+                                <div className="w-14 h-14 rounded-2xl bg-maker-50 flex items-center justify-center mb-6 flex-shrink-0">
+                                    <GraduationCap size={28} className="text-maker-500" strokeWidth={1.5} />
                                 </div>
                                 <div className="flex-grow">
-                                    <span className="badge-store mb-3">販創所</span>
+                                    <span className="badge-maker mb-3">創客世界</span>
                                     <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
-                                        文創商品<br />創意教材
+                                        STEAM 課程<br />動手做體驗
                                     </h3>
                                     <p className="text-bcs-muted leading-relaxed text-sm">
-                                        親自開發、設計並製造的專屬物件，每件商品背後都有一個故事。涵蓋壓克力燈、雷切雷雕、3D 列印文創品，歡迎透過 LINE 或 IG 直接詢問。
+                                        結合 STEAM 教育理念，透過 Arduino、3D 列印、雷切課程，激發大小朋友的創造力，訓練日常邏輯思維能力。
                                     </p>
                                 </div>
-                                <Link to="/store/products" className="mt-8 btn-store w-full justify-center group">
-                                    去逛逛
+                                <Link to="/makerworld" className="mt-8 btn-maker w-full justify-center group">
+                                    查看課程
                                     <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             </div>
@@ -109,24 +109,24 @@ export default function Home() {
                             </div>
                         </Reveal>
 
-                        {/* 創客世界 */}
+                        {/* 販創所 */}
                         <Reveal delay={200} className="flex flex-col">
                             <div className="card card-hover p-8 flex flex-col h-full overflow-hidden relative">
-                                <div className="absolute top-0 left-0 right-0 h-1 bg-maker-500 rounded-t-card" />
-                                <div className="w-14 h-14 rounded-2xl bg-maker-50 flex items-center justify-center mb-6 flex-shrink-0">
-                                    <GraduationCap size={28} className="text-maker-500" strokeWidth={1.5} />
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-store-500 rounded-t-card" />
+                                <div className="w-14 h-14 rounded-2xl bg-store-50 flex items-center justify-center mb-6 flex-shrink-0">
+                                    <Sparkles size={28} className="text-store-500" strokeWidth={1.5} />
                                 </div>
                                 <div className="flex-grow">
-                                    <span className="badge-maker mb-3">創客世界</span>
+                                    <span className="badge-store mb-3">販創所</span>
                                     <h3 className="text-2xl font-black mt-3 mb-3 leading-snug">
-                                        STEAM 課程<br />動手做體驗
+                                        文創商品<br />創意教材
                                     </h3>
                                     <p className="text-bcs-muted leading-relaxed text-sm">
-                                        結合 STEAM 教育理念，透過 Arduino、3D 列印、雷切課程，激發大小朋友的創造力，訓練日常邏輯思維能力。
+                                        親自開發、設計並製造的專屬物件，每件商品背後都有一個故事。涵蓋壓克力燈、雷切雷雕、3D 列印文創品，歡迎透過 LINE 或 IG 直接詢問。
                                     </p>
                                 </div>
-                                <Link to="/makerworld" className="mt-8 btn-maker w-full justify-center group">
-                                    查看課程
+                                <Link to="/store/products" className="mt-8 btn-store w-full justify-center group">
+                                    去逛逛
                                     <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             </div>

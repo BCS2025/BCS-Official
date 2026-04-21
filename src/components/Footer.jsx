@@ -3,14 +3,11 @@ import { Instagram, MessageCircle, MapPin } from 'lucide-react';
 
 const BRAND_LINKS = [
     {
-        label: '販創所',
-        color: 'text-store-500',
+        label: '創客世界',
+        color: 'text-maker-500',
         links: [
-            { to: '/store', text: '品牌介紹' },
-            { to: '/store/products', text: '所有商品' },
-            { to: '/store/products?cat=creative', text: '創作商品' },
-            { to: '/store/products?cat=materials', text: '創客材料' },
-            { to: '/store/cart', text: '購物車' },
+            { to: '/makerworld', text: '課程列表' },
+            { to: '/about', text: '關於我們' },
         ],
     },
     {
@@ -23,11 +20,14 @@ const BRAND_LINKS = [
         ],
     },
     {
-        label: '創客世界',
-        color: 'text-maker-500',
+        label: '販創所',
+        color: 'text-store-500',
         links: [
-            { to: '/makerworld', text: '課程列表' },
-            { to: '/about', text: '關於我們' },
+            { to: '/store', text: '品牌介紹' },
+            { to: '/store/products', text: '所有商品' },
+            { to: '/store/products?cat=creative', text: '創作商品' },
+            { to: '/store/products?cat=materials', text: '創客材料' },
+            { to: '/store/cart', text: '購物車' },
         ],
     },
 ];
