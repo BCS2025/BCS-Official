@@ -111,10 +111,10 @@ export default function Returns() {
                 {/* 七、退款 */}
                 <Block title="七、退款方式與時程" icon={<CreditCard className="text-store-500" size={28} strokeWidth={1.8} />}>
                     <ul>
-                        <li><strong>銀行轉帳訂單</strong>：退款將以原付款帳戶或您指定之帳戶匯回，於驗收通過後 7 個工作天內完成。</li>
-                        <li><strong>LINE Pay / ECPay / 信用卡訂單</strong>：透過原金流管道辦理退刷，實際入帳時間依各發卡銀行作業時程而定（約 5–30 日）。</li>
-                        <li>退款金額為您實際支付之金額（扣除已使用之優惠折扣、免運門檻若因退貨不再符合則按比例調整）。</li>
-                        <li>發票處理：本站將於退款時同步辦理發票作廢或折讓單，請勿自行銷毀原發票。</li>
+                        <li><strong>ATM／銀行轉帳訂單</strong>：退款將匯回原付款帳戶或您指定之帳戶，於驗收通過後 <strong>7 個工作天內</strong>完成；申請時請提供戶名、銀行、帳號以利匯款。</li>
+                        <li><strong>LINE Pay 訂單</strong>：透過 LINE Pay 原管道辦理退款，由 LINE Pay 將款項退回您原支付之連結信用卡或 LINE Pay Money 餘額；實際入帳時程依 LINE Pay 及發卡銀行作業而定，一般為 <strong>3–14 個工作天</strong>。</li>
+                        <li>退款金額為您實際支付之金額，扣除已使用之優惠折扣；如因退貨使訂單不再符合免運門檻，將按比例調整應退金額。</li>
+                        <li>發票處理：本站將於退款時同步辦理發票作廢或開立折讓單，請勿自行銷毀原發票。</li>
                     </ul>
                 </Block>
 

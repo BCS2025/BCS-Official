@@ -116,11 +116,14 @@ export default function Terms() {
                     </Block>
 
                     <Block id="payment" title="六、付款方式">
+                        <p>本站目前提供以下付款方式，您可於結帳時擇一使用：</p>
                         <ul>
-                            <li><strong>ATM / 銀行轉帳</strong>：訂單成立後，本站將提供轉帳帳號，請於 3 日內完成付款，逾期未付款訂單將自動取消。</li>
-                            <li><strong>LINE Pay、ECPay、NewebPay 等線上金流</strong>（開通後適用）：結帳時選擇對應之金流管道，並依該管道之流程完成付款；付款成功即視為款項已到位。</li>
-                            <li>所有線上金流交易之刷卡授權、扣款、退款皆由第三方金流機構處理，本站不保存您的信用卡資訊。</li>
+                            <li><strong>ATM／銀行轉帳</strong>：訂單送出後，本站將提供轉帳帳號（含銀行代碼、帳號、金額）；請您於 <strong>3 個工作天內</strong>完成匯款，並回覆匯款後 5 碼帳號以利對帳，逾期未付款之訂單將自動取消。</li>
+                            <li><strong>LINE Pay</strong>：結帳時選擇 LINE Pay，系統將導引您前往 LINE Pay 完成付款；付款成功並由 LINE Pay 回傳授權後，本站將立即確認訂單。</li>
                         </ul>
+                        <p className="text-sm bg-bcs-gray border border-bcs-border rounded-lg p-4">
+                            本站目前<strong>尚未提供信用卡直接刷卡、ECPay、NewebPay 等其他第三方金流</strong>服務；若未來開通，將另行於付款頁面與本條款公告。LINE Pay 交易之金流處理、授權、退款皆由 LINE Pay 官方執行，本站不儲存您的信用卡或支付帳戶資料。
+                        </p>
                     </Block>
 
                     <Block id="shipping" title="七、配送與取貨">
