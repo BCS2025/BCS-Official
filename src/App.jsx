@@ -10,6 +10,8 @@ import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import ThankYouPage from './components/ThankYouPage';
+import PaymentConfirmPage from './pages/PaymentConfirmPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminProducts } from './pages/admin/AdminProducts';
@@ -107,7 +109,7 @@ function App() {
         setCustomer(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = (couponData) => {
+    const handleSubmit = ({ paymentMethod, ...couponData }) => {
         submitOrder({
             cart,
             customer,
@@ -118,6 +120,7 @@ function App() {
             FREE_SHIPPING_THRESHOLD,
             products,
             couponData,
+            paymentMethod,
             onSuccess: () => {
                 setCart([]);
                 setCustomer(prev => ({
@@ -178,6 +181,7 @@ function App() {
                             needProof={successData.needProof}
                             estimatedDate={successData.estimatedDate}
                             totalAmount={successData.totalAmount}
+                            paymentMethod={successData.paymentMethod}
                             onHome={() => {
                                 clearSuccessData();
                                 navigate('/');
@@ -187,6 +191,10 @@ function App() {
                         <Navigate to="/store/products" replace />
                     )
                 } />
+
+                {/* LINE Pay 付款結果頁 */}
+                <Route path="/store/payment/confirm" element={<PaymentConfirmPage />} />
+                <Route path="/store/payment/cancel" element={<PaymentCancelPage />} />
 
                 {/* 舊路由向後相容重定向 */}
                 <Route path="/product/:id" element={<Navigate to="/store/products" replace />} />

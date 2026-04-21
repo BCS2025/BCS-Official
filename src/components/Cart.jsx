@@ -4,10 +4,11 @@ import OrderList from './OrderList';
 import CustomerInfo from './CustomerInfo';
 import ProductForm from './ProductForm';
 import { Button } from './ui/Button';
-import { Send, ArrowLeft, X } from 'lucide-react';
+import { Send, ArrowLeft, X, Landmark, Smartphone } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import { couponService } from '../lib/couponService'; // New Coupon Service
+import { PAYMENT_METHODS } from '../lib/paymentService';
 import { MESSAGES } from '../constants/messages';
 import { Input } from './ui/Input';
 import { Loader2 } from 'lucide-react';
@@ -35,6 +36,7 @@ export default function Cart({
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [couponError, setCouponError] = useState(null);
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS.BANK_TRANSFER);
 
     // Calculate total quantity for lead time
     const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
@@ -250,6 +252,50 @@ export default function Cart({
                 )}
             </div>
 
+            {/* Payment Method Selection */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-bcs-border">
+                <h3 className="text-lg font-serif font-bold text-bcs-black mb-4">
+                    付款方式
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === PAYMENT_METHODS.BANK_TRANSFER ? 'border-store-500 bg-store-50' : 'border-bcs-border hover:border-store-300'}`}>
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={PAYMENT_METHODS.BANK_TRANSFER}
+                            checked={paymentMethod === PAYMENT_METHODS.BANK_TRANSFER}
+                            onChange={() => setPaymentMethod(PAYMENT_METHODS.BANK_TRANSFER)}
+                            className="mt-1 accent-store-500"
+                        />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 font-bold text-bcs-black">
+                                <Landmark size={18} className="text-store-500" />
+                                銀行轉帳
+                            </div>
+                            <div className="text-xs text-bcs-muted mt-1">送出訂單後顯示匯款資訊，3 天內完成轉帳</div>
+                        </div>
+                    </label>
+
+                    <label className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === PAYMENT_METHODS.LINE_PAY ? 'border-green-500 bg-green-50' : 'border-bcs-border hover:border-green-300'}`}>
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={PAYMENT_METHODS.LINE_PAY}
+                            checked={paymentMethod === PAYMENT_METHODS.LINE_PAY}
+                            onChange={() => setPaymentMethod(PAYMENT_METHODS.LINE_PAY)}
+                            className="mt-1 accent-green-500"
+                        />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 font-bold text-bcs-black">
+                                <Smartphone size={18} className="text-green-600" />
+                                LINE Pay
+                            </div>
+                            <div className="text-xs text-bcs-muted mt-1">送出訂單後導向 LINE Pay 即時付款</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div className="bg-store-50 p-6 rounded-lg border border-bcs-border">
                 <div className="flex justify-between mb-2 text-bcs-muted">
                     <span>商品總計</span>
@@ -299,14 +345,15 @@ export default function Cart({
                 onClick={() => onSubmit({
                     couponCode: appliedCoupon?.code,
                     discountAmount,
-                    // Pass applied coupon details if needed for record
-                    appliedCoupon
+                    appliedCoupon,
+                    paymentMethod,
                 })}
                 disabled={!isValid || isSubmitting}
             >
                 {isSubmitting ? '處理中...' : (
                     <span className="flex items-center gap-2">
-                        <Send size={20} /> 確認送出訂單
+                        <Send size={20} />
+                        {paymentMethod === PAYMENT_METHODS.LINE_PAY ? '送出並前往 LINE Pay' : '確認送出訂單'}
                     </span>
                 )}
             </Button>

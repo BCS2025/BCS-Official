@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
-import { Search, Eye, X, ChevronDown, ChevronUp, Archive, RefreshCw, Trash2, Edit } from 'lucide-react';
+import { Search, Eye, X, ChevronDown, ChevronUp, Archive, RefreshCw, Trash2, Edit, Undo2 } from 'lucide-react';
 import { formatCurrency } from '../../lib/pricing';
+import { refundLinePay, getPaymentMethodLabel, getPaymentStatusLabel } from '../../lib/paymentService';
 
 export const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -11,6 +12,7 @@ export const AdminOrders = () => {
     const [viewMode, setViewMode] = useState('active'); // 'active' | 'archived'
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isSavingNotes, setIsSavingNotes] = useState(false);
+    const [isRefunding, setIsRefunding] = useState(false);
 
     // Fetch Orders
     useEffect(() => {
@@ -136,6 +138,56 @@ export const AdminOrders = () => {
         } catch (error) {
             alert('批次操作失敗: ' + error.message);
             setIsLoading(false);
+        }
+    };
+
+    const handleRefund = async (order) => {
+        if (order.payment_method !== 'line_pay') return;
+        if (order.payment_status !== 'paid') {
+            alert('此訂單不在「已付款」狀態，無法退款。');
+            return;
+        }
+
+        const input = prompt(
+            `確定要對訂單 ${order.order_id} 執行 LINE Pay 退款嗎？\n\n` +
+            `原訂單金額：$${order.total_amount}\n` +
+            `留空 = 全額退款；或輸入要退款的金額（部分退款）：`,
+            String(order.total_amount)
+        );
+        if (input === null) return;
+
+        const trimmed = input.trim();
+        const refundAmount = trimmed === '' ? null : Number(trimmed);
+        if (refundAmount !== null && (!Number.isFinite(refundAmount) || refundAmount <= 0)) {
+            alert('退款金額必須是正整數');
+            return;
+        }
+
+        if (!confirm(`即將執行退款 $${refundAmount ?? order.total_amount}，確定嗎？此動作會呼叫 LINE Pay，無法撤銷。`)) {
+            return;
+        }
+
+        setIsRefunding(true);
+        try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const accessToken = sessionData?.session?.access_token;
+            if (!accessToken) throw new Error('尚未登入或 Session 已過期，請重新登入');
+
+            const result = await refundLinePay({
+                orderId: order.order_id,
+                refundAmount,
+                accessToken,
+            });
+            alert(`退款成功（${result.isFull ? '全額' : '部分'} $${result.refundAmount}）`);
+            await fetchOrders();
+            if (selectedOrder?.id === order.id) {
+                setSelectedOrder(null);
+            }
+        } catch (err) {
+            console.error('Refund failed:', err);
+            alert(`退款失敗：${err.message}`);
+        } finally {
+            setIsRefunding(false);
         }
     };
 
@@ -321,6 +373,21 @@ export const AdminOrders = () => {
                                 />
                             </div>
 
+                            {/* Payment Info */}
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">💳 金流資訊</h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <p><span className="text-gray-500">付款方式:</span> {getPaymentMethodLabel(selectedOrder.payment_method || 'bank_transfer')}</p>
+                                    <p><span className="text-gray-500">付款狀態:</span> <span className="font-bold">{getPaymentStatusLabel(selectedOrder.payment_status || 'pending')}</span></p>
+                                    {selectedOrder.payment_ref && (
+                                        <p className="col-span-2"><span className="text-gray-500">LINE Pay 交易:</span> <span className="font-mono text-xs">{selectedOrder.payment_ref}</span></p>
+                                    )}
+                                    {selectedOrder.paid_at && (
+                                        <p className="col-span-2"><span className="text-gray-500">付款時間:</span> {new Date(selectedOrder.paid_at).toLocaleString()}</p>
+                                    )}
+                                </div>
+                            </div>
+
                             {/* Customer Info */}
                             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
                                 <h4 className="font-bold text-gray-700 mb-2 flex items-center gap-2">👤 客戶資訊</h4>
@@ -394,7 +461,19 @@ export const AdminOrders = () => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="sticky bottom-0 bg-gray-50 p-4 border-t border-gray-200 flex justify-end">
+                        <div className="sticky bottom-0 bg-gray-50 p-4 border-t border-gray-200 flex justify-between items-center gap-2">
+                            <div>
+                                {selectedOrder.payment_method === 'line_pay' && selectedOrder.payment_status === 'paid' && (
+                                    <Button
+                                        onClick={() => handleRefund(selectedOrder)}
+                                        disabled={isRefunding}
+                                        className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+                                    >
+                                        <Undo2 size={16} />
+                                        {isRefunding ? '退款中...' : 'LINE Pay 退款'}
+                                    </Button>
+                                )}
+                            </div>
                             <Button onClick={() => setSelectedOrder(null)}>關閉</Button>
                         </div>
                     </div>

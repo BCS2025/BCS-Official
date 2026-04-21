@@ -1,87 +1,107 @@
 /**
- * paymentService.js — 比創空間支付抽象層
+ * paymentService.js — 比創空間金流唯一入口
  *
- * 架構設計原則（ADR-002）：
- * - 此檔案是整個專案唯一的金流入口
- * - Phase 1（現在）：回傳銀行轉帳資訊，人工確認
- * - Phase 2（未來）：只改此檔案即可接入 ECPay / NewebPay
- * - 禁止在其他元件直接寫付款邏輯
+ * 支援：
+ *   - bank_transfer：匯款資訊靜態顯示在感謝頁
+ *   - line_pay：走 /api/linepay/* Serverless Functions
  */
+
+export const PAYMENT_METHODS = {
+    BANK_TRANSFER: 'bank_transfer',
+    LINE_PAY: 'line_pay',
+};
+
+export function getBankTransferInfo() {
+    return {
+        bank: import.meta.env.VITE_PAYMENT_BANK_NAME || '中華郵政 (700)',
+        account: import.meta.env.VITE_PAYMENT_ACCOUNT || '0031421-0318644',
+        accountName: import.meta.env.VITE_PAYMENT_ACCOUNT_NAME || '黃詣',
+    };
+}
 
 /**
  * 發起付款
  *
  * @param {object} params
- * @param {string} params.orderId       - 訂單編號
- * @param {number} params.amount        - 應付金額（新台幣）
- * @param {string} params.customerEmail - 客戶 Email（未來金流寄送收據用）
- * @param {string} params.source        - 訂單來源 'store' | 'forge'
+ * @param {string} params.orderId       - 訂單編號（human-readable）
+ * @param {string} params.paymentMethod - 'bank_transfer' | 'line_pay'
  *
- * @returns {Promise<PaymentResult>}
- *
- * PaymentResult（Phase 1）：
- * {
- *   method: 'bank_transfer',
- *   bank: string,
- *   account: string,
- *   amount: number,
- *   deadline: string,   // 付款期限，ISO date string
- * }
- *
- * PaymentResult（Phase 2，未來）：
- * {
- *   method: 'ecpay' | 'neweb',
- *   redirectUrl: string,  // 導向第三方付款頁
- * }
+ * @returns {Promise<{ method: string, redirectUrl?: string, bankInfo?: object }>}
  */
-export async function initiatePayment({ orderId, amount, customerEmail, source }) {
-    // ── Phase 1：銀行轉帳（手動確認）──────────────────────────────
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + 3); // 3 天付款期限
+export async function initiatePayment({ orderId, paymentMethod }) {
+    if (paymentMethod === PAYMENT_METHODS.LINE_PAY) {
+        const res = await fetch('/api/linepay/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || `LINE Pay 付款建立失敗（${res.status}）`);
+        }
+        return {
+            method: PAYMENT_METHODS.LINE_PAY,
+            redirectUrl: data.paymentUrl,
+            transactionId: data.transactionId,
+        };
+    }
 
     return {
-        method: 'bank_transfer',
-        bank: import.meta.env.VITE_PAYMENT_BANK_NAME || '（請於 Vercel 環境變數設定 VITE_PAYMENT_BANK_NAME）',
-        account: import.meta.env.VITE_PAYMENT_ACCOUNT || '（請於 Vercel 環境變數設定 VITE_PAYMENT_ACCOUNT）',
-        amount,
-        orderId,
-        deadline: deadline.toLocaleDateString('zh-TW'),
+        method: PAYMENT_METHODS.BANK_TRANSFER,
+        bankInfo: getBankTransferInfo(),
     };
-
-    // ── Phase 2（未來解除註解，並移除上方 Phase 1 區塊）───────────
-    // const ecpayResult = await createEcpayOrder({ orderId, amount, customerEmail });
-    // return {
-    //     method: 'ecpay',
-    //     redirectUrl: ecpayResult.paymentUrl,
-    // };
 }
 
 /**
- * 處理金流回呼（付款成功 Webhook）
- *
- * Phase 1：無實作（人工確認後在後台手動標記）
- * Phase 2：驗簽 → 更新 orders.payment_status = 'paid' → 觸發通知
- *
- * @param {object} payload - 金流平台回傳的 raw payload
- * @returns {Promise<{ success: boolean, orderId: string }>}
+ * 確認 LINE Pay 付款（/store/payment/confirm 頁面呼叫）
  */
-export async function handlePaymentCallback(payload) {
-    // Phase 2 實作位置
-    console.warn('[paymentService] handlePaymentCallback 尚未實作（Phase 2）');
-    return { success: false, orderId: null };
+export async function confirmLinePayPayment({ orderId, transactionId }) {
+    const res = await fetch('/api/linepay/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, transactionId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data.error || `LINE Pay 付款確認失敗（${res.status}）`);
+    }
+    return data;
 }
 
 /**
- * 取得付款狀態說明文字（用於 UI 顯示）
- *
- * @param {string} paymentStatus - 'pending' | 'paid' | 'failed'
- * @returns {string}
+ * LINE Pay 退款（Admin 後台使用，需帶 Supabase access token）
  */
+export async function refundLinePay({ orderId, refundAmount, accessToken }) {
+    const res = await fetch('/api/linepay/refund', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ orderId, refundAmount }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data.error || `LINE Pay 退款失敗（${res.status}）`);
+    }
+    return data;
+}
+
 export function getPaymentStatusLabel(paymentStatus) {
     const labels = {
         pending: '待付款',
-        paid:    '已付款',
-        failed:  '付款失敗',
+        paid: '已付款',
+        failed: '付款失敗',
+        refunded: '已退款',
+        partial_refunded: '部分退款',
     };
     return labels[paymentStatus] ?? '未知';
+}
+
+export function getPaymentMethodLabel(method) {
+    const labels = {
+        bank_transfer: '銀行轉帳',
+        line_pay: 'LINE Pay',
+    };
+    return labels[method] ?? method;
 }

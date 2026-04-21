@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import { notifyGAS } from '../lib/webhookService';
+import { initiatePayment, PAYMENT_METHODS } from '../lib/paymentService';
 import { MESSAGES } from '../constants/messages';
 
 export function useOrderSubmit() {
@@ -24,13 +25,14 @@ export function useOrderSubmit() {
         FREE_SHIPPING_THRESHOLD,
         products,
         couponData = {},
+        paymentMethod = PAYMENT_METHODS.BANK_TRANSFER,
         onSuccess,
     }) => {
         const { couponCode, discountAmount = 0 } = couponData;
         const finalTotal = Math.max(0, itemsTotal - discountAmount + finalShippingCost);
 
-        // Build confirmation message
-        let confirmMsg = `確定要送出訂單嗎？\n\n商品總計: ${formatCurrency(itemsTotal)}`;
+        const paymentLabel = paymentMethod === PAYMENT_METHODS.LINE_PAY ? 'LINE Pay' : '銀行轉帳';
+        let confirmMsg = `確定要送出訂單嗎？\n\n付款方式: ${paymentLabel}\n商品總計: ${formatCurrency(itemsTotal)}`;
         if (discountAmount > 0) confirmMsg += `\n優惠折抵: -${formatCurrency(discountAmount)}`;
         if (finalShippingCost > 0) {
             confirmMsg += `\n運費: ${formatCurrency(finalShippingCost)}`;
@@ -40,6 +42,9 @@ export function useOrderSubmit() {
             confirmMsg += `\n運費: 免運 (優惠碼)`;
         }
         confirmMsg += `\n----------------\n總金額: ${formatCurrency(finalTotal)}`;
+        if (paymentMethod === PAYMENT_METHODS.LINE_PAY) {
+            confirmMsg += `\n\n送出後將導向 LINE Pay 付款頁面`;
+        }
 
         if (!confirm(confirmMsg)) return;
 
@@ -89,6 +94,7 @@ export function useOrderSubmit() {
                 discountAmount,
                 totalQuantity,
                 status: 'pending',
+                paymentMethod,
             };
 
             // 2. Build human-readable items for email/LINE notification
@@ -106,7 +112,7 @@ export function useOrderSubmit() {
             // 3. Submit to Supabase
             await submitOrderService(orderData);
 
-            // 4. GAS webhook — order notification
+            // 4. GAS webhook — order notification（訂單建立時先發一次）
             notifyGAS({ ...orderData, items: readableItems }, 'order_notify');
 
             // 5. Low stock alert
@@ -137,8 +143,24 @@ export function useOrderSubmit() {
             }
 
             // 6. Success
-            setSuccessData({ orderId, needProof, estimatedDate, totalAmount: finalTotal });
+            setSuccessData({ orderId, needProof, estimatedDate, totalAmount: finalTotal, paymentMethod });
             onSuccess?.();
+
+            if (paymentMethod === PAYMENT_METHODS.LINE_PAY) {
+                // 導向 LINE Pay：先呼叫 /api/linepay/request 取得 paymentUrl
+                try {
+                    const { redirectUrl } = await initiatePayment({ orderId, paymentMethod });
+                    if (!redirectUrl) throw new Error('LINE Pay 未回傳付款網址');
+                    window.location.href = redirectUrl;
+                    return;
+                } catch (err) {
+                    console.error('LINE Pay initiatePayment failed:', err);
+                    alert(`建立 LINE Pay 付款失敗：${err.message}\n\n訂單已成立，您可稍後在「待付款訂單」重試，或改用銀行轉帳。`);
+                    navigate('/store/thank-you');
+                    return;
+                }
+            }
+
             navigate('/store/thank-you');
 
         } catch (error) {

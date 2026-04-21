@@ -31,7 +31,9 @@ export async function submitOrder(orderData) {
                 total_amount: orderData.totalAmount,
                 coupon_code: orderData.couponCode || null,
                 discount_amount: orderData.discountAmount || 0,
-                status: 'pending'
+                status: 'pending',
+                payment_method: orderData.paymentMethod || 'bank_transfer',
+                payment_status: 'pending'
             }
         ]); // Removed .select() to avoid RLS read error
 
