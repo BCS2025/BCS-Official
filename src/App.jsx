@@ -21,6 +21,8 @@ import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import Store from './pages/Store';
 import Forge from './pages/Forge';
+import Terms from './pages/Terms';
+import Returns from './pages/Returns';
 import Footer from './components/Footer';
 import MakerWorld from './pages/MakerWorld';
 import CourseDetail from './pages/CourseDetail';
@@ -193,6 +195,10 @@ function App() {
 
                 {/* 關於我們 */}
                 <Route path="/about" element={<AboutUs />} />
+
+                {/* 法律頁面 */}
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/returns" element={<Returns />} />
 
                 {/* 鍛造工坊 */}
                 <Route path="/forge" element={<Forge />} />

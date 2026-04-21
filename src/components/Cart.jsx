@@ -311,6 +311,14 @@ export default function Cart({
                 )}
             </Button>
 
+            <p className="text-center text-xs text-bcs-muted leading-relaxed">
+                送出訂單即表示您已閱讀並同意
+                <Link to="/terms" className="text-store-500 hover:text-store-700 underline mx-1">服務條款</Link>
+                與
+                <Link to="/returns" className="text-store-500 hover:text-store-700 underline mx-1">退換貨政策</Link>
+                。客製化商品依法不適用 7 日鑑賞期，請於下單前確認規格。
+            </p>
+
             {
                 !isValid && (
                     <p className="text-center text-sm text-red-500">

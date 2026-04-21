@@ -98,17 +98,26 @@ export default function Footer() {
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-white/10 mt-10 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex flex-col sm:flex-row gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1.5">
-                            <MessageCircle size={13} />
-                            聯絡請透過 LINE 加好友或 IG DM
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <MapPin size={13} />
-                            台南市永康區新興街 34 巷 2 號
-                        </span>
+                <div className="border-t border-white/10 mt-10 pt-8 flex flex-col gap-6">
+                    {/* Legal links + contact */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-300">
+                            <Link to="/terms" className="hover:text-white transition-colors">服務條款</Link>
+                            <Link to="/returns" className="hover:text-white transition-colors">退換貨政策</Link>
+                            <Link to="/about" className="hover:text-white transition-colors">關於我們</Link>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-4 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5">
+                                <MessageCircle size={13} />
+                                聯絡請透過 LINE 加好友或 IG DM
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <MapPin size={13} />
+                                台南市永康區新興街 34 巷 2 號
+                            </span>
+                        </div>
                     </div>
+
                     <p className="text-xs text-gray-600">
                         © {new Date().getFullYear()} 比創空間 · 統編 94320625
                     </p>

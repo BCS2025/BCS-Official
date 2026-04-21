@@ -13,6 +13,8 @@ const INDEXED_STATIC_ROUTES = [
   '/store/products',
   '/forge',
   '/makerworld',
+  '/terms',
+  '/returns',
 ]
 
 // 會被預渲染但不該被索引。寫 robots noindex，避免被當成首頁重複內容。
