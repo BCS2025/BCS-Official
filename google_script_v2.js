@@ -1,11 +1,12 @@
-/* 
-  BCS Order Manager & Notifier (Google Apps Script) - V4 (Ultimate)
-  
+/*
+  BCS Order Manager & Notifier (Google Apps Script) - V5 (LINE Pay)
+
   FEATURES:
   - Supports LINE Messaging API (Flex Messages with Customer Info)
   - Beautiful HTML Email Template with Correct Link
   - Robust Low Stock Alerting support
-  
+  - LINE Pay payment_confirmed / payment_refunded notifications (email + LINE Flex)
+
   SETUP:
   1. Script Properties: LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID, ADMIN_EMAIL
 */
@@ -58,7 +59,51 @@ function doPost(e) {
             return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'inquiry' }));
         }
 
-        // --- CASE 4: NEW ORDER ---
+        // --- CASE 4: LINE PAY PAYMENT CONFIRMED ---
+        if (data.type === 'payment_confirmed') {
+            // 1. Email to customer (付款完成確認信)
+            if (data.customer && data.customer.email) {
+                try {
+                    sendPaymentConfirmedEmail(data);
+                } catch (err) {
+                    console.error("PaymentConfirmed Email Error:", err);
+                }
+            }
+
+            // 2. Flex to admin (付款完成通知)
+            try {
+                const flex = createPaymentConfirmedFlex(data);
+                sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [flex]);
+            } catch (err) {
+                console.error("PaymentConfirmed Line Error:", err);
+            }
+
+            return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'payment_confirmed', id: data.orderId }));
+        }
+
+        // --- CASE 5: LINE PAY PAYMENT REFUNDED ---
+        if (data.type === 'payment_refunded') {
+            // 1. Email to customer (退款通知)
+            if (data.customer && data.customer.email) {
+                try {
+                    sendPaymentRefundedEmail(data);
+                } catch (err) {
+                    console.error("PaymentRefunded Email Error:", err);
+                }
+            }
+
+            // 2. Flex to admin (退款通知)
+            try {
+                const flex = createPaymentRefundedFlex(data);
+                sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [flex]);
+            } catch (err) {
+                console.error("PaymentRefunded Line Error:", err);
+            }
+
+            return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'payment_refunded', id: data.orderId }));
+        }
+
+        // --- CASE 6: NEW ORDER (fallback，無 type 欄位) ---
         // 1. Send Beautiful Email to Customer
         if (data.customer && data.customer.email) {
             try {
@@ -459,6 +504,240 @@ function sendQuoteAcknowledgeEmail(quote) {
         subject: subject,
         htmlBody: body
     });
+}
+
+// --- HELPER: Payment Confirmed Email (LINE Pay 付款完成確認信) ---
+function sendPaymentConfirmedEmail(data) {
+    const subject = `【BCS 付款完成】${data.orderId} - LINE Pay 付款已確認`;
+
+    let itemsHtml = '';
+    if (data.items && data.items.length) {
+        itemsHtml = data.items.map(function (item) {
+            let details = [];
+            Object.keys(item).forEach(function (key) {
+                if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
+                if (key.endsWith('_filename')) return;
+                details.push(key + ': ' + item[key]);
+            });
+            return '<tr style="border-bottom:1px solid #eee;">'
+                + '<td style="padding:12px 0;">'
+                + '<div style="font-weight:bold;color:#333;">' + (item.productName || item.productId) + '</div>'
+                + '<div style="font-size:12px;color:#888;">' + details.join(' | ') + '</div>'
+                + '</td>'
+                + '<td style="padding:12px 0;text-align:right;color:#555;">x ' + item.quantity + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    const paidAtStr = data.paidAt
+        ? Utilities.formatDate(new Date(data.paidAt), 'Asia/Taipei', 'yyyy/MM/dd HH:mm')
+        : Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd HH:mm');
+
+    const body = ''
+        + '<!DOCTYPE html><html><head><style>'
+        + '.container{max-width:600px;margin:0 auto;font-family:sans-serif;border:1px solid #eee;border-radius:8px;overflow:hidden;}'
+        + '.header{background:#00B900;color:white;padding:20px;text-align:center;}'
+        + '.content{padding:20px;line-height:1.6;}'
+        + '.footer{background:#f9f9f9;padding:20px;text-align:center;font-size:12px;color:#999;}'
+        + '.info-box{background:#f0fdf4;border:1px solid #bbf7d0;padding:15px;border-radius:5px;margin-top:20px;}'
+        + '</style></head>'
+        + '<body style="margin:0;padding:20px;background:#f5f5f5;">'
+        + '<div class="container" style="background:white;">'
+        + '<div class="header">'
+        + '<h1 style="margin:0;font-size:20px;">✅ 付款完成</h1>'
+        + '<p style="margin:5px 0 0;opacity:0.9;">' + data.orderId + '</p>'
+        + '</div>'
+        + '<div class="content">'
+        + '<p>親愛的 ' + (data.customer && data.customer.name ? data.customer.name : '客戶') + ' 您好，</p>'
+        + '<p>我們已收到您透過 <strong>LINE Pay</strong> 完成的付款，訂單已進入處理階段。</p>'
+        + '<div class="info-box">'
+        + '<h4 style="margin:0 0 10px;color:#16a34a;">💳 付款資訊</h4>'
+        + '<p style="margin:5px 0;font-size:14px;">訂單編號：<b>' + data.orderId + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">付款金額：<b>$' + data.totalAmount + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">付款時間：<b>' + paidAtStr + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">交易編號：<b style="font-family:monospace;">' + (data.transactionId || '-') + '</b></p>'
+        + '</div>'
+        + (itemsHtml
+            ? '<h3 style="border-bottom:2px solid #333;padding-bottom:10px;margin-top:30px;">訂單明細</h3>'
+              + '<table style="width:100%;border-collapse:collapse;">' + itemsHtml
+              + '<tr><td style="padding:15px 0;font-weight:bold;font-size:18px;">總金額</td>'
+              + '<td style="padding:15px 0;text-align:right;font-weight:bold;font-size:18px;color:#16a34a;">$' + data.totalAmount + '</td></tr>'
+              + '</table>'
+            : '')
+        + '<p style="margin-top:30px;">我們將盡快為您準備商品。若有任何問題，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
+        + '</div>'
+        + '<div class="footer"><p>此信件為系統自動發送</p><p>Be Creative Space | 客製化工坊</p></div>'
+        + '</div></body></html>';
+
+    MailApp.sendEmail({
+        to: data.customer.email,
+        subject: subject,
+        htmlBody: body
+    });
+}
+
+// --- HELPER: Payment Confirmed Flex Message (管理員 LINE 通知) ---
+function createPaymentConfirmedFlex(data) {
+    const paidAtStr = data.paidAt
+        ? Utilities.formatDate(new Date(data.paidAt), 'Asia/Taipei', 'MM/dd HH:mm')
+        : Utilities.formatDate(new Date(), 'Asia/Taipei', 'MM/dd HH:mm');
+
+    return {
+        type: "flex",
+        altText: '✅ LINE Pay 付款完成 ' + data.orderId + ' $' + data.totalAmount,
+        contents: {
+            type: "bubble",
+            body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    { type: "text", text: "PAYMENT CONFIRMED", weight: "bold", color: "#00B900", size: "sm" },
+                    { type: "text", text: "LINE Pay 付款完成", weight: "bold", size: "xl", margin: "md" },
+                    { type: "text", text: 'ID: ' + data.orderId, size: "xs", color: "#aaaaaa", wrap: true },
+                    { type: "separator", margin: "xxl" },
+                    {
+                        type: "box", layout: "vertical", margin: "xxl", spacing: "sm",
+                        contents: [
+                            {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "付款金額", color: "#555555", size: "sm" },
+                                    { type: "text", text: '$' + data.totalAmount, color: "#00B900", size: "lg", weight: "bold", align: "end" }
+                                ]
+                            },
+                            {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "付款時間", color: "#555555", size: "sm", flex: 2 },
+                                    { type: "text", text: paidAtStr, color: "#111111", size: "sm", align: "end", flex: 3 }
+                                ]
+                            },
+                            {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "交易編號", color: "#555555", size: "sm", flex: 2 },
+                                    { type: "text", text: String(data.transactionId || '-'), color: "#111111", size: "xs", align: "end", flex: 3, wrap: true }
+                                ]
+                            }
+                        ]
+                    },
+                    { type: "separator", margin: "xxl" },
+                    {
+                        type: "box", layout: "vertical", margin: "lg", spacing: "sm",
+                        contents: [
+                            data.customer && data.customer.name ? { type: "text", text: '客戶: ' + data.customer.name, size: "sm", color: "#555555" } : null,
+                            data.customer && data.customer.phone ? { type: "text", text: '電話: ' + data.customer.phone, size: "sm", color: "#555555" } : null
+                        ].filter(Boolean)
+                    }
+                ]
+            }
+        }
+    };
+}
+
+// --- HELPER: Payment Refunded Email (LINE Pay 退款通知) ---
+function sendPaymentRefundedEmail(data) {
+    const isFull = !!data.isFull;
+    const subject = '【BCS ' + (isFull ? '全額' : '部分') + '退款通知】' + data.orderId;
+
+    const body = ''
+        + '<!DOCTYPE html><html><head><style>'
+        + '.container{max-width:600px;margin:0 auto;font-family:sans-serif;border:1px solid #eee;border-radius:8px;overflow:hidden;}'
+        + '.header{background:#dc2626;color:white;padding:20px;text-align:center;}'
+        + '.content{padding:20px;line-height:1.6;}'
+        + '.footer{background:#f9f9f9;padding:20px;text-align:center;font-size:12px;color:#999;}'
+        + '.info-box{background:#fef2f2;border:1px solid #fecaca;padding:15px;border-radius:5px;margin-top:20px;}'
+        + '</style></head>'
+        + '<body style="margin:0;padding:20px;background:#f5f5f5;">'
+        + '<div class="container" style="background:white;">'
+        + '<div class="header">'
+        + '<h1 style="margin:0;font-size:20px;">🔁 ' + (isFull ? '全額' : '部分') + '退款通知</h1>'
+        + '<p style="margin:5px 0 0;opacity:0.9;">' + data.orderId + '</p>'
+        + '</div>'
+        + '<div class="content">'
+        + '<p>親愛的 ' + (data.customer && data.customer.name ? data.customer.name : '客戶') + ' 您好，</p>'
+        + '<p>我們已為您處理完成 LINE Pay ' + (isFull ? '全額' : '部分') + '退款，款項將由 LINE Pay 於數個工作日內退回您的原付款方式。</p>'
+        + '<div class="info-box">'
+        + '<h4 style="margin:0 0 10px;color:#dc2626;">💰 退款資訊</h4>'
+        + '<p style="margin:5px 0;font-size:14px;">訂單編號：<b>' + data.orderId + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">退款金額：<b>$' + data.refundAmount + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">退款類型：<b>' + (isFull ? '全額退款（訂單已取消）' : '部分退款') + '</b></p>'
+        + (data.refundTransactionId
+            ? '<p style="margin:5px 0;font-size:14px;">退款交易編號：<b style="font-family:monospace;">' + data.refundTransactionId + '</b></p>'
+            : '')
+        + '</div>'
+        + '<p style="margin-top:30px;">若有任何疑問，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
+        + '</div>'
+        + '<div class="footer"><p>此信件為系統自動發送</p><p>Be Creative Space | 客製化工坊</p></div>'
+        + '</div></body></html>';
+
+    MailApp.sendEmail({
+        to: data.customer.email,
+        subject: subject,
+        htmlBody: body
+    });
+}
+
+// --- HELPER: Payment Refunded Flex Message (管理員 LINE 通知) ---
+function createPaymentRefundedFlex(data) {
+    const isFull = !!data.isFull;
+    return {
+        type: "flex",
+        altText: '🔁 LINE Pay ' + (isFull ? '全額' : '部分') + '退款 ' + data.orderId + ' $' + data.refundAmount,
+        contents: {
+            type: "bubble",
+            body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    { type: "text", text: "PAYMENT REFUNDED", weight: "bold", color: "#dc2626", size: "sm" },
+                    { type: "text", text: 'LINE Pay ' + (isFull ? '全額' : '部分') + '退款', weight: "bold", size: "xl", margin: "md" },
+                    { type: "text", text: 'ID: ' + data.orderId, size: "xs", color: "#aaaaaa", wrap: true },
+                    { type: "separator", margin: "xxl" },
+                    {
+                        type: "box", layout: "vertical", margin: "xxl", spacing: "sm",
+                        contents: [
+                            {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "退款金額", color: "#555555", size: "sm" },
+                                    { type: "text", text: '$' + data.refundAmount, color: "#dc2626", size: "lg", weight: "bold", align: "end" }
+                                ]
+                            },
+                            {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "退款類型", color: "#555555", size: "sm", flex: 2 },
+                                    { type: "text", text: isFull ? '全額退款' : '部分退款', color: "#111111", size: "sm", align: "end", flex: 3 }
+                                ]
+                            },
+                            data.refundTransactionId ? {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "退款編號", color: "#555555", size: "sm", flex: 2 },
+                                    { type: "text", text: String(data.refundTransactionId), color: "#111111", size: "xs", align: "end", flex: 3, wrap: true }
+                                ]
+                            } : null,
+                            data.refundedBy ? {
+                                type: "box", layout: "baseline",
+                                contents: [
+                                    { type: "text", text: "操作者", color: "#555555", size: "sm", flex: 2 },
+                                    { type: "text", text: String(data.refundedBy), color: "#111111", size: "xs", align: "end", flex: 3, wrap: true }
+                                ]
+                            } : null
+                        ].filter(Boolean)
+                    },
+                    data.customer && data.customer.name ? { type: "separator", margin: "xxl" } : null,
+                    data.customer && data.customer.name ? {
+                        type: "box", layout: "vertical", margin: "lg", spacing: "sm",
+                        contents: [
+                            { type: "text", text: '客戶: ' + data.customer.name, size: "sm", color: "#555555" }
+                        ]
+                    } : null
+                ].filter(Boolean)
+            }
+        }
+    };
 }
 
 function testLine() {

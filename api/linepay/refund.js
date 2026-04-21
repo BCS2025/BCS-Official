@@ -82,15 +82,19 @@ export default async function handler(req, res) {
 
         if (updErr) console.error('[linepay/refund] DB 更新失敗：', updErr);
 
-        notifyGASServer({
-            type: 'payment_refunded',
-            orderId: order.order_id,
-            refundAmount: refundedAmount,
-            isFull,
-            refundedBy: user.email,
-            refundTransactionId: data.info?.refundTransactionId || null,
-            customer: order.user_info,
-        }, 'payment_refund').catch(() => {});
+        try {
+            await notifyGASServer({
+                type: 'payment_refunded',
+                orderId: order.order_id,
+                refundAmount: refundedAmount,
+                isFull,
+                refundedBy: user.email,
+                refundTransactionId: data.info?.refundTransactionId || null,
+                customer: order.user_info,
+            }, 'payment_refund');
+        } catch (notifyErr) {
+            console.error('[linepay/refund] 通知失敗（不影響退款結果）：', notifyErr);
+        }
 
         return res.status(200).json({
             ok: true,

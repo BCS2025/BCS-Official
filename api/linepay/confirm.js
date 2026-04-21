@@ -79,16 +79,20 @@ export default async function handler(req, res) {
             console.error('[linepay/confirm] DB 更新失敗：', updErr);
         }
 
-        notifyGASServer({
-            type: 'payment_confirmed',
-            orderId: order.order_id,
-            totalAmount: order.total_amount,
-            paymentMethod: 'line_pay',
-            transactionId: String(transactionId),
-            paidAt,
-            customer: order.user_info,
-            items: order.items,
-        }, 'payment_confirm').catch(() => {});
+        try {
+            await notifyGASServer({
+                type: 'payment_confirmed',
+                orderId: order.order_id,
+                totalAmount: order.total_amount,
+                paymentMethod: 'line_pay',
+                transactionId: String(transactionId),
+                paidAt,
+                customer: order.user_info,
+                items: order.items,
+            }, 'payment_confirm');
+        } catch (notifyErr) {
+            console.error('[linepay/confirm] 通知失敗（不影響付款結果）：', notifyErr);
+        }
 
         return res.status(200).json({
             success: true,
