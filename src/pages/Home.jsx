@@ -24,7 +24,7 @@ export default function Home() {
                     style={{ animationDelay: '100ms' }}
                 >
                     創意的工坊，<br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-maker-500 via-forge-500 to-store-500">
+                    <span className="text-transparent bg-clip-text bg-[linear-gradient(in_oklch_to_right,#064DAC_0%,#D37018_50%,#41AB56_100%)]">
                         無限的可能。
                     </span>
                 </h1>
