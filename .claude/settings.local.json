@@ -38,7 +38,8 @@
       "Bash(python -c \"import re; html=open\\('/tmp/bcs_prod.html',encoding='utf-8'\\).read\\(\\); m=re.search\\(r'id=\\\\\"root\\\\\">\\(.+?\\)</body>', html, re.S\\); body=m.group\\(1\\) if m else ''; text=re.sub\\(r'<[^>]+>','|',body\\); text=re.sub\\(r'\\\\|+','|',text\\); print\\(text[:800]\\)\")",
       "Bash(grep -oE '>[^<>]{4,}<')",
       "WebFetch(domain:developers-pay.line.me)",
-      "WebFetch(domain:pay.line.me)"
+      "WebFetch(domain:pay.line.me)",
+      "Bash(git push *)"
     ]
   }
 }
