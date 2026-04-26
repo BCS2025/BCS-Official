@@ -63,7 +63,10 @@ function doPost(e) {
       `${item.productName} (${item.shape||'-'}/${item.font||'-'}) x${item.quantity}`
     ).join('\n');
     
-    const needProofText = (customer.needProof === 'no') ? '不需對稿 (直接製作)' : '需要對稿';
+    const needProofText =
+      customer.needProof === 'yes' ? '需要對稿'
+      : customer.needProof === 'no' ? '不需對稿（客戶選擇直接製作）'
+      : '不適用（訂單無對稿商品）';
 
     const rowData = [
       rawData.orderId || 'N/A',

@@ -82,11 +82,39 @@ export default function OrderList({ items, products = [], onEdit, onDelete }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-bcs-border">
-                            {items.map((item) => (
+                            {items.map((item) => {
+                                const product = products.find(p => p.id === item.productId);
+                                const isProofItem = product?.needsProof === true;
+                                return (
                                 <tr key={item._id} className="hover:bg-store-50">
                                     <td className="px-4 py-3">
-                                        <div className="font-medium text-bcs-black text-base">{item.productName}</div>
+                                        <div className="font-medium text-bcs-black text-base flex items-center gap-2 flex-wrap">
+                                            <span>{item.productName}</span>
+                                            {isProofItem && (
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">
+                                                    需對稿
+                                                </span>
+                                            )}
+                                        </div>
                                         {renderItemDetails(item)}
+                                        {isProofItem && (
+                                            <div className="mt-1.5 text-xs">
+                                                {item.proofFileLater ? (
+                                                    <span className="inline-block bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">
+                                                        對稿檔：稍後上傳
+                                                    </span>
+                                                ) : item.proofFile?.name ? (
+                                                    <span className="inline-flex items-center gap-1 text-blue-700">
+                                                        <FileImage size={12} />
+                                                        對稿檔：{item.proofFile.name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-block bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-200">
+                                                        對稿檔：尚未提供
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-center font-medium">{item.quantity}</td>
                                     <td className="px-4 py-3 text-right font-medium text-bcs-black">{formatCurrency(item.price)}</td>
@@ -101,7 +129,8 @@ export default function OrderList({ items, products = [], onEdit, onDelete }) {
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                         <tfoot className="bg-store-50 font-bold text-bcs-black border-t border-bcs-border">
                             <tr>

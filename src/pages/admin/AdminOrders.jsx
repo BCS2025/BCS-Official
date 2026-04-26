@@ -426,20 +426,43 @@ export const AdminOrders = () => {
                                                 <div className="mt-1 flex flex-wrap gap-2">
                                                     {Object.entries(item).map(([key, val]) => {
                                                         if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return null;
+                                                        if (key === 'proofFileLater') return null;
                                                         if (key.endsWith('_filename')) return null;
+                                                        // 對應 _filename 存在 → 此 key 是檔案 URL，由下方檔案區塊處理
+                                                        if (item[`${key}_filename`]) return null;
+                                                        if (val === null || val === undefined || val === '') return null;
                                                         return (
                                                             <span key={key} className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">
-                                                                {key}: {val}
+                                                                {key}: {String(val)}
                                                             </span>
                                                         );
                                                     })}
                                                 </div>
-                                                {/* Uploaded File Link */}
-                                                {item.image_filename && (
-                                                    <a href={item.image} target="_blank" rel="noopener noreferrer"
-                                                        className="text-xs text-blue-600 underline mt-2 inline-block">
-                                                        查看上傳圖片 ({item.image_filename})
-                                                    </a>
+                                                {/* 通用化檔案連結：偵測所有 _filename 結尾的欄位 */}
+                                                {Object.keys(item).filter(k => k.endsWith('_filename')).map(filenameKey => {
+                                                    const fieldKey = filenameKey.replace(/_filename$/, '');
+                                                    const url = item[fieldKey];
+                                                    const filename = item[filenameKey];
+                                                    if (!url || !filename) return null;
+                                                    const ext = (filename.split('.').pop() || 'FILE').toUpperCase();
+                                                    const isImage = /^(PNG|JPG|JPEG|GIF|WEBP|SVG)$/.test(ext);
+                                                    return (
+                                                        <div key={filenameKey} className="mt-2 space-y-1">
+                                                            <a href={url} target="_blank" rel="noopener noreferrer"
+                                                               className="text-xs text-blue-600 underline inline-flex items-center gap-1">
+                                                                下載檔案：{filename}
+                                                                <span className="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded">{ext}</span>
+                                                            </a>
+                                                            {isImage && (
+                                                                <img src={url} alt={filename} className="max-w-[120px] max-h-[120px] mt-1 border rounded" />
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                                {item.proofFileLater && (
+                                                    <div className="mt-2 inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded">
+                                                        ⚠️ 客戶選擇稍後上傳，待補件
+                                                    </div>
                                                 )}
                                             </div>
                                             <div className="text-right font-bold text-gray-700">

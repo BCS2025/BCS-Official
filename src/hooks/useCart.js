@@ -25,6 +25,15 @@ export function useCart() {
             return;
         }
 
+        // 對稿商品永不合併：每筆對應獨立檔案/客製內容，避免後台處理混淆
+        const productMeta = products?.find(p => p.id === item.productId);
+        if (productMeta?.needsProof) {
+            newCart.push(item);
+            setCart(newCart);
+            alert('已加入購物車！');
+            return;
+        }
+
         // Adding new item — check for identical config to merge
         const identicalIndex = cart.findIndex(i => {
             if (i.productId !== item.productId) return false;

@@ -8,7 +8,7 @@ import { Send, ArrowLeft, X, Landmark, Smartphone } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import { couponService } from '../lib/couponService'; // New Coupon Service
-import { cartNeedsProof } from '../lib/cartHelpers';
+import { getProofItems } from '../lib/cartHelpers';
 import { PAYMENT_METHODS } from '../lib/paymentService';
 import { MESSAGES } from '../constants/messages';
 import { Input } from './ui/Input';
@@ -42,8 +42,8 @@ export default function Cart({
     // Calculate total quantity for lead time
     const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
 
-    // 購物車內是否有需要對稿（含 text/file 欄位）的客製商品
-    const showProof = cartNeedsProof(cart, products);
+    // 購物車內所有需對稿（後台 needsProof=true）的品項
+    const proofItems = getProofItems(cart, products);
 
     // --- Coupon Logic ---
     const calculateDiscount = () => {
@@ -211,7 +211,8 @@ export default function Cart({
                 onShippingCostChange={onShippingCostChange}
                 isFreeShipping={isFreeShipping}
                 totalQuantity={totalQuantity}
-                showProof={showProof}
+                proofItems={proofItems}
+                products={products}
             />
 
             {/* Coupon Section */}

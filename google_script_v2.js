@@ -152,10 +152,25 @@ function createFlexReceipt(order) {
         let details = [];
         Object.keys(item).forEach(key => {
             if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
+            if (key === 'proofFileLater') return;
             if (key.endsWith('_filename')) return;
+            if (item[key + '_filename']) return; // file URL，下方專屬列出
+            if (item[key] === null || item[key] === '' || item[key] === undefined) return;
             details.push(item[key]);
         });
         const detailText = details.join(' / ');
+
+        // 檔案行
+        const fileRows = Object.keys(item)
+            .filter(k => k.endsWith('_filename') && item[k] && item[k.replace(/_filename$/, '')])
+            .map(k => {
+                const url = item[k.replace(/_filename$/, '')];
+                return { type: "text", text: '📎 ' + item[k] + ' → ' + url, size: "xs", color: "#1d4ed8", wrap: true, margin: "xs" };
+            });
+
+        const lateRow = item.proofFileLater
+            ? { type: "text", text: '⚠️ 稍後上傳（待客戶補件）', size: "xs", color: "#c2410c", weight: "bold", margin: "xs" }
+            : null;
 
         return {
             type: "box",
@@ -172,7 +187,9 @@ function createFlexReceipt(order) {
                         { type: "text", text: `x${item.quantity}`, size: "sm", color: "#666666", align: "end", flex: 1 }
                     ]
                 },
-                detailText ? { type: "text", text: detailText, size: "xs", color: "#aaaaaa", wrap: true, margin: "xs" } : null
+                detailText ? { type: "text", text: detailText, size: "xs", color: "#aaaaaa", wrap: true, margin: "xs" } : null,
+                ...fileRows,
+                lateRow
             ].filter(Boolean)
         };
     });
@@ -238,15 +255,31 @@ function sendCustomerEmail(order) {
         let details = [];
         Object.keys(item).forEach(key => {
             if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
+            if (key === 'proofFileLater') return;
             if (key.endsWith('_filename')) return;
+            if (item[key + '_filename']) return;
+            if (item[key] === null || item[key] === '' || item[key] === undefined) return;
             details.push(`${key}: ${item[key]}`);
         });
+
+        const fileLines = Object.keys(item)
+            .filter(k => k.endsWith('_filename') && item[k] && item[k.replace(/_filename$/, '')])
+            .map(k => {
+                const url = item[k.replace(/_filename$/, '')];
+                return `<div style="font-size:12px;margin-top:4px;"><a href="${url}" style="color:#1d4ed8;">📎 ${item[k]}</a></div>`;
+            }).join('');
+
+        const lateHtml = item.proofFileLater
+            ? '<div style="font-size:12px;color:#c2410c;font-weight:bold;margin-top:4px;">⚠️ 稍後上傳（待客戶補件）</div>'
+            : '';
 
         return `
       <tr style="border-bottom: 1px solid #eee;">
         <td style="padding: 12px 0;">
           <div style="font-weight: bold; color: #333;">${item.productName || item.productId}</div>
           <div style="font-size: 12px; color: #888;">${details.join(' | ')}</div>
+          ${fileLines}
+          ${lateHtml}
         </td>
         <td style="padding: 12px 0; text-align: right; color: #555;">x ${item.quantity}</td>
       </tr>
@@ -516,13 +549,27 @@ function sendPaymentConfirmedEmail(data) {
             let details = [];
             Object.keys(item).forEach(function (key) {
                 if (['productId', 'productName', '_id', 'price', 'quantity', 'image'].includes(key)) return;
+                if (key === 'proofFileLater') return;
                 if (key.endsWith('_filename')) return;
+                if (item[key + '_filename']) return;
+                if (item[key] === null || item[key] === '' || item[key] === undefined) return;
                 details.push(key + ': ' + item[key]);
             });
+            const fileLines = Object.keys(item)
+                .filter(function (k) { return k.endsWith('_filename') && item[k] && item[k.replace(/_filename$/, '')]; })
+                .map(function (k) {
+                    const url = item[k.replace(/_filename$/, '')];
+                    return '<div style="font-size:12px;margin-top:4px;"><a href="' + url + '" style="color:#1d4ed8;">📎 ' + item[k] + '</a></div>';
+                }).join('');
+            const lateHtml = item.proofFileLater
+                ? '<div style="font-size:12px;color:#c2410c;font-weight:bold;margin-top:4px;">⚠️ 稍後上傳（待客戶補件）</div>'
+                : '';
             return '<tr style="border-bottom:1px solid #eee;">'
                 + '<td style="padding:12px 0;">'
                 + '<div style="font-weight:bold;color:#333;">' + (item.productName || item.productId) + '</div>'
                 + '<div style="font-size:12px;color:#888;">' + details.join(' | ') + '</div>'
+                + fileLines
+                + lateHtml
                 + '</td>'
                 + '<td style="padding:12px 0;text-align:right;color:#555;">x ' + item.quantity + '</td>'
                 + '</tr>';

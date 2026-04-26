@@ -182,6 +182,7 @@ function App() {
                             estimatedDate={successData.estimatedDate}
                             totalAmount={successData.totalAmount}
                             paymentMethod={successData.paymentMethod}
+                            hasLateUpload={successData.hasLateUpload}
                             onHome={() => {
                                 clearSuccessData();
                                 navigate('/');

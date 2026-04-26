@@ -9,6 +9,7 @@ import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import { notifyGAS } from '../lib/webhookService';
 import { initiatePayment, PAYMENT_METHODS } from '../lib/paymentService';
 import { MESSAGES } from '../constants/messages';
+import { getProofItems } from '../lib/cartHelpers';
 
 export function useOrderSubmit() {
     const navigate = useNavigate();
@@ -50,11 +51,16 @@ export function useOrderSubmit() {
 
         setIsSubmitting(true);
         try {
-            // 1. Upload files
+            // 1. Upload files（跳過 proofFileLater === true 的 proofFile）
             const processedItems = await Promise.all(cart.map(async (item) => {
                 const newItem = { ...item };
                 for (const key of Object.keys(newItem)) {
                     if (newItem[key] instanceof File) {
+                        // 客戶選擇稍後透過 LINE 補檔 → 不上傳，保留 null + 標記
+                        if (key === 'proofFile' && newItem.proofFileLater === true) {
+                            newItem[key] = null;
+                            continue;
+                        }
                         try {
                             const publicUrl = await uploadFile(newItem[key]);
                             newItem[`${key}_filename`] = newItem[key].name;
@@ -69,7 +75,10 @@ export function useOrderSubmit() {
             }));
 
             const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-            const needProof = customer.needProof || 'yes';
+            // 對稿三值化：無對稿商品 → 'na'；有對稿商品 → 沿用客戶選擇（預設 yes）
+            const hasProofItems = getProofItems(cart, products).length > 0;
+            const hasLateUpload = processedItems.some(it => it.proofFileLater === true);
+            const needProof = !hasProofItems ? 'na' : (customer.needProof || 'yes');
             const totalQuantity = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0, 10), 0);
             const leadDays = calculateLeadDays(totalQuantity);
             const estimatedDate = customer.shippingMethod === 'pickup'
@@ -143,7 +152,7 @@ export function useOrderSubmit() {
             }
 
             // 6. Success
-            setSuccessData({ orderId, needProof, estimatedDate, totalAmount: finalTotal, paymentMethod });
+            setSuccessData({ orderId, needProof, estimatedDate, totalAmount: finalTotal, paymentMethod, hasProofItems, hasLateUpload });
             onSuccess?.();
 
             if (paymentMethod === PAYMENT_METHODS.LINE_PAY) {

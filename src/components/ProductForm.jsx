@@ -25,8 +25,17 @@ function buildFormDefaults(product) {
     product.fields.forEach(field => {
         defaults[field.name] = getFieldDefault(field);
     });
+    if (product.requiresFileUpload) {
+        defaults.proofFile = null;
+        defaults.proofFileLater = false;
+    }
     return defaults;
 }
+
+// 系統保留欄位名 — 與管理員自設 fields 衝突時，以管理員設定優先（不顯示系統欄位）
+const PROOF_FIELD_NAME = 'proofFile';
+const hasAdminProofFieldConflict = (product) =>
+    Array.isArray(product?.fields) && product.fields.some(f => f.name === PROOF_FIELD_NAME);
 
 export default function ProductForm({ product, onAddToCart, initialData = null, onCancelEdit, cart = [] }) {
 
@@ -39,6 +48,13 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
     const [maxStock, setMaxStock] = useState(null); // Initialize as null (unknown)
     const [isLowStock, setIsLowStock] = useState(false); // Controls display text
     const [isLoadingStock, setIsLoadingStock] = useState(false);
+
+    // 是否需顯示系統 proofFile 欄位（管理員另行設定同名欄位時，讓位給管理員）
+    const adminProofConflict = hasAdminProofFieldConflict(product);
+    if (product.requiresFileUpload && adminProofConflict) {
+        console.warn(`[ProductForm] product ${product.id} 已自設 proofFile 欄位，系統不再插入對稿上傳欄位`);
+    }
+    const showProofUpload = !!product.requiresFileUpload && !adminProofConflict;
 
     // Deep compare helper for cart dependency
     const cartDependency = JSON.stringify(cart.filter(item => item.productId === product.id));
@@ -165,6 +181,12 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
 
         if (formData.quantity < 1) return;
 
+        // 對稿檔案上傳檢查：未勾「稍後上傳」且未選檔 → 阻擋
+        if (showProofUpload && !formData.proofFileLater && !formData.proofFile) {
+            alert('請上傳客製化檔案，或勾選「我稍後再透過 LINE 提供檔案」');
+            return;
+        }
+
         const limit = maxStock;
         const stockLimitExceeded = limit < 9999;
 
@@ -287,6 +309,39 @@ export default function ProductForm({ product, onAddToCart, initialData = null, 
                         }
                         return null;
                     })}
+
+                    {showProofUpload && (
+                        <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <label htmlFor={PROOF_FIELD_NAME} className="text-sm font-medium text-bcs-black block">
+                                客製化檔案上傳 {!formData.proofFileLater && <span className="text-red-500">*</span>}
+                            </label>
+                            <p className="text-xs text-orange-700">支援圖片、PDF、AI、SVG 等格式，將用於設計師製作前對稿</p>
+                            <Input
+                                id={PROOF_FIELD_NAME}
+                                type="file"
+                                onChange={handleChange}
+                                disabled={!!formData.proofFileLater}
+                                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-store-50 file:text-store-700 hover:file:bg-store-100 cursor-pointer"
+                            />
+                            {formData.proofFile && !formData.proofFileLater && (
+                                <p className="text-xs text-green-600">已選擇: {formData.proofFile.name}</p>
+                            )}
+                            <label className="flex items-center gap-2 text-sm text-bcs-black cursor-pointer pt-1">
+                                <input
+                                    type="checkbox"
+                                    checked={!!formData.proofFileLater}
+                                    onChange={e => setFormData(prev => ({
+                                        ...prev,
+                                        proofFileLater: e.target.checked,
+                                        // 勾選稍後上傳 → 清掉已選檔案
+                                        proofFile: e.target.checked ? null : prev.proofFile
+                                    }))}
+                                    className="w-4 h-4"
+                                />
+                                我稍後再透過 LINE 提供檔案
+                            </label>
+                        </div>
+                    )}
 
                     <div className="space-y-1">
                         <Input

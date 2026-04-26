@@ -10,10 +10,12 @@ import ProofSelector from './ProofSelector';
 import PickupScheduler from './PickupScheduler';
 import { MESSAGES } from '../constants/messages';
 
-export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity, showProof = false }) {
+export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity, proofItems = [], products = [] }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
     const [errors, setErrors] = useState({});
+
+    const showProof = proofItems.length > 0;
 
     // Estimated ship date display
     const processingDays = calculateLeadDays(totalQuantity);
@@ -101,10 +103,29 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                 />
 
                 {showProof && (
-                    <ProofSelector
-                        value={data.needProof}
-                        onChange={(val) => onChange('needProof', val)}
-                    />
+                    <>
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
+                            <p className="text-sm font-bold text-orange-900">⚠️ 您的購物車中有以下客製化商品需要對稿確認：</p>
+                            <ul className="text-sm text-orange-900 space-y-1 pl-4">
+                                {proofItems.map(item => {
+                                    const p = products.find(pp => pp.id === item.productId);
+                                    const fileStatus = item.proofFileLater
+                                        ? '稍後上傳'
+                                        : (item.proofFile?.name ? `已上傳：${item.proofFile.name}` : '尚未提供檔案');
+                                    return (
+                                        <li key={item._id} className="list-disc">
+                                            {p?.name || item.productName} ×{item.quantity}
+                                            <span className="text-xs text-orange-700 ml-2">（{fileStatus}）</span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                        <ProofSelector
+                            value={data.needProof}
+                            onChange={(val) => onChange('needProof', val)}
+                        />
+                    </>
                 )}
 
                 <div className="border-t border-bcs-border pt-4 grid gap-4 md:grid-cols-2">

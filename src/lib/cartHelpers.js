@@ -1,11 +1,11 @@
 /**
- * 判斷商品是否需要「製作前對稿」確認。
- * 規則：商品 fields 中存在 text 或 file 型別 → 用戶輸入會影響排版/設計，需先確認。
- * 純 select / 無 fields 的商品（現貨、變體選擇）不適用。
+ * 對稿（製作前確認）相關 helper。
+ * 規則：以後台 `needsProof` 旗標判斷，不再依 fields 結構自動推論。
  */
-export const productNeedsProof = (product) =>
-    Array.isArray(product?.fields) &&
-    product.fields.some(f => f.type === 'text' || f.type === 'file');
+export const productNeedsProof = (product) => product?.needsProof === true;
 
-export const cartNeedsProof = (cart, products) =>
-    cart.some(item => productNeedsProof(products.find(p => p.id === item.productId)));
+/**
+ * 回傳購物車中所有需對稿的 cart items（保留原 cart item 結構，含 productId / quantity / proofFile / proofFileLater 等）
+ */
+export const getProofItems = (cart, products) =>
+    (cart || []).filter(item => productNeedsProof((products || []).find(p => p.id === item.productId)));

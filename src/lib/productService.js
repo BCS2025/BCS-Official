@@ -60,7 +60,9 @@ function transformProduct(dbProduct) {
             category: dbProduct.category || 'creative',
             createdAt: dbProduct.created_at,
             sortOrder: dbProduct.sort_order,
-            calculatePrice: calculatePrice
+            calculatePrice: calculatePrice,
+            needsProof: dbProduct.needs_proof === true,
+            requiresFileUpload: dbProduct.requires_file_upload === true
         };
     }
 
@@ -76,7 +78,9 @@ function transformProduct(dbProduct) {
             uuid: dbProduct.id,
             category: dbProduct.category || 'creative',
             createdAt: dbProduct.created_at,
-            sortOrder: dbProduct.sort_order
+            sortOrder: dbProduct.sort_order,
+            needsProof: dbProduct.needs_proof === true,
+            requiresFileUpload: dbProduct.requires_file_upload === true
         };
     }
 
@@ -99,7 +103,9 @@ function transformProduct(dbProduct) {
         fields: [],
         createdAt: dbProduct.created_at,
         sortOrder: dbProduct.sort_order,
-        calculatePrice: (config, qty) => (safeBasePrice * (qty || 0))
+        calculatePrice: (config, qty) => (safeBasePrice * (qty || 0)),
+        needsProof: dbProduct.needs_proof === true,
+        requiresFileUpload: dbProduct.requires_file_upload === true
     };
 }
 

@@ -1,10 +1,10 @@
 
-import { CheckCircle, Home, FileText, Calendar, Mail, Smartphone } from 'lucide-react';
+import { CheckCircle, Home, FileText, Calendar, Mail, Smartphone, AlertTriangle } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
 import { getBankTransferInfo, PAYMENT_METHODS } from '../lib/paymentService';
 
-export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate, totalAmount, paymentMethod }) {
+export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate, totalAmount, paymentMethod, hasLateUpload = false }) {
     const isLinePay = paymentMethod === PAYMENT_METHODS.LINE_PAY;
     const bankInfo = getBankTransferInfo();
 
@@ -51,6 +51,17 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                         </div>
                     </div>
                 </div>
+
+                {/* 稍後上傳檔案 — 強提示 */}
+                {hasLateUpload && (
+                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 flex items-start gap-3">
+                        <AlertTriangle size={22} className="text-red-600 shrink-0 mt-0.5" />
+                        <div className="text-sm text-red-800">
+                            <p className="font-bold mb-1">您有商品選擇「稍後上傳檔案」</p>
+                            <p>請務必透過下方 <span className="font-bold">官方 LINE</span> 補上客製化檔案，否則無法開始製作。</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Dynamic Process Content */}
                 <div className="space-y-4 border-t border-b border-bcs-border py-6">

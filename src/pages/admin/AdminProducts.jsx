@@ -37,7 +37,9 @@ export const AdminProducts = () => {
             pricing_logic: {},   // New Pricing Logic
             sort_order: 5,
             is_active: true,
-            category: 'creative' // 'creative'（創作商品）| 'materials'（創客材料）
+            category: 'creative', // 'creative'（創作商品）| 'materials'（創客材料）
+            needs_proof: false,
+            requires_file_upload: false
         };
     }
 
@@ -201,7 +203,9 @@ export const AdminProducts = () => {
                 is_active: formData.is_active,
                 config_schema: parsedSchema,
                 pricing_logic: formData.pricing_logic,
-                category: formData.category || 'creative'
+                category: formData.category || 'creative',
+                needs_proof: !!formData.needs_proof,
+                requires_file_upload: !!(formData.needs_proof && formData.requires_file_upload)
             };
 
             // A. Upsert Product
@@ -387,7 +391,14 @@ export const AdminProducts = () => {
                                             {p.image_url && <img src={p.image_url} alt="" className="w-full h-full object-cover" />}
                                         </div>
                                         <div>
-                                            <div className="font-bold text-gray-900">{p.name}</div>
+                                            <div className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                                                <span>{p.name}</span>
+                                                {p.needs_proof && (
+                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 border border-orange-200">
+                                                        需對稿
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="font-mono text-xs text-blue-600 bg-blue-50 px-1 rounded inline-block">
                                                 {p.id}
                                             </div>
@@ -560,6 +571,38 @@ export const AdminProducts = () => {
                                     </label>
                                     <p className="text-xs text-gray-500">取消勾選將將商品隱藏，前台無法購買</p>
                                 </div>
+                            </div>
+
+                            {/* 客製化設定 (對稿 / 上傳檔案) */}
+                            <div className="space-y-3 border border-orange-200 bg-orange-50/50 p-5 rounded-xl">
+                                <div>
+                                    <label className="text-base font-bold text-orange-900 block">客製化設定（對稿與檔案上傳）</label>
+                                    <span className="text-xs text-orange-700">控制此商品結帳時是否需要對稿確認、商品頁是否提供檔案上傳欄位</span>
+                                </div>
+                                <label className="flex items-center gap-2 text-sm font-bold text-gray-800 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!formData.needs_proof}
+                                        onChange={e => setFormData(prev => ({
+                                            ...prev,
+                                            needs_proof: e.target.checked,
+                                            // 取消勾選主項時，requires_file_upload 自動歸 false
+                                            requires_file_upload: e.target.checked ? prev.requires_file_upload : false
+                                        }))}
+                                        className="w-4 h-4 cursor-pointer"
+                                    />
+                                    此商品需要「製作前對稿」確認
+                                </label>
+                                <label className={`flex items-center gap-2 text-sm pl-6 ${formData.needs_proof ? 'text-gray-800 cursor-pointer' : 'text-gray-400 cursor-not-allowed'}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={!!formData.requires_file_upload}
+                                        disabled={!formData.needs_proof}
+                                        onChange={e => setFormData(prev => ({ ...prev, requires_file_upload: e.target.checked }))}
+                                        className="w-4 h-4"
+                                    />
+                                    商品頁提供「客製化檔案上傳」欄位（客戶可選擇稍後透過 LINE 補上）
+                                </label>
                             </div>
 
                             {/* Config Editor (Moved up) */}
