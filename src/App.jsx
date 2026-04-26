@@ -58,7 +58,7 @@ function App() {
         pickupDate: '',
         pickupTime: '',
         friendName: '',
-        needProof: 'yes',
+        // 不在此預設 needProof：由 CustomerInfo 依購物車內容動態決定
     });
     const [shippingCost, setShippingCost] = useState(60);
 

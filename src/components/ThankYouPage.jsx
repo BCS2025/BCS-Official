@@ -106,7 +106,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                         <div className="space-y-4 text-sm text-bcs-black">
                             <p className="flex gap-2">
                                 <span className="bg-store-100 text-bcs-black w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">1</span>
-                                <span>您選擇<span className="font-bold text-bcs-black">「直接製作」</span>，請完成匯款。</span>
+                                <span>請依下方資訊完成匯款。</span>
                             </p>
 
                             {/* Bank Info Block */}

@@ -10,7 +10,7 @@ import ProofSelector from './ProofSelector';
 import PickupScheduler from './PickupScheduler';
 import { MESSAGES } from '../constants/messages';
 
-export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity }) {
+export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity, showProof = false }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
     const [errors, setErrors] = useState({});
@@ -19,12 +19,17 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
     const processingDays = calculateLeadDays(totalQuantity);
     const formattedShipDate = getEstimatedShipDate(processingDays).replace(/-/g, '/');
 
-    // Default needProof if absent
+    // 同步 needProof：購物車有客製商品時預設 'yes'，純現貨時強制 'no'
     useEffect(() => {
-        if (data.needProof === undefined) {
-            onChange('needProof', 'yes');
+        const target = showProof ? 'yes' : 'no';
+        if (showProof) {
+            if (data.needProof !== 'yes' && data.needProof !== 'no') {
+                onChange('needProof', target);
+            }
+        } else if (data.needProof !== 'no') {
+            onChange('needProof', 'no');
         }
-    }, [data.needProof, onChange]);
+    }, [showProof, data.needProof, onChange]);
 
     // Sync city/district from parent
     useEffect(() => {
@@ -95,10 +100,12 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                     isFreeShipping={isFreeShipping}
                 />
 
-                <ProofSelector
-                    value={data.needProof}
-                    onChange={(val) => onChange('needProof', val)}
-                />
+                {showProof && (
+                    <ProofSelector
+                        value={data.needProof}
+                        onChange={(val) => onChange('needProof', val)}
+                    />
+                )}
 
                 <div className="border-t border-bcs-border pt-4 grid gap-4 md:grid-cols-2">
 
