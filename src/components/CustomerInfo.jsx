@@ -239,21 +239,6 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         />
                     )}
 
-                    {/* Friend pickup */}
-                    {data.shippingMethod === 'friend' && (
-                        <div className="md:col-span-2">
-                            <Input
-                                id="friendName"
-                                label="代領人姓名"
-                                placeholder="請輸入代領親友的真實姓名"
-                                value={data.friendName || ''}
-                                onChange={handleChange}
-                                required
-                                error={errors.friendName}
-                            />
-                        </div>
-                    )}
-
                     <Input
                         id="email"
                         label="Email (必填)"

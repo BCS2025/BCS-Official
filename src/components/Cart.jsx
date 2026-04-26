@@ -138,8 +138,7 @@ export default function Cart({
         (
             (customer.shippingMethod === 'store' && customer.storeName) ||
             (customer.shippingMethod === 'post' && customer.city && customer.district && customer.address) ||
-            (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupTime) ||
-            (customer.shippingMethod === 'friend' && customer.friendName)
+            (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupTime)
         );
 
     // If cart is empty

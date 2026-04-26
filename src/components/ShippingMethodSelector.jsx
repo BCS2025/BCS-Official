@@ -1,18 +1,17 @@
-import { Truck, MapPin, Store, Users } from 'lucide-react';
+import { Truck, MapPin, Store } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 
 const SHIPPING_METHODS = [
     { id: 'store',  name: '超商一般店到店',    price: 60, icon: Store, description: '需提供超商門市' },
     { id: 'post',   name: '郵局掛號 (小包)',   price: 40, icon: Truck, description: '需提供詳細地址' },
     { id: 'pickup', name: '自取',              price: 0,  icon: MapPin, description: '全家永康勝華店 / 7-11 北園門市' },
-    { id: 'friend', name: '親友代領',          price: 0,  icon: Users,  description: '需填寫代領人姓名' },
 ];
 
 export default function ShippingMethodSelector({ selectedMethod, onSelect, isFreeShipping }) {
     return (
         <div className="space-y-3">
             <label className="block text-sm font-medium text-bcs-black">選擇運送方式</label>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
                 {SHIPPING_METHODS.map((method) => {
                     const Icon = method.icon;
                     const isSelected = selectedMethod === method.id;
