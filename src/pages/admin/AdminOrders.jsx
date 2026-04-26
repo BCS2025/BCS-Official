@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
-import { Search, Eye, X, ChevronDown, ChevronUp, Archive, RefreshCw, Trash2, Edit, Undo2 } from 'lucide-react';
+import { Search, Eye, X, ChevronDown, ChevronUp, Archive, RefreshCw, Trash2, Edit, Undo2, Printer, Truck } from 'lucide-react';
 import { formatCurrency } from '../../lib/pricing';
 import { refundLinePay, getPaymentMethodLabel, getPaymentStatusLabel } from '../../lib/paymentService';
+
+const SHIPPING_LABELS = {
+    store: '超商店到店',
+    tcat: '黑貓宅配',
+    post: '中華郵政',
+    pickup: '自取',
+};
+
+const LOGISTICS_BRAND_LABELS = {
+    UNIMARTC2C: '7-11 賣貨便',
+    FAMIC2C: '全家店到店',
+    HILIFEC2C: '萊爾富店到店',
+    OKMARTC2C: 'OK 超商店到店',
+    TCAT: '黑貓宅急便',
+    POST: '中華郵政',
+};
 
 export const AdminOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -13,6 +29,8 @@ export const AdminOrders = () => {
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [isSavingNotes, setIsSavingNotes] = useState(false);
     const [isRefunding, setIsRefunding] = useState(false);
+    const [isPrintingLabel, setIsPrintingLabel] = useState(false);
+    const [isRefreshingLogistics, setIsRefreshingLogistics] = useState(false);
 
     // Fetch Orders
     useEffect(() => {
@@ -49,6 +67,7 @@ export const AdminOrders = () => {
             [timestampField]: new Date().toISOString()
         };
 
+        let updatedOrder = null;
         try {
             const { error } = await supabase
                 .from('orders')
@@ -58,12 +77,49 @@ export const AdminOrders = () => {
             if (error) throw error;
 
             // Refresh local state
-            setOrders(prev => prev.map(o =>
-                o.id === orderId ? { ...o, ...updates } : o
-            ));
+            setOrders(prev => prev.map(o => {
+                if (o.id !== orderId) return o;
+                updatedOrder = { ...o, ...updates };
+                return updatedOrder;
+            }));
         } catch (error) {
             console.error('Error updating status:', error);
             alert('更新失敗: ' + error.message);
+            return;
+        }
+
+        // 確認入帳 (status='paid') 時觸發綠界建單。失敗只跳訊息，不影響狀態更新。
+        if (newStatus === 'paid' && updatedOrder && !updatedOrder.logistics_id) {
+            const subType = updatedOrder.logistics_sub_type || updatedOrder.cvs_store_brand;
+            if (!subType) return; // 自取不建物流單
+            try {
+                const { data: sessionData } = await supabase.auth.getSession();
+                const accessToken = sessionData?.session?.access_token;
+                if (!accessToken) {
+                    alert('已記為入帳，但 Session 過期無法建立物流單，請重新登入後到該訂單手動補建。');
+                    return;
+                }
+                const res = await fetch('/api/logistics/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({ orderId: updatedOrder.order_id }),
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    alert(`已記為入帳，但綠界建單失敗：${json.error || res.status}\n\n（已寫入失敗記錄，可至「通知失敗」頁面或重試此訂單。）`);
+                } else {
+                    setOrders(prev => prev.map(o => o.id === orderId ? {
+                        ...o,
+                        logistics_id: json.logisticsId || o.logistics_id,
+                    } : o));
+                }
+            } catch (err) {
+                console.error('auto create logistics failed:', err);
+                alert(`已記為入帳，但建單請求例外：${err.message}`);
+            }
         }
     };
 
@@ -191,6 +247,76 @@ export const AdminOrders = () => {
         }
     };
 
+    const handlePrintLabel = async (order) => {
+        if (!order?.logistics_id) {
+            alert('此訂單尚未建立綠界物流單，無法列印託運單。');
+            return;
+        }
+        setIsPrintingLabel(true);
+        let blobUrl = null;
+        try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const accessToken = sessionData?.session?.access_token;
+            if (!accessToken) throw new Error('Session 過期，請重新登入');
+
+            const res = await fetch('/api/logistics/print-document', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({ orderId: order.order_id }),
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                throw new Error(text || `列印請求失敗 (${res.status})`);
+            }
+            const html = await res.text();
+            const blob = new Blob([html], { type: 'text/html' });
+            blobUrl = URL.createObjectURL(blob);
+            const win = window.open(blobUrl, '_blank', 'width=900,height=700');
+            if (!win) {
+                throw new Error('無法開啟新視窗，請在瀏覽器允許彈出視窗。');
+            }
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        } catch (err) {
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+            console.error('print label failed:', err);
+            alert('列印失敗：' + err.message);
+        } finally {
+            setIsPrintingLabel(false);
+        }
+    };
+
+    const handleRefreshLogistics = async (order) => {
+        if (!order?.logistics_id) {
+            alert('此訂單尚未建立綠界物流單。');
+            return;
+        }
+        setIsRefreshingLogistics(true);
+        try {
+            const url = `/api/logistics/query-status?orderId=${encodeURIComponent(order.order_id)}&refresh=true`;
+            const res = await fetch(url);
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(json.error || `查詢失敗 (${res.status})`);
+            const fresh = json.order || {};
+            const patch = {
+                logistics_status: fresh.logistics_status,
+                logistics_status_at: fresh.logistics_status_at,
+                logistics_message: fresh.logistics_message,
+            };
+            setOrders(prev => prev.map(o => o.id === order.id ? { ...o, ...patch } : o));
+            if (selectedOrder?.id === order.id) {
+                setSelectedOrder(prev => prev ? { ...prev, ...patch } : prev);
+            }
+        } catch (err) {
+            console.error('refresh logistics failed:', err);
+            alert('刷新失敗：' + err.message);
+        } finally {
+            setIsRefreshingLogistics(false);
+        }
+    };
+
     const handleUpdateNotes = async () => {
         setIsSavingNotes(true);
         try {
@@ -291,6 +417,24 @@ export const AdminOrders = () => {
                                     {order.admin_notes && (
                                         <div className="text-xs text-yellow-700 bg-yellow-100 rounded px-1.5 py-0.5 mt-1 max-w-[150px] truncate" title={order.admin_notes}>
                                             📝 {order.admin_notes}
+                                        </div>
+                                    )}
+                                    {(order.logistics_sub_type || order.logistics_id) && (
+                                        <div className="mt-1 text-[11px] text-gray-600 space-y-0.5 max-w-[180px]">
+                                            <div className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 rounded px-1.5 py-0.5">
+                                                <Truck size={11} />
+                                                {LOGISTICS_BRAND_LABELS[order.logistics_sub_type] || order.logistics_sub_type || '—'}
+                                            </div>
+                                            {order.shipment_no && (
+                                                <div className="font-mono truncate" title={order.shipment_no}>
+                                                    #{order.shipment_no}
+                                                </div>
+                                            )}
+                                            {order.logistics_message && (
+                                                <div className="text-gray-500 truncate" title={order.logistics_message}>
+                                                    {order.logistics_message}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </td>
@@ -395,14 +539,100 @@ export const AdminOrders = () => {
                                     <p><span className="text-gray-500">姓名:</span> {selectedOrder.user_info?.name}</p>
                                     <p><span className="text-gray-500">電話:</span> {selectedOrder.user_info?.phone}</p>
                                     <p><span className="text-gray-500">Email:</span> {selectedOrder.user_info?.email}</p>
-                                    <p><span className="text-gray-500">寄送:</span> {selectedOrder.user_info?.shippingMethod === 'pickup' ? '自取' : '郵寄'}</p>
+                                    <p>
+                                        <span className="text-gray-500">寄送:</span>{' '}
+                                        {SHIPPING_LABELS[selectedOrder.user_info?.shippingMethod] || selectedOrder.user_info?.shippingMethod || '—'}
+                                    </p>
+                                    {selectedOrder.user_info?.shippingMethod === 'pickup' && selectedOrder.user_info?.pickupLocation && (
+                                        <p className="col-span-2 border-t border-gray-200 pt-2 mt-1">
+                                            <span className="text-gray-500">自取門市:</span> {selectedOrder.user_info.pickupLocation}
+                                            {selectedOrder.user_info.pickupTime && `（${selectedOrder.user_info.pickupTime}）`}
+                                        </p>
+                                    )}
                                     {selectedOrder.user_info?.address && (
                                         <p className="col-span-2 border-t border-gray-200 pt-2 mt-1">
-                                            <span className="text-gray-500">地址:</span> {selectedOrder.user_info?.address}
+                                            <span className="text-gray-500">地址:</span>
+                                            {selectedOrder.user_info?.zipCode ? ` ${selectedOrder.user_info.zipCode} ` : ' '}
+                                            {selectedOrder.user_info?.address}
                                         </p>
                                     )}
                                 </div>
                             </div>
+
+                            {/* Logistics Info */}
+                            {(selectedOrder.logistics_sub_type || selectedOrder.logistics_id || selectedOrder.cvs_store_name) && (
+                                <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="font-bold text-purple-800 flex items-center gap-2">
+                                            <Truck size={16} /> 綠界物流
+                                        </h4>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleRefreshLogistics(selectedOrder)}
+                                                disabled={isRefreshingLogistics || !selectedOrder.logistics_id}
+                                                className="h-8 flex items-center gap-1"
+                                            >
+                                                <RefreshCw size={14} className={isRefreshingLogistics ? 'animate-spin' : ''} />
+                                                {isRefreshingLogistics ? '查詢中…' : '強制刷新'}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => handlePrintLabel(selectedOrder)}
+                                                disabled={isPrintingLabel || !selectedOrder.logistics_id}
+                                                className="h-8 bg-purple-600 hover:bg-purple-700 text-white border-none flex items-center gap-1"
+                                            >
+                                                <Printer size={14} />
+                                                {isPrintingLabel ? '產生中…' : '列印託運單'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                                        <p>
+                                            <span className="text-gray-500">物流方式:</span>{' '}
+                                            {LOGISTICS_BRAND_LABELS[selectedOrder.logistics_sub_type] || selectedOrder.logistics_sub_type || '—'}
+                                        </p>
+                                        <p>
+                                            <span className="text-gray-500">託運編號:</span>{' '}
+                                            <span className="font-mono">{selectedOrder.shipment_no || selectedOrder.logistics_id || '—'}</span>
+                                        </p>
+                                        {selectedOrder.payment_no && (
+                                            <p>
+                                                <span className="text-gray-500">繳款代碼:</span>{' '}
+                                                <span className="font-mono">{selectedOrder.payment_no}</span>
+                                            </p>
+                                        )}
+                                        {selectedOrder.logistics_status && (
+                                            <p>
+                                                <span className="text-gray-500">狀態碼:</span>{' '}
+                                                <span className="font-mono">{selectedOrder.logistics_status}</span>
+                                            </p>
+                                        )}
+                                        {selectedOrder.cvs_store_name && (
+                                            <p className="col-span-2">
+                                                <span className="text-gray-500">取件門市:</span> {selectedOrder.cvs_store_name}
+                                                {selectedOrder.cvs_store_address ? `（${selectedOrder.cvs_store_address}）` : ''}
+                                            </p>
+                                        )}
+                                        {selectedOrder.logistics_message && (
+                                            <p className="col-span-2">
+                                                <span className="text-gray-500">最新訊息:</span> {selectedOrder.logistics_message}
+                                                {selectedOrder.logistics_status_at && (
+                                                    <span className="ml-2 text-xs text-gray-400">
+                                                        {new Date(selectedOrder.logistics_status_at).toLocaleString()}
+                                                    </span>
+                                                )}
+                                            </p>
+                                        )}
+                                        {!selectedOrder.logistics_id && (
+                                            <p className="col-span-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                                尚未建立綠界物流單。將狀態設為「已付款」會自動建立；或先確認訂單已付款後再操作。
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Items List */}
                             <div>

@@ -1,8 +1,9 @@
 
-import { CheckCircle, Home, FileText, Calendar, Mail, Smartphone, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Home, FileText, Mail, Smartphone, AlertTriangle, Truck } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
 import { getBankTransferInfo, PAYMENT_METHODS } from '../lib/paymentService';
+import LogisticsTracking from './LogisticsTracking';
 
 export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate, totalAmount, paymentMethod, hasLateUpload = false }) {
     const isLinePay = paymentMethod === PAYMENT_METHODS.LINE_PAY;
@@ -138,6 +139,15 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                             </p>
                         </div>
                     )}
+                </div>
+
+                {/* Logistics Tracking */}
+                <div className="space-y-3 border-t border-bcs-border pt-6">
+                    <h3 className="font-bold text-bcs-black flex items-center gap-2">
+                        <Truck size={20} className="text-bcs-muted" />
+                        物流追蹤
+                    </h3>
+                    <LogisticsTracking orderId={orderId} />
                 </div>
 
                 {/* Call to Action: LINE */}

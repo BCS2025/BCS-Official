@@ -1,45 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { TAIWAN_DATA } from '../lib/taiwanData';
-import { Store, Truck, Calendar } from 'lucide-react';
+import { Store, Calendar, MapPin } from 'lucide-react';
 import { calculateLeadDays, getEstimatedShipDate } from '../lib/utils';
 import ShippingMethodSelector from './ShippingMethodSelector';
 import ProofSelector from './ProofSelector';
 import PickupScheduler from './PickupScheduler';
 import { MESSAGES } from '../constants/messages';
 
-export default function CustomerInfo({ data, onChange, onShippingCostChange, isFreeShipping, totalQuantity, proofItems = [], products = [] }) {
+const CVS_BRAND_OPTIONS = [
+    { value: 'UNIMARTC2C', label: '7-11 賣貨便' },
+    { value: 'FAMIC2C',    label: '全家店到店' },
+    { value: 'HILIFEC2C',  label: '萊爾富店到店' },
+    { value: 'OKMARTC2C',  label: 'OK 超商店到店' },
+];
+
+const CVS_BRAND_LABEL = Object.fromEntries(CVS_BRAND_OPTIONS.map(o => [o.value, o.label]));
+
+export default function CustomerInfo({
+    data,
+    onChange,
+    onShippingCostChange,
+    isFreeShipping,
+    totalQuantity,
+    proofItems = [],
+    products = [],
+    pendingStore,
+    onConsumePendingStore,
+    onClearStore,
+}) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
     const [errors, setErrors] = useState({});
+    const [cvsBrand, setCvsBrand] = useState(data.cvsStoreBrand || 'UNIMARTC2C');
+    const storeFormRef = useRef(null);
 
     const showProof = proofItems.length > 0;
 
-    // Estimated ship date display
     const processingDays = calculateLeadDays(totalQuantity);
     const formattedShipDate = getEstimatedShipDate(processingDays).replace(/-/g, '/');
 
     // 同步 needProof：購物車有客製商品時預設 'yes'，純現貨時強制 'no'
     useEffect(() => {
-        const target = showProof ? 'yes' : 'no';
         if (showProof) {
             if (data.needProof !== 'yes' && data.needProof !== 'no') {
-                onChange('needProof', target);
+                onChange('needProof', 'yes');
             }
         } else if (data.needProof !== 'no') {
             onChange('needProof', 'no');
         }
     }, [showProof, data.needProof, onChange]);
 
-    // Sync city/district from parent
+    // 同步 city/district from parent
     useEffect(() => {
         if (data.city !== city) {
             setCity(data.city);
             setDistrict(data.district || '');
         }
     }, [data.city, data.district, city]);
+
+    // 接收 useLogisticsStore 從 URL/sessionStorage 帶回的選店結果
+    useEffect(() => {
+        if (!pendingStore || !onConsumePendingStore) return;
+        const store = onConsumePendingStore();
+        if (!store) return;
+        onChange('shippingMethod', 'store');
+        onShippingCostChange?.(60);
+        onChange('cvsStoreId', store.cvsStoreId);
+        onChange('cvsStoreName', store.cvsStoreName);
+        onChange('cvsStoreAddress', store.cvsStoreAddress);
+        onChange('cvsStoreBrand', store.cvsStoreBrand);
+        if (store.cvsStoreBrand) setCvsBrand(store.cvsStoreBrand);
+    }, [pendingStore, onConsumePendingStore, onChange, onShippingCostChange]);
 
     const handleMethodChange = (methodId, methodPrice) => {
         onChange('shippingMethod', methodId);
@@ -69,6 +103,10 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
             if (!value) return MESSAGES.VALIDATION.EMAIL_REQUIRED;
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return MESSAGES.VALIDATION.EMAIL_FORMAT;
         }
+        if (id === 'zipCode') {
+            if (!value) return MESSAGES.VALIDATION.ZIPCODE_REQUIRED;
+            if (!/^\d{3}(\d{2})?$/.test(String(value).trim())) return MESSAGES.VALIDATION.ZIPCODE_FORMAT;
+        }
         return '';
     };
 
@@ -78,6 +116,17 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
         const error = validateField(id, value);
         setErrors(prev => ({ ...prev, [id]: error }));
     };
+
+    const handleClearStore = () => {
+        onClearStore?.();
+        onChange('cvsStoreId', '');
+        onChange('cvsStoreName', '');
+        onChange('cvsStoreAddress', '');
+        onChange('cvsStoreBrand', '');
+    };
+
+    const isHomeMethod = data.shippingMethod === 'tcat' || data.shippingMethod === 'post';
+    const hasPickedStore = Boolean(data.cvsStoreId);
 
     return (
         <Card>
@@ -130,7 +179,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
 
                 <div className="border-t border-bcs-border pt-4 grid gap-4 md:grid-cols-2">
 
-                    {/* Common contact fields */}
+                    {/* 共用聯絡欄位 */}
                     <Input
                         id="name"
                         label="訂購人姓名"
@@ -150,48 +199,80 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         error={errors.phone}
                     />
 
-                    {/* Store-to-store */}
+                    {/* 超商店到店：綠界 CVS 賣貨便 */}
                     {data.shippingMethod === 'store' && (
-                        <div className="md:col-span-2 space-y-2">
-                            <Input
-                                id="storeName"
-                                label="超商門市名稱 / 代號"
-                                placeholder="例如：7-11 北園門市 (店號 123456)"
-                                value={data.storeName || ''}
-                                onChange={handleChange}
-                                required
-                                error={errors.storeName}
-                            />
-                            <div className="flex flex-wrap gap-2">
-                                <a
-                                    href="https://emap.pcsc.com.tw/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-bcs-black bg-store-50 border border-bcs-border rounded hover:bg-store-100 transition-colors"
-                                >
-                                    <Store size={14} />
-                                    查詢 7-11 門市
-                                </a>
-                                <a
-                                    href="https://www.family.com.tw/marketing/inquiry.aspx"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-bcs-black bg-store-50 border border-bcs-border rounded hover:bg-store-100 transition-colors"
-                                >
-                                    <Store size={14} />
-                                    查詢全家門市
-                                </a>
-                            </div>
-                            <p className="text-xs text-bcs-muted pl-1">
-                                {MESSAGES.VALIDATION.STORE_NAME_HINT}
-                                <br />請點擊上方按鈕查詢門市資訊後複製貼上。
-                            </p>
+                        <div className="md:col-span-2 space-y-3">
+                            {hasPickedStore ? (
+                                <div className="rounded-lg border border-store-200 bg-store-50 p-4 space-y-2">
+                                    <div className="flex items-start gap-2">
+                                        <Store size={18} className="text-store-500 shrink-0 mt-0.5" />
+                                        <div className="flex-1">
+                                            <div className="text-sm font-bold text-bcs-black">
+                                                {CVS_BRAND_LABEL[data.cvsStoreBrand] || '已選門市'}
+                                                ：{data.cvsStoreName || '(未取得門市名稱)'}
+                                            </div>
+                                            <div className="text-xs text-bcs-muted mt-1">
+                                                店號 {data.cvsStoreId}
+                                                {data.cvsStoreAddress ? ` ・ ${data.cvsStoreAddress}` : ''}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleClearStore}
+                                            className="text-xs text-store-500 hover:text-store-700 underline shrink-0"
+                                        >
+                                            重新選擇
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                                        <Select
+                                            id="cvsBrand"
+                                            label="選擇超商品牌"
+                                            value={cvsBrand}
+                                            onChange={(e) => setCvsBrand(e.target.value)}
+                                            options={CVS_BRAND_OPTIONS}
+                                        />
+                                        <form
+                                            ref={storeFormRef}
+                                            method="POST"
+                                            action="/api/logistics/select-store"
+                                            target="_self"
+                                            className="md:pb-0"
+                                        >
+                                            <input type="hidden" name="subType" value={cvsBrand} />
+                                            <button
+                                                type="submit"
+                                                className="inline-flex items-center justify-center gap-2 rounded-md bg-store-500 hover:bg-store-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors w-full md:w-auto"
+                                            >
+                                                <MapPin size={16} />
+                                                選擇超商門市
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <p className="text-xs text-bcs-muted">
+                                        點擊後跳轉至綠界選店頁，選好門市後會自動帶回此頁。
+                                    </p>
+                                </>
+                            )}
                         </div>
                     )}
 
-                    {/* Postal address */}
-                    {data.shippingMethod === 'post' && (
+                    {/* 黑貓 / 郵政：宅配地址 */}
+                    {isHomeMethod && (
                         <>
+                            <Input
+                                id="zipCode"
+                                label="郵遞區號"
+                                placeholder="例如 710"
+                                value={data.zipCode || ''}
+                                onChange={handleChange}
+                                required
+                                error={errors.zipCode}
+                            />
+                            <div className="hidden md:block" aria-hidden />
                             <Select
                                 id="city"
                                 label="縣市"
@@ -228,7 +309,7 @@ export default function CustomerInfo({ data, onChange, onShippingCostChange, isF
                         </>
                     )}
 
-                    {/* Pickup scheduling */}
+                    {/* 自取 */}
                     {data.shippingMethod === 'pickup' && (
                         <PickupScheduler
                             pickupLocation={data.pickupLocation}

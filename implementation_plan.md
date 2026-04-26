@@ -454,6 +454,120 @@ CREATE POLICY "admin write" ON forge_portfolio FOR ALL USING (auth.role() = 'aut
 
 ---
 
+### Phase 6：綠界物流整合（C2C 賣貨便 + 黑貓 + 中華郵政）
+
+**動機：** 目前 `CustomerInfo.jsx` 的超商選店是外部連結 → 手動複製貼上，UX 不佳。整合綠界物流後達成「選店自動帶回 + 付款後自動建立物流單 + 即時追蹤 + LINE 推播」。
+
+**先決條件（已完成）：**
+- [x] 綠界物流代辦服務開通（比創空間獨資，統編 94320625）
+- [x] 取得 MerchantID + HashKey + HashIV
+- [x] 安裝綠界 AI Skill（`~/.claude/skills/ecpay`）
+
+**範圍決策：**
+- 物流類型：**C2C 賣貨便**（自送 7-11 / 全家 / 萊爾富 / OK，6 個月內出貨量小）
+- 一併整合**黑貓宅配 + 中華郵政**（取代現有手填地址流程）
+- 狀態變更觸發 **LINE Messaging API** 推播
+
+#### Phase 6.0 — 環境變數 + DB schema
+- [x] Vercel 新增環境變數：
+  - `ECPAY_LOGISTICS_MERCHANT_ID`
+  - `ECPAY_LOGISTICS_HASH_KEY`
+  - `ECPAY_LOGISTICS_HASH_IV`
+  - `ECPAY_LOGISTICS_BASE_URL`（測試 `https://logistics-stage.ecpay.com.tw`，正式 `https://logistics.ecpay.com.tw`）
+  - `VITE_LOGISTICS_REPLY_URL`（前端 callback 接點 = `https://bcs.tw/api/logistics/select-store-callback`）
+- [x] Supabase migration：`orders` 表新增欄位（SQL 已執行，11 欄 + idx_orders_logistics_id）
+  - `cvs_store_id` text — 超商店號
+  - `cvs_store_name` text — 超商店名
+  - `cvs_store_brand` text — `UNIMARTC2C` / `FAMIC2C` / `HILIFEC2C` / `OKMARTC2C`
+  - `cvs_store_address` text
+  - `logistics_id` text — 綠界物流訂單編號
+  - `logistics_sub_type` text — `UNIMARTC2C` / `FAMIC2C` / `TCAT` / `POST`
+  - `logistics_status` text — 對應綠界物流狀態碼
+  - `logistics_status_at` timestamptz
+  - `logistics_message` text
+  - `shipment_no` text — 賣貨便寄件代碼 / 黑貓託運單號 / 郵政掛號號碼
+  - `payment_no` text — 賣貨便繳款代碼（C2C 才有）
+
+#### Phase 6.1 — 後端 Serverless Functions（`api/logistics/`）
+- [x] `_lib/check-mac.js` — CheckMacValue 計算（已過 ecpay skill 7/7 test-vectors）
+- [x] `_lib/ecpay-client.js` — buildPayload / buildAutoSubmitForm / postLogistics / parseEcpayResponse
+- [x] `_lib/create-order-core.js` — 共用建單核心（給 LINE Pay confirm 直接 import）
+- [x] `select-store.js` — 產生綠界選店 form HTML（auto-submit）
+- [x] `select-store-callback.js` — 接綠界 POST，302 redirect 回 `/store/cart` 帶 query string
+- [x] `create-order.js` — C2C / TCAT / POST 三分支，admin 觸發
+- [x] `query-status.js` — 公開 endpoint，supports cache + refresh
+- [x] `status-webhook.js` — CMV 驗證 + 永遠回 `1|OK` 防綠界重送風暴
+- [x] `print-document.js` — C2C 用 brand-specific endpoint，HOME 用 `/helper/printTradeDocument`
+
+#### Phase 6.2 — 前端：選店與運送方式（`CustomerInfo.jsx`）
+- [x] `ShippingMethodSelector.jsx` 重構：超商店到店 / 黑貓 / 郵政 / 自取
+- [x] `CustomerInfo.jsx` 兩個外部連結 → 「選擇超商門市」按鈕（form POST 到 `/api/logistics/select-store`，含 brand 下拉）
+- [x] 新增 `useLogisticsStore.js` hook：URL query → sessionStorage → React state，自動移除網址參數
+- [x] 已選門市改顯示卡片（Brand + 店名 + 店號 + 地址 + 重新選擇）
+- [x] 黑貓 / 郵政新增 `zipCode` 欄位（綠界 HOME 必填）
+- [x] `App.jsx` 新增 `cvsStore*` / `zipCode` defaults + onSuccess 重置
+- [x] `useOrderSubmit.js` + `orderService.js`：寫入 `logistics_sub_type` / `cvs_store_*` 欄位
+- [x] `npm run build` 通過，無 syntax error
+
+#### Phase 6.3 — 物流訂單自動建立
+- [x] `_lib/create-order-core.js` 加 `tryAutoCreateLogistics`（自取自動跳過、失敗寫 `notification_failures`）
+- [x] LINE Pay `confirm.js` 在付款成功後直接呼叫，不影響付款結果
+- [x] AdminOrders `updateOrderStatus(id, 'paid')` 觸發 `/api/logistics/create-order`（帶 Bearer token）
+- [x] 自取訂單 / 已建單訂單自動跳過
+
+#### Phase 6.4 — 物流追蹤（`ThankYouPage.jsx` + `PaymentConfirmPage.jsx`）
+- [x] 新增 `<LogisticsTracking>` 元件（src/components/LogisticsTracking.jsx）
+- [x] 載入時 first-fetch（cache）+ 每 30s polling `/api/logistics/query-status?refresh=true`
+- [x] Timeline 顯示（簡化為 4 個關鍵節點，避免太雜亂）：
+  - **C2C**：訂單建立 → 已寄件 → 已到取件門市 → 已取貨
+  - **黑貓**：訂單建立 → 已取件 → 配送中 → 已送達
+  - **郵政**：訂單建立 → 已交寄 → 投遞中 → 已投遞
+- [x] 物流單號 + 繳款代碼（C2C）+ 取件門市 + 對應品牌官網查詢連結
+- [x] 已掛載到 `ThankYouPage.jsx`（銀行轉帳完成頁）和 `PaymentConfirmPage.jsx`（LINE Pay 確認頁）
+
+#### Phase 6.5 — 後台（`AdminOrders.jsx`）
+- [x] 訂單列「訂單編號」欄位下方新增物流標籤：物流方式 + 託運編號 + 最新訊息
+- [x] 詳情 Modal 新增「綠界物流」區塊：物流方式 / 託運編號 / 繳款代碼（C2C）/ 取件門市 / 狀態碼 / 訊息 + 時間
+- [x] 「列印託運單」按鈕：POST `/api/logistics/print-document`（admin Bearer），用 Blob URL 開新視窗
+- [x] 「強制刷新狀態」按鈕：GET `/api/logistics/query-status?refresh=true`，更新本地 state
+- [x] 修正 legacy `'pickup' ? '自取' : '郵寄'` 顯示 → 4 種運送方式 label dict
+- [x] 詳情頁加上 zipCode 顯示 + pickup 門市/時段
+
+#### Phase 6.6 — LINE 通知整合
+- [x] `status-webhook.js` payload 擴充：subType / shipmentNo / paymentNo / storeAddress / customer.email
+- [x] GAS V6：新增 `logistics_status` case + `classifyLogisticsStatus` 將 RtnCode 對應 5 種里程碑（created/shipped/inTransit/arrived/delivered）
+- [x] GAS V6：`createLogisticsStatusFlex` admin LINE 通知（含品牌、狀態、託運單號、取件門市、客戶資訊）
+- [x] GAS V6：`sendLogisticsStatusEmail` 客戶里程碑信件（僅 shipped / arrived / delivered 觸發；arrived 包含取件門市卡片）
+- [x] 新增 `/store/track?orderId=...` 路由 + `TrackOrderPage`（信件 CTA 連到此頁）
+- [x] 訂購確認信（bank transfer + LINE Pay）加入「📦 查看物流追蹤」CTA 按鈕
+- [x] GAS Script Property `BCS_BASE_URL` 預設 `https://bcs.tw`，可依環境覆寫
+
+#### Phase 6.7 — 測試 + 切正式（**需使用者手動執行**）
+- [x] CheckMacValue 已在 Phase 6.1 驗證（ecpay skill 7/7 test-vectors）
+- [x] 程式碼路徑全建立：`npm run build` 通過、所有 API endpoint 可載入
+- [ ] **使用者：** Vercel 上設定 `BCS_BASE_URL`（GAS Script Property，非 Vercel env）→ `https://bcs.tw`
+- [ ] **使用者：** sandbox 環境下單測試三種物流類型：
+  - C2C 7-11 賣貨便：選店 → 下單 → admin 確認入帳 → 收到託運單 PDF + 繳款代碼
+  - 黑貓宅配：填地址 + zipCode → 下單 → admin 確認入帳 → 黑貓託運單
+  - 中華郵政：填地址 + zipCode → 下單 → admin 確認入帳 → 郵政託運單
+- [ ] **使用者：** 綠界廠商後台手動觸發狀態變更（已寄出 / 到店 / 已取貨）→ 驗證：
+  - 狀態 webhook 收到並更新 DB
+  - admin LINE 收到 logistics_status Flex
+  - 客戶於關鍵里程碑收到 email（含取件門市卡片）
+  - 客戶 `/store/track?orderId=...` 與 ThankYouPage 自動更新（30s polling）
+- [ ] **使用者：** AdminOrders「列印託運單」按鈕測試（C2C 應走品牌專屬端點，HOME 走 `/helper/printTradeDocument`）
+- [ ] **使用者：** 確認綠界正式 MerchantID 同時支援 C2C 賣貨便 + B2C 黑貓/郵政
+  - ⚠️ **若不支援單一 MerchantID 同時掛 2 種物流，需拆分：**
+    - 一組 env：`ECPAY_LOGISTICS_C2C_*`（C2C 賣貨便用 2000933 / 對應 HashKey/IV）
+    - 一組 env：`ECPAY_LOGISTICS_HOME_*`（B2C 黑貓/郵政用 2000132 / 對應 HashKey/IV）
+    - 程式需改 `getLogisticsEnv` 依 subType 分支選擇 env，現未實作
+- [ ] **使用者：** 小量正式單實測（建議先用一筆自家測試訂單）
+- [ ] **使用者：** Vercel env `ECPAY_LOGISTICS_BASE_URL` → `https://logistics.ecpay.com.tw`
+
+**預估工作量：** 3 天
+
+---
+
 ## 7. 檔案結構變更
 
 ```
@@ -496,12 +610,21 @@ VITE_SUPABASE_ANON_KEY
 VITE_GAS_WEBHOOK_URL
 ```
 
-**未來加入 ECPay 時需新增：**
+**Phase 6 物流整合需新增（後端用，Vercel Serverless）：**
 ```
-VITE_ECPAY_MERCHANT_ID
-VITE_ECPAY_HASH_KEY
-VITE_ECPAY_HASH_IV
-ECPAY_RETURN_URL          (後端用，Vercel Edge Function)
+ECPAY_LOGISTICS_MERCHANT_ID
+ECPAY_LOGISTICS_HASH_KEY
+ECPAY_LOGISTICS_HASH_IV
+ECPAY_LOGISTICS_BASE_URL    (測試: https://logistics-stage.ecpay.com.tw / 正式: https://logistics.ecpay.com.tw)
+VITE_LOGISTICS_REPLY_URL    (前端 callback 接點，例如 https://bcs.tw/api/logistics/select-store-callback)
+```
+
+**未來加入 ECPay 金流時需新增：**
+```
+ECPAY_PAYMENT_MERCHANT_ID
+ECPAY_PAYMENT_HASH_KEY
+ECPAY_PAYMENT_HASH_IV
+ECPAY_PAYMENT_RETURN_URL
 ```
 
 ---

@@ -12,6 +12,7 @@ import Cart from './components/Cart';
 import ThankYouPage from './components/ThankYouPage';
 import PaymentConfirmPage from './pages/PaymentConfirmPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import TrackOrderPage from './pages/TrackOrderPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminProducts } from './pages/admin/AdminProducts';
@@ -51,9 +52,16 @@ function App() {
         email: '',
         address: '',
         shippingMethod: 'store',
-        storeName: '',
+        // 綠界 C2C 賣貨便（線上選店後自動帶入）
+        cvsStoreId: '',
+        cvsStoreName: '',
+        cvsStoreAddress: '',
+        cvsStoreBrand: '',
+        // 黑貓 / 郵政
+        zipCode: '',
         city: '',
         district: '',
+        // 自取
         pickupLocation: '',
         pickupDate: '',
         pickupTime: '',
@@ -128,10 +136,16 @@ function App() {
                     phone: '',
                     email: '',
                     address: '',
+                    cvsStoreId: '',
+                    cvsStoreName: '',
+                    cvsStoreAddress: '',
+                    cvsStoreBrand: '',
+                    zipCode: '',
                     pickupLocation: '',
                     pickupTime: '',
                     pickupDate: '',
                 }));
+                try { sessionStorage.removeItem('bcs_cvs_store'); } catch { /* noop */ }
             },
         });
     };
@@ -195,6 +209,9 @@ function App() {
                 {/* LINE Pay 付款結果頁 */}
                 <Route path="/store/payment/confirm" element={<PaymentConfirmPage />} />
                 <Route path="/store/payment/cancel" element={<PaymentCancelPage />} />
+
+                {/* 物流追蹤（從通知信件連結進入） */}
+                <Route path="/store/track" element={<TrackOrderPage />} />
 
                 {/* 舊路由向後相容重定向 */}
                 <Route path="/product/:id" element={<Navigate to="/store/products" replace />} />

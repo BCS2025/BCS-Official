@@ -14,6 +14,7 @@ import { MESSAGES } from '../constants/messages';
 import { Input } from './ui/Input';
 import { Loader2 } from 'lucide-react';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { useLogisticsStore } from '../hooks/useLogisticsStore';
 
 export default function Cart({
     cart,
@@ -32,6 +33,7 @@ export default function Cart({
 }) {
     usePageMeta('購物車・販創所', '比創空間・販創所購物車——檢視訂購商品、選擇運送方式、填寫聯絡資訊。', { noindex: true });
     const [editingItem, setEditingItem] = useState(null);
+    const { pendingStore, consumePendingStore, clearStore } = useLogisticsStore();
 
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -134,10 +136,14 @@ export default function Cart({
     const isValid = cart.length > 0 &&
         customer.name &&
         customer.phone && /^09\d{8}$/.test(customer.phone) &&
-        customer.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) && // Basic with Regex
+        customer.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) &&
         (
-            (customer.shippingMethod === 'store' && customer.storeName) ||
-            (customer.shippingMethod === 'post' && customer.city && customer.district && customer.address) ||
+            (customer.shippingMethod === 'store' && customer.cvsStoreId && customer.cvsStoreBrand) ||
+            (
+                (customer.shippingMethod === 'tcat' || customer.shippingMethod === 'post') &&
+                customer.zipCode && /^\d{3}(\d{2})?$/.test(String(customer.zipCode).trim()) &&
+                customer.city && customer.district && customer.address
+            ) ||
             (customer.shippingMethod === 'pickup' && customer.pickupLocation && customer.pickupTime)
         );
 
@@ -212,6 +218,9 @@ export default function Cart({
                 totalQuantity={totalQuantity}
                 proofItems={proofItems}
                 products={products}
+                pendingStore={pendingStore}
+                onConsumePendingStore={consumePendingStore}
+                onClearStore={clearStore}
             />
 
             {/* Coupon Section */}
@@ -316,7 +325,9 @@ export default function Cart({
                 )}
 
                 <div className="flex justify-between mb-4 text-bcs-muted">
-                    <span>運費 ({customer.shippingMethod === 'store' ? '超商' : customer.shippingMethod === 'post' ? '郵寄' : '自取'})</span>
+                    <span>運費 ({(
+                        { store: '超商店到店', tcat: '黑貓宅配', post: '中華郵政', pickup: '自取' }[customer.shippingMethod] || ''
+                    )})</span>
                     <span className={isFreeShipping || isCouponFreeShipping ? "text-red-500 font-bold" : ""}>
                         {isFreeShipping || isCouponFreeShipping ? '免運' : formatCurrency(shippingCost)}
                     </span>

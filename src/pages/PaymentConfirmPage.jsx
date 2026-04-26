@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { Loader2, CheckCircle, XCircle, Home, ShoppingBag } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Home, ShoppingBag, Truck } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { confirmLinePayPayment } from '../lib/paymentService';
 import { formatCurrency } from '../lib/pricing';
 import { usePageMeta } from '../hooks/usePageMeta';
+import LogisticsTracking from '../components/LogisticsTracking';
 
 export default function PaymentConfirmPage() {
     usePageMeta('付款確認中・販創所', '比創空間・販創所正在確認您的 LINE Pay 付款結果。', { noindex: true });
@@ -105,6 +106,17 @@ export default function PaymentConfirmPage() {
                 <p className="text-sm text-bcs-muted">
                     訂單明細已寄至您的 Email，我們將盡快為您製作與出貨。
                 </p>
+
+                {result?.orderId && (
+                    <div className="space-y-3 border-t border-bcs-border pt-6 text-left">
+                        <h3 className="font-bold text-bcs-black flex items-center gap-2">
+                            <Truck size={18} className="text-bcs-muted" />
+                            物流追蹤
+                        </h3>
+                        <LogisticsTracking orderId={result.orderId} />
+                    </div>
+                )}
+
                 <div className="flex flex-col gap-2">
                     <Link to="/store/products">
                         <Button className="w-full"><ShoppingBag size={18} className="mr-2" />繼續逛逛</Button>

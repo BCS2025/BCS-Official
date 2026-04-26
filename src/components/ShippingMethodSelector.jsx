@@ -1,17 +1,18 @@
-import { Truck, MapPin, Store } from 'lucide-react';
+import { Truck, MapPin, Store, Mail } from 'lucide-react';
 import { formatCurrency } from '../lib/pricing';
 
-const SHIPPING_METHODS = [
-    { id: 'store',  name: '超商一般店到店',    price: 60, icon: Store, description: '需提供超商門市' },
-    { id: 'post',   name: '郵局掛號 (小包)',   price: 40, icon: Truck, description: '需提供詳細地址' },
-    { id: 'pickup', name: '自取',              price: 0,  icon: MapPin, description: '全家永康勝華店 / 7-11 北園門市' },
+export const SHIPPING_METHODS = [
+    { id: 'store',  name: '超商店到店',   price: 60,  icon: Store, description: '7-11 / 全家 / 萊爾富 / OK，線上選店' },
+    { id: 'tcat',   name: '黑貓宅配',     price: 180, icon: Truck, description: '本島 1–2 天，常溫包裹' },
+    { id: 'post',   name: '中華郵政',     price: 80,  icon: Mail,  description: '郵局包裹，本島 2–3 天' },
+    { id: 'pickup', name: '自取',         price: 0,   icon: MapPin, description: '全家永康勝華店 / 7-11 北園門市' },
 ];
 
 export default function ShippingMethodSelector({ selectedMethod, onSelect, isFreeShipping }) {
     return (
         <div className="space-y-3">
             <label className="block text-sm font-medium text-bcs-black">選擇運送方式</label>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {SHIPPING_METHODS.map((method) => {
                     const Icon = method.icon;
                     const isSelected = selectedMethod === method.id;
@@ -28,13 +29,13 @@ export default function ShippingMethodSelector({ selectedMethod, onSelect, isFre
                                     : 'border-bcs-border hover:border-bcs-border bg-white'}
                             `}
                         >
-                            <div className={`p-2 rounded-full ${isSelected ? 'bg-store-500 text-white' : 'bg-store-50 text-store-500'}`}>
+                            <div className={`p-2 rounded-full shrink-0 ${isSelected ? 'bg-store-500 text-white' : 'bg-store-50 text-store-500'}`}>
                                 <Icon size={20} />
                             </div>
-                            <div className="flex-1">
-                                <div className="flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-center gap-2">
                                     <span className="font-bold text-bcs-black">{method.name}</span>
-                                    <div className="text-right">
+                                    <div className="text-right shrink-0">
                                         {isFree ? (
                                             <>
                                                 <span className="text-xs text-bcs-muted line-through mr-1">${method.price}</span>
@@ -47,7 +48,7 @@ export default function ShippingMethodSelector({ selectedMethod, onSelect, isFre
                                         )}
                                     </div>
                                 </div>
-                                <p className="text-xs text-bcs-muted mt-1">{method.description}</p>
+                                <p className="text-xs text-bcs-muted mt-1 leading-snug">{method.description}</p>
                             </div>
                         </div>
                     );

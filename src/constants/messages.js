@@ -19,6 +19,10 @@ export const MESSAGES = {
         EMAIL_REQUIRED: '請輸入 Email',
         EMAIL_FORMAT: '請輸入有效的 Email 格式',
         STORE_NAME_HINT: '建議填寫完整「門市名稱」與「店號」以避免寄送錯誤。',
+        ZIPCODE_REQUIRED: '請輸入郵遞區號',
+        ZIPCODE_FORMAT: '請輸入 3 或 5 碼郵遞區號',
+        ADDRESS_REQUIRED: '請輸入詳細地址',
+        STORE_PICK_REQUIRED: '請點選「選擇超商門市」完成選店',
     },
 
     // ── 購物車 ────────────────────────────────────────────────
