@@ -39,7 +39,22 @@
       "Bash(grep -oE '>[^<>]{4,}<')",
       "WebFetch(domain:developers-pay.line.me)",
       "WebFetch(domain:pay.line.me)",
+<<<<<<< Updated upstream
       "Bash(git push *)"
+=======
+      "Bash(git push *)",
+      "Bash(git clone *)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(npx eslint *)",
+      "Bash(node --check google_script_v2.js)",
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/status-webhook.js'\\).then\\(m => console.log\\('status-webhook OK:', typeof m.default\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/create-order.js'\\).then\\(m => console.log\\('create-order OK'\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/print-document.js'\\).then\\(m => console.log\\('print-document OK'\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/query-status.js'\\).then\\(m => console.log\\('query-status OK'\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/_lib/create-order-core.js'\\).then\\(m => console.log\\('create-order-core OK, exports:', Object.keys\\(m\\)\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
+      "Bash(node --input-type=module -e \"import\\('./src/hooks/useOrderSubmit.js'\\).then\\(\\(\\) => console.log\\('useOrderSubmit OK'\\)\\).catch\\(e => console.error\\(e.message\\)\\)\")",
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/_lib/url-helpers.js'\\).then\\(m => console.log\\('helpers OK:', Object.keys\\(m\\).join\\(','\\)\\)\\); import\\('./api/logistics/select-store.js'\\).then\\(\\(\\) => console.log\\('select-store OK'\\)\\); import\\('./api/logistics/select-store-callback.js'\\).then\\(\\(\\) => console.log\\('callback OK'\\)\\); import\\('./api/logistics/_lib/create-order-core.js'\\).then\\(\\(\\) => console.log\\('core OK'\\)\\); import\\('./api/logistics/create-order.js'\\).then\\(\\(\\) => console.log\\('create-order OK'\\)\\); import\\('./api/linepay/confirm.js'\\).then\\(\\(\\) => console.log\\('linepay confirm OK'\\)\\);\")"
+>>>>>>> Stashed changes
     ]
   }
 }

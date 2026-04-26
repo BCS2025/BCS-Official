@@ -1,4 +1,9 @@
 import { callLinePay, getSupabaseAdmin, notifyGASServer } from '../_lib/linepay.js';
+<<<<<<< Updated upstream
+=======
+import { tryAutoCreateLogistics } from '../logistics/_lib/create-order-core.js';
+import { getStatusWebhookUrl } from '../logistics/_lib/url-helpers.js';
+>>>>>>> Stashed changes
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -94,6 +99,19 @@ export default async function handler(req, res) {
             console.error('[linepay/confirm] 通知失敗（不影響付款結果）：', notifyErr);
         }
 
+<<<<<<< Updated upstream
+=======
+        // 付款成功 → 自動建立綠界物流單；失敗只寫 notification_failures，不影響付款結果
+        const logisticsResult = await tryAutoCreateLogistics(supabase, order.order_id, getStatusWebhookUrl(req));
+        if (logisticsResult.ok && logisticsResult.logisticsId) {
+            console.log('[linepay/confirm] 物流單已建立：', logisticsResult.logisticsId);
+        } else if (logisticsResult.skipped) {
+            console.log('[linepay/confirm] 跳過物流建單：', logisticsResult.skipped);
+        } else if (!logisticsResult.ok) {
+            console.warn('[linepay/confirm] 物流建單失敗，已寫入 notification_failures：', logisticsResult.error);
+        }
+
+>>>>>>> Stashed changes
         return res.status(200).json({
             success: true,
             orderId: order.order_id,
