@@ -1,15 +1,27 @@
 /*
-  BCS Order Manager & Notifier (Google Apps Script) - V5 (LINE Pay)
+  BCS Order Manager & Notifier (Google Apps Script) - V6 (ECPay 物流)
 
   FEATURES:
   - Supports LINE Messaging API (Flex Messages with Customer Info)
-  - Beautiful HTML Email Template with Correct Link
+  - Beautiful HTML Email Template with Tracking Page Link
   - Robust Low Stock Alerting support
   - LINE Pay payment_confirmed / payment_refunded notifications (email + LINE Flex)
+  - ECPay 物流狀態變更：admin LINE Flex + 客戶里程碑 Email（已寄出 / 到店待取 / 已送達）
 
   SETUP:
   1. Script Properties: LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID, ADMIN_EMAIL
+  2. (Optional) Script Properties: BCS_BASE_URL（追蹤頁連結用，預設 https://bcs.tw）
 */
+
+const BCS_BASE_URL = (function () {
+    try {
+        return PropertiesService.getScriptProperties().getProperty('BCS_BASE_URL') || 'https://bcs.tw';
+    } catch (_) { return 'https://bcs.tw'; }
+})();
+
+function bcsTrackingUrl(orderId) {
+    return BCS_BASE_URL.replace(/\/$/, '') + '/store/track?orderId=' + encodeURIComponent(orderId || '');
+}
 
 function doPost(e) {
     try {
@@ -103,7 +115,37 @@ function doPost(e) {
             return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'payment_refunded', id: data.orderId }));
         }
 
-        // --- CASE 6: NEW ORDER (fallback，無 type 欄位) ---
+        // --- CASE 6: ECPAY 物流狀態變更 ---
+        if (data.type === 'logistics_status') {
+            const milestone = classifyLogisticsStatus(data.subType, data.rtnCode);
+
+            // 1. Admin Flex（不論里程碑都通知）
+            try {
+                const flex = createLogisticsStatusFlex(data, milestone);
+                sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [flex]);
+            } catch (err) {
+                console.error("LogisticsStatus Line Error:", err);
+            }
+
+            // 2. Customer Email — 僅在關鍵里程碑（已寄出 / 到店待取 / 已送達）發送
+            const SHOULD_EMAIL = { shipped: true, arrived: true, delivered: true };
+            if (SHOULD_EMAIL[milestone.key] && data.customer && data.customer.email) {
+                try {
+                    sendLogisticsStatusEmail(data, milestone);
+                } catch (err) {
+                    console.error("LogisticsStatus Email Error:", err);
+                }
+            }
+
+            return ContentService.createTextOutput(JSON.stringify({
+                status: 'success',
+                type: 'logistics_status',
+                id: data.orderId,
+                milestone: milestone.key,
+            }));
+        }
+
+        // --- CASE 7: NEW ORDER (fallback，無 type 欄位) ---
         // 1. Send Beautiful Email to Customer
         if (data.customer && data.customer.email) {
             try {
@@ -322,10 +364,15 @@ function sendCustomerEmail(order) {
             <h4 style="margin: 0 0 10px; color: #004488;">🛒 下一步：付款與確認</h4>
             <p style="margin: 5px 0; font-size: 14px;">1. 請將款項匯至：<b>822 (中信) 123-456-7890</b></p>
             <p style="margin: 5px 0; font-size: 14px;">2. 匯款後，請點擊下方按鈕加入官方 LINE，告知我們您的<b>「帳號末五碼」</b>以完成對帳。</p>
-            
+
             <div style="text-align: center; margin-top: 20px;">
               <a href="https://line.me/R/ti/p/@bcs_official" class="btn" style="color: white !important;">LINE 聯繫客服</a>
             </div>
+          </div>
+
+          <div style="text-align:center;margin-top:20px;">
+            <a href="${bcsTrackingUrl(order.orderId)}" style="display:inline-block;background:#EA580C;color:white !important;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;">📦 查看物流追蹤</a>
+            <p style="font-size:12px;color:#888;margin-top:8px;">付款確認後會自動建立託運單，可隨時回此頁查看狀態。</p>
           </div>
         </div>
         
@@ -611,6 +658,10 @@ function sendPaymentConfirmedEmail(data) {
               + '<td style="padding:15px 0;text-align:right;font-weight:bold;font-size:18px;color:#16a34a;">$' + data.totalAmount + '</td></tr>'
               + '</table>'
             : '')
+        + '<div style="text-align:center;margin-top:30px;">'
+        + '<a href="' + bcsTrackingUrl(data.orderId) + '" style="display:inline-block;background:#EA580C;color:white !important;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;">📦 查看物流追蹤</a>'
+        + '<p style="font-size:12px;color:#888;margin-top:8px;">託運單建立後，狀態會自動更新到追蹤頁。</p>'
+        + '</div>'
         + '<p style="margin-top:30px;">我們將盡快為您準備商品。若有任何問題，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
         + '</div>'
         + '<div class="footer"><p>此信件為系統自動發送</p><p>Be Creative Space | 客製化工坊</p></div>'
@@ -785,6 +836,168 @@ function createPaymentRefundedFlex(data) {
             }
         }
     };
+}
+
+// --- HELPER: 將綠界 RtnCode 對應到語意化里程碑 ---
+function classifyLogisticsStatus(subType, rtnCode) {
+    const code = String(rtnCode || '');
+    const C2C_BRANDS = { UNIMARTC2C: 1, FAMIC2C: 1, HILIFEC2C: 1, OKMARTC2C: 1 };
+
+    if (C2C_BRANDS[subType]) {
+        if (code === '300' || code === '2030') return { key: 'created',  label: '訂單建立', emoji: '🆕', brand: brandLabel(subType) };
+        if (code === '310' || code === '311')  return { key: 'shipped',  label: '已寄件',   emoji: '📦', brand: brandLabel(subType) };
+        if (code === '2063' || code === '325' || code === '2067') return { key: 'arrived',   label: '到店待取', emoji: '🏪', brand: brandLabel(subType) };
+        if (code === '320' || code === '322')  return { key: 'delivered', label: '已取貨',  emoji: '✅', brand: brandLabel(subType) };
+    }
+    if (subType === 'TCAT') {
+        if (code === '300') return { key: 'created',  label: '訂單建立', emoji: '🆕', brand: '黑貓宅急便' };
+        if (code === '901' || code === '902') return { key: 'shipped',   label: '已取件',  emoji: '📦', brand: '黑貓宅急便' };
+        if (code === '906' || code === '907') return { key: 'inTransit', label: '配送中',  emoji: '🚚', brand: '黑貓宅急便' };
+        if (code === '908' || code === '5008') return { key: 'delivered', label: '已送達', emoji: '✅', brand: '黑貓宅急便' };
+    }
+    if (subType === 'POST') {
+        if (code === '300')   return { key: 'created',   label: '訂單建立', emoji: '🆕', brand: '中華郵政' };
+        if (code === '30001') return { key: 'shipped',   label: '已交寄',   emoji: '📦', brand: '中華郵政' };
+        if (code === '30002') return { key: 'inTransit', label: '投遞中',   emoji: '🚚', brand: '中華郵政' };
+        if (code === '30003') return { key: 'delivered', label: '已投遞',   emoji: '✅', brand: '中華郵政' };
+    }
+    return { key: 'unknown', label: '狀態變更（' + code + '）', emoji: 'ℹ️', brand: brandLabel(subType) };
+}
+
+function brandLabel(subType) {
+    return ({
+        UNIMARTC2C: '7-11 賣貨便',
+        FAMIC2C: '全家店到店',
+        HILIFEC2C: '萊爾富店到店',
+        OKMARTC2C: 'OK 超商店到店',
+        TCAT: '黑貓宅急便',
+        POST: '中華郵政',
+    })[subType] || (subType || '物流');
+}
+
+// --- HELPER: 物流狀態變更 Admin Flex ---
+function createLogisticsStatusFlex(data, milestone) {
+    const tsStr = data.ts
+        ? Utilities.formatDate(new Date(data.ts), 'Asia/Taipei', 'MM/dd HH:mm')
+        : Utilities.formatDate(new Date(), 'Asia/Taipei', 'MM/dd HH:mm');
+
+    const colorByMilestone = {
+        shipped:   '#7c3aed',
+        arrived:   '#16a34a',
+        inTransit: '#2563eb',
+        delivered: '#059669',
+        created:   '#6b7280',
+        unknown:   '#6b7280',
+    }[milestone.key] || '#6b7280';
+
+    const rows = [
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "物流", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: milestone.brand, color: "#111111", size: "sm", align: "end", flex: 3, wrap: true }
+        ]},
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "狀態", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: milestone.label + '（' + (data.rtnMsg || data.rtnCode || '') + '）', color: colorByMilestone, size: "sm", weight: "bold", align: "end", flex: 3, wrap: true }
+        ]},
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "託運單", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.shipmentNo || data.logisticsId || '-'), color: "#111111", size: "xs", align: "end", flex: 3, wrap: true }
+        ]},
+        data.storeName ? { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "取件門市", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.storeName), color: "#111111", size: "xs", align: "end", flex: 3, wrap: true }
+        ]} : null,
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "更新時間", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: tsStr, color: "#111111", size: "sm", align: "end", flex: 3 }
+        ]},
+    ].filter(Boolean);
+
+    return {
+        type: "flex",
+        altText: milestone.emoji + ' [物流] ' + milestone.label + ' ' + data.orderId,
+        contents: {
+            type: "bubble",
+            body: {
+                type: "box", layout: "vertical",
+                contents: [
+                    { type: "text", text: "LOGISTICS UPDATE", weight: "bold", color: colorByMilestone, size: "sm" },
+                    { type: "text", text: milestone.emoji + ' ' + milestone.label, weight: "bold", size: "xl", margin: "md" },
+                    { type: "text", text: 'ID: ' + data.orderId, size: "xs", color: "#aaaaaa", wrap: true },
+                    { type: "separator", margin: "xxl" },
+                    { type: "box", layout: "vertical", margin: "xxl", spacing: "sm", contents: rows },
+                    (data.customer && (data.customer.name || data.customer.phone)) ? { type: "separator", margin: "xxl" } : null,
+                    (data.customer && (data.customer.name || data.customer.phone)) ? {
+                        type: "box", layout: "vertical", margin: "lg", spacing: "sm",
+                        contents: [
+                            data.customer.name  ? { type: "text", text: '客戶: ' + data.customer.name, size: "sm", color: "#555555" } : null,
+                            data.customer.phone ? { type: "text", text: '電話: ' + data.customer.phone, size: "sm", color: "#555555" } : null,
+                        ].filter(Boolean)
+                    } : null,
+                ].filter(Boolean)
+            }
+        }
+    };
+}
+
+// --- HELPER: 物流里程碑 Email（給客戶）---
+function sendLogisticsStatusEmail(data, milestone) {
+    const subject = '【BCS 販創所】' + milestone.emoji + ' 訂單 ' + data.orderId + ' ' + milestone.label;
+    const trackingUrl = bcsTrackingUrl(data.orderId);
+
+    const tipByKey = {
+        shipped:   '我們已將您的包裹交給物流，請耐心等待。',
+        arrived:   '請於 7 天內持身分證件至取件門市領取，逾期將自動退回。',
+        delivered: '感謝您的訂購！如商品有任何問題，歡迎透過 LINE 聯繫客服。',
+    };
+    const tip = tipByKey[milestone.key] || '';
+
+    const storeBlock = (milestone.key === 'arrived' && data.storeName)
+        ? '<div style="background:#fff7ed;border:1px solid #fed7aa;padding:15px;border-radius:5px;margin-top:20px;">'
+          + '<h4 style="margin:0 0 10px;color:#c2410c;">🏪 取件門市</h4>'
+          + '<p style="margin:5px 0;font-size:14px;"><b>' + data.storeName + '</b></p>'
+          + (data.storeAddress ? '<p style="margin:5px 0;font-size:13px;color:#7c2d12;">' + data.storeAddress + '</p>' : '')
+          + (data.paymentNo ? '<p style="margin:5px 0;font-size:13px;color:#7c2d12;">取件代碼：<span style="font-family:monospace;font-weight:bold;">' + data.paymentNo + '</span></p>' : '')
+          + '</div>'
+        : '';
+
+    const body = ''
+        + '<!DOCTYPE html><html><head><style>'
+        + '.btn{display:inline-block;background:#EA580C;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;}'
+        + '.container{max-width:600px;margin:0 auto;font-family:sans-serif;border:1px solid #eee;border-radius:8px;overflow:hidden;}'
+        + '.header{background:#EA580C;color:white;padding:20px;text-align:center;}'
+        + '.content{padding:20px;line-height:1.6;}'
+        + '.footer{background:#f9f9f9;padding:20px;text-align:center;font-size:12px;color:#999;}'
+        + '.info-box{background:#fff7ed;border:1px solid #fed7aa;padding:15px;border-radius:5px;margin-top:20px;}'
+        + '</style></head>'
+        + '<body style="margin:0;padding:20px;background:#f5f5f5;">'
+        + '<div class="container" style="background:white;">'
+        + '<div class="header">'
+        + '<h1 style="margin:0;font-size:20px;">' + milestone.emoji + ' ' + milestone.label + '</h1>'
+        + '<p style="margin:5px 0 0;opacity:0.9;">' + data.orderId + '</p>'
+        + '</div>'
+        + '<div class="content">'
+        + '<p>親愛的 ' + (data.customer && data.customer.name ? data.customer.name : '客戶') + ' 您好，</p>'
+        + '<p>您的訂單物流狀態已更新為 <strong>' + milestone.label + '</strong>。' + tip + '</p>'
+        + '<div class="info-box">'
+        + '<p style="margin:5px 0;font-size:14px;">物流方式：<b>' + milestone.brand + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">託運編號：<b style="font-family:monospace;">' + (data.shipmentNo || data.logisticsId || '-') + '</b></p>'
+        + '<p style="margin:5px 0;font-size:14px;">最新狀態：<b>' + (data.rtnMsg || milestone.label) + '</b></p>'
+        + '</div>'
+        + storeBlock
+        + '<div style="text-align:center;margin-top:30px;">'
+        + '<a href="' + trackingUrl + '" class="btn" style="color:white !important;">📦 查看物流追蹤頁</a>'
+        + '</div>'
+        + '<p style="margin-top:30px;font-size:13px;color:#888;">如有任何問題，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
+        + '</div>'
+        + '<div class="footer"><p>此信件為系統自動發送</p><p>比創空間 販創所</p></div>'
+        + '</div></body></html>';
+
+    MailApp.sendEmail({
+        to: data.customer.email,
+        subject: subject,
+        htmlBody: body,
+    });
 }
 
 function testLine() {

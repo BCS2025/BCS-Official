@@ -21,21 +21,28 @@ export async function submitOrder(orderData) {
     }
 
     // 2. SUBMIT ORDER
+    const cvsStore = orderData.cvsStore || null;
+    const insertRow = {
+        order_id: orderData.orderId,
+        user_info: orderData.customer,
+        items: orderData.items,
+        total_amount: orderData.totalAmount,
+        coupon_code: orderData.couponCode || null,
+        discount_amount: orderData.discountAmount || 0,
+        status: 'pending',
+        payment_method: orderData.paymentMethod || 'bank_transfer',
+        payment_status: 'pending',
+        // 物流欄位（給綠界建單用）
+        logistics_sub_type: orderData.logisticsSubType || null,
+        cvs_store_id: cvsStore?.id || null,
+        cvs_store_name: cvsStore?.name || null,
+        cvs_store_address: cvsStore?.address || null,
+        cvs_store_brand: cvsStore?.brand || null,
+    };
+
     const { data, error } = await supabase
         .from('orders')
-        .insert([
-            {
-                order_id: orderData.orderId,
-                user_info: orderData.customer,
-                items: orderData.items,
-                total_amount: orderData.totalAmount,
-                coupon_code: orderData.couponCode || null,
-                discount_amount: orderData.discountAmount || 0,
-                status: 'pending',
-                payment_method: orderData.paymentMethod || 'bank_transfer',
-                payment_status: 'pending'
-            }
-        ]); // Removed .select() to avoid RLS read error
+        .insert([insertRow]); // Removed .select() to avoid RLS read error
 
     if (error) {
         console.error('Order Submission Error:', error);

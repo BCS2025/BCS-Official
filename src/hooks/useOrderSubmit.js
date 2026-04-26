@@ -85,6 +85,22 @@ export function useOrderSubmit() {
                 ? customer.pickupDate
                 : getEstimatedShipDate(leadDays);
 
+            const isHomeShipping = customer.shippingMethod === 'tcat' || customer.shippingMethod === 'post';
+            const composedAddress = isHomeShipping
+                ? `${customer.city || ''}${customer.district || ''}${customer.address || ''}`
+                : customer.address;
+
+            // 對應綠界 LogisticsSubType
+            //  - C2C 賣貨便：UNIMARTC2C / FAMIC2C / HILIFEC2C / OKMARTC2C（從 cvsStoreBrand 帶）
+            //  - 黑貓宅配：TCAT
+            //  - 中華郵政：POST
+            //  - 自取：null（不建立綠界物流單）
+            const logisticsSubType =
+                customer.shippingMethod === 'store' ? (customer.cvsStoreBrand || null) :
+                customer.shippingMethod === 'tcat'  ? 'TCAT' :
+                customer.shippingMethod === 'post'  ? 'POST' :
+                null;
+
             const orderData = {
                 orderId,
                 timestamp: new Date().toISOString(),
@@ -93,9 +109,9 @@ export function useOrderSubmit() {
                     ...customer,
                     needProof,
                     shippingCost: finalShippingCost,
-                    address: customer.shippingMethod === 'post'
-                        ? `${customer.city}${customer.district}${customer.address}`
-                        : customer.address,
+                    address: composedAddress,
+                    // cellPhone 給後端 createLogisticsOrder 用（user_info.cellPhone 為主）
+                    cellPhone: customer.phone,
                 },
                 items: processedItems,
                 totalAmount: finalTotal,
@@ -104,6 +120,13 @@ export function useOrderSubmit() {
                 totalQuantity,
                 status: 'pending',
                 paymentMethod,
+                logisticsSubType,
+                cvsStore: customer.shippingMethod === 'store' ? {
+                    id: customer.cvsStoreId,
+                    name: customer.cvsStoreName,
+                    address: customer.cvsStoreAddress,
+                    brand: customer.cvsStoreBrand,
+                } : null,
             };
 
             // 2. Build human-readable items for email/LINE notification

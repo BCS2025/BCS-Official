@@ -39,9 +39,6 @@
       "Bash(grep -oE '>[^<>]{4,}<')",
       "WebFetch(domain:developers-pay.line.me)",
       "WebFetch(domain:pay.line.me)",
-<<<<<<< Updated upstream
-      "Bash(git push *)"
-=======
       "Bash(git push *)",
       "Bash(git clone *)",
       "Bash(node --input-type=module -e ' *)",
@@ -53,8 +50,14 @@
       "Bash(node --input-type=module -e \"import\\('./api/logistics/query-status.js'\\).then\\(m => console.log\\('query-status OK'\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
       "Bash(node --input-type=module -e \"import\\('./api/logistics/_lib/create-order-core.js'\\).then\\(m => console.log\\('create-order-core OK, exports:', Object.keys\\(m\\)\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
       "Bash(node --input-type=module -e \"import\\('./src/hooks/useOrderSubmit.js'\\).then\\(\\(\\) => console.log\\('useOrderSubmit OK'\\)\\).catch\\(e => console.error\\(e.message\\)\\)\")",
-      "Bash(node --input-type=module -e \"import\\('./api/logistics/_lib/url-helpers.js'\\).then\\(m => console.log\\('helpers OK:', Object.keys\\(m\\).join\\(','\\)\\)\\); import\\('./api/logistics/select-store.js'\\).then\\(\\(\\) => console.log\\('select-store OK'\\)\\); import\\('./api/logistics/select-store-callback.js'\\).then\\(\\(\\) => console.log\\('callback OK'\\)\\); import\\('./api/logistics/_lib/create-order-core.js'\\).then\\(\\(\\) => console.log\\('core OK'\\)\\); import\\('./api/logistics/create-order.js'\\).then\\(\\(\\) => console.log\\('create-order OK'\\)\\); import\\('./api/linepay/confirm.js'\\).then\\(\\(\\) => console.log\\('linepay confirm OK'\\)\\);\")"
->>>>>>> Stashed changes
+      "Bash(node --input-type=module -e \"import\\('./api/logistics/_lib/url-helpers.js'\\).then\\(m => console.log\\('helpers OK:', Object.keys\\(m\\).join\\(','\\)\\)\\); import\\('./api/logistics/select-store.js'\\).then\\(\\(\\) => console.log\\('select-store OK'\\)\\); import\\('./api/logistics/select-store-callback.js'\\).then\\(\\(\\) => console.log\\('callback OK'\\)\\); import\\('./api/logistics/_lib/create-order-core.js'\\).then\\(\\(\\) => console.log\\('core OK'\\)\\); import\\('./api/logistics/create-order.js'\\).then\\(\\(\\) => console.log\\('create-order OK'\\)\\); import\\('./api/linepay/confirm.js'\\).then\\(\\(\\) => console.log\\('linepay confirm OK'\\)\\);\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\); console.log\\('settings.local.json OK'\\)\")",
+      "Bash(node --check api/linepay/confirm.js)",
+      "Bash(node --check api/logistics/_lib/create-order-core.js)",
+      "Bash(node --check api/logistics/_lib/check-mac.js)",
+      "Bash(node --check api/logistics/create-order.js)",
+      "Bash(node --input-type=module -e \"Promise.all\\([import\\('./api/logistics/_lib/url-helpers.js'\\).then\\(m => console.log\\('url-helpers OK:', Object.keys\\(m\\).join\\(','\\)\\)\\), import\\('./api/logistics/_lib/check-mac.js'\\).then\\(m => console.log\\('check-mac OK:', Object.keys\\(m\\).join\\(','\\)\\)\\), import\\('./api/logistics/_lib/ecpay-client.js'\\).then\\(m => console.log\\('ecpay-client OK:', Object.keys\\(m\\).join\\(','\\)\\)\\), import\\('./api/logistics/_lib/create-order-core.js'\\).then\\(m => console.log\\('create-order-core OK:', Object.keys\\(m\\).join\\(','\\)\\)\\), import\\('./api/logistics/select-store.js'\\).then\\(\\(\\) => console.log\\('select-store OK'\\)\\), import\\('./api/logistics/select-store-callback.js'\\).then\\(\\(\\) => console.log\\('select-store-callback OK'\\)\\), import\\('./api/logistics/create-order.js'\\).then\\(\\(\\) => console.log\\('create-order OK'\\)\\), import\\('./api/linepay/confirm.js'\\).then\\(\\(\\) => console.log\\('linepay confirm OK'\\)\\)]\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\);\")",
+      "Bash(git add *)"
     ]
   }
 }
