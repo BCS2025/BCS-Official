@@ -1,9 +1,16 @@
 import { supabase } from './supabaseClient';
 import { calculateKeychainPrice, calculateVariantPrice } from './pricing';
+import { DEFAULT_ALLOWED_SHIPPING_METHODS } from './shippingService';
 
 // TODO: Legacy fallback — 當 Supabase 內所有商品的 config_schema 與 pricing_logic 均已填妥後，
 // 可移除此 import 及 transformProduct 中的 staticConfig 相關邏輯，並刪除 src/data/products.js。
 import { PRODUCTS } from '../data/products';
+
+function pickAllowedShippingMethods(dbProduct) {
+    const raw = dbProduct?.allowed_shipping_methods;
+    if (Array.isArray(raw) && raw.length > 0) return raw;
+    return DEFAULT_ALLOWED_SHIPPING_METHODS;
+}
 
 /**
  * Transforms a DB product row into the Frontend Product Object format
@@ -62,7 +69,8 @@ function transformProduct(dbProduct) {
             sortOrder: dbProduct.sort_order,
             calculatePrice: calculatePrice,
             needsProof: dbProduct.needs_proof === true,
-            requiresFileUpload: dbProduct.requires_file_upload === true
+            requiresFileUpload: dbProduct.requires_file_upload === true,
+            allowedShippingMethods: pickAllowedShippingMethods(dbProduct)
         };
     }
 
@@ -80,7 +88,8 @@ function transformProduct(dbProduct) {
             createdAt: dbProduct.created_at,
             sortOrder: dbProduct.sort_order,
             needsProof: dbProduct.needs_proof === true,
-            requiresFileUpload: dbProduct.requires_file_upload === true
+            requiresFileUpload: dbProduct.requires_file_upload === true,
+            allowedShippingMethods: pickAllowedShippingMethods(dbProduct)
         };
     }
 
@@ -105,7 +114,8 @@ function transformProduct(dbProduct) {
         sortOrder: dbProduct.sort_order,
         calculatePrice: (config, qty) => (safeBasePrice * (qty || 0)),
         needsProof: dbProduct.needs_proof === true,
-        requiresFileUpload: dbProduct.requires_file_upload === true
+        requiresFileUpload: dbProduct.requires_file_upload === true,
+        allowedShippingMethods: pickAllowedShippingMethods(dbProduct)
     };
 }
 

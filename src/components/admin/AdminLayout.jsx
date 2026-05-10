@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { LayoutDashboard, Package, Box, LogOut, Settings, Tag, FlaskConical, GraduationCap, ClipboardList, Images, AlertTriangle, MapPin, Rocket } from 'lucide-react';
+import { LayoutDashboard, Package, Box, LogOut, Settings, Tag, FlaskConical, GraduationCap, ClipboardList, Images, AlertTriangle, MapPin, Rocket, Truck } from 'lucide-react';
 
 export const AdminLayout = () => {
     const [session, setSession] = useState(null);
@@ -58,6 +58,7 @@ export const AdminLayout = () => {
         { path: '/admin/registrations', icon: ClipboardList, label: '報名管理 (Registrations)' },
         { path: '/admin/forge-portfolio', icon: Images, label: '作品集管理 (Portfolio)' },
         { path: '/admin/notification-failures', icon: AlertTriangle, label: '通知失敗記錄' },
+        { path: '/admin/shipping', icon: Truck, label: '運費與物流 (Shipping)' },
         { path: '/admin/publish', icon: Rocket, label: '發佈到官網 (Publish)' },
     ];
 

@@ -30,6 +30,9 @@ export default function CustomerInfo({
     pendingStore,
     onConsumePendingStore,
     onClearStore,
+    shippingMethods = [],
+    allowedShippingIds = null,
+    itemsTotal = 0,
 }) {
     const [city, setCity] = useState(data.city || '');
     const [district, setDistrict] = useState(data.district || '');
@@ -67,13 +70,15 @@ export default function CustomerInfo({
         const store = onConsumePendingStore();
         if (!store) return;
         onChange('shippingMethod', 'store');
-        onShippingCostChange?.(60);
+        // 依當前 DB 設定取 store 物流費用（找不到則 fallback 60）
+        const storeMethod = shippingMethods.find(m => m.id === 'store');
+        onShippingCostChange?.(storeMethod?.price ?? 60);
         onChange('cvsStoreId', store.cvsStoreId);
         onChange('cvsStoreName', store.cvsStoreName);
         onChange('cvsStoreAddress', store.cvsStoreAddress);
         onChange('cvsStoreBrand', store.cvsStoreBrand);
         if (store.cvsStoreBrand) setCvsBrand(store.cvsStoreBrand);
-    }, [pendingStore, onConsumePendingStore, onChange, onShippingCostChange]);
+    }, [pendingStore, onConsumePendingStore, onChange, onShippingCostChange, shippingMethods]);
 
     const handleMethodChange = (methodId, methodPrice) => {
         onChange('shippingMethod', methodId);
@@ -146,9 +151,11 @@ export default function CustomerInfo({
             <CardContent className="space-y-6">
 
                 <ShippingMethodSelector
+                    methods={shippingMethods}
+                    allowedIds={allowedShippingIds}
                     selectedMethod={data.shippingMethod}
                     onSelect={handleMethodChange}
-                    isFreeShipping={isFreeShipping}
+                    itemsTotal={itemsTotal}
                 />
 
                 {showProof && (

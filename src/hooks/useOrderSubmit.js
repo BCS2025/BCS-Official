@@ -23,7 +23,7 @@ export function useOrderSubmit() {
         finalShippingCost,
         isFreeShipping,
         shippingCost,
-        FREE_SHIPPING_THRESHOLD,
+        freeShippingThreshold,
         products,
         couponData = {},
         paymentMethod = PAYMENT_METHODS.BANK_TRANSFER,
@@ -38,7 +38,8 @@ export function useOrderSubmit() {
         if (finalShippingCost > 0) {
             confirmMsg += `\n運費: ${formatCurrency(finalShippingCost)}`;
         } else if (isFreeShipping && shippingCost > 0) {
-            confirmMsg += `\n運費: 免運 (滿$${FREE_SHIPPING_THRESHOLD}活動)`;
+            const thresholdLabel = freeShippingThreshold ? `滿$${freeShippingThreshold}活動` : '滿額活動';
+            confirmMsg += `\n運費: 免運 (${thresholdLabel})`;
         } else if (couponCode && finalShippingCost === 0 && !isFreeShipping) {
             confirmMsg += `\n運費: 免運 (優惠碼)`;
         }

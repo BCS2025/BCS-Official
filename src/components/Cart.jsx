@@ -28,9 +28,14 @@ export default function Cart({
     onSubmit,
     isSubmitting,
     isFreeShipping,
-    FREE_SHIPPING_THRESHOLD,
-    itemsTotal
+    freeShippingThreshold,
+    itemsTotal,
+    shippingMethods = [],
+    allowedShippingIds = null,
 }) {
+    const intersectionEmpty = Array.isArray(allowedShippingIds) && allowedShippingIds.length === 0;
+    const showFreeShippingProgress = freeShippingThreshold != null && freeShippingThreshold > 0;
+    const remainingForFreeShipping = showFreeShippingProgress ? Math.max(0, freeShippingThreshold - itemsTotal) : 0;
     usePageMeta('購物車・販創所', '比創空間・販創所購物車——檢視訂購商品、選擇運送方式、填寫聯絡資訊。', { noindex: true });
     const [editingItem, setEditingItem] = useState(null);
     const { pendingStore, consumePendingStore, clearStore } = useLogisticsStore();
@@ -174,17 +179,28 @@ export default function Cart({
                 結帳
             </h1>
 
-            {/* Free Shipping Progress */}
-            {!isFreeShipping && itemsTotal > 0 && (
+            {/* Free Shipping Progress（依當前選擇物流的門檻） */}
+            {showFreeShippingProgress && !isFreeShipping && itemsTotal > 0 && (
                 <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg flex items-center justify-between text-sm text-orange-800">
-                    <span>再買 <span className="font-bold text-orange-600">${FREE_SHIPPING_THRESHOLD - itemsTotal}</span> 即可享免運優惠！</span>
-                    <span className="text-xs bg-orange-200 px-2 py-1 rounded-full">差一點點</span>
+                    <span>
+                        目前運送方式（{customer.shippingMethod === 'tcat' ? '黑貓宅配'
+                            : customer.shippingMethod === 'post' ? '中華郵政'
+                            : customer.shippingMethod === 'pickup' ? '自取'
+                            : '超商店到店'}）滿 <span className="font-bold text-orange-600">${freeShippingThreshold}</span> 免運，再買 <span className="font-bold text-orange-600">${remainingForFreeShipping}</span> 即享！
+                    </span>
+                    <span className="text-xs bg-orange-200 px-2 py-1 rounded-full shrink-0 ml-2">差一點點</span>
                 </div>
             )}
             {isFreeShipping && itemsTotal > 0 && (
                 <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-center gap-2 text-sm text-green-800">
                     <span className="bg-green-100 p-1 rounded-full">🎉</span>
                     <span className="font-bold">{MESSAGES.CART.FREE_SHIPPING_QUALIFIED}</span>
+                </div>
+            )}
+
+            {intersectionEmpty && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-700">
+                    ⚠️ 購物車內商品的物流限制不相容，無法統一寄送。請拆成多筆訂單分別結帳，或聯絡客服協助。
                 </div>
             )}
 
@@ -221,6 +237,9 @@ export default function Cart({
                 pendingStore={pendingStore}
                 onConsumePendingStore={consumePendingStore}
                 onClearStore={clearStore}
+                shippingMethods={shippingMethods}
+                allowedShippingIds={allowedShippingIds}
+                itemsTotal={itemsTotal}
             />
 
             {/* Coupon Section */}
@@ -326,7 +345,9 @@ export default function Cart({
 
                 <div className="flex justify-between mb-4 text-bcs-muted">
                     <span>運費 ({(
-                        { store: '超商店到店', tcat: '黑貓宅配', post: '中華郵政', pickup: '自取' }[customer.shippingMethod] || ''
+                        shippingMethods.find(m => m.id === customer.shippingMethod)?.name
+                        ?? { store: '超商店到店', tcat: '黑貓宅配', post: '中華郵政', pickup: '自取' }[customer.shippingMethod]
+                        ?? ''
                     )})</span>
                     <span className={isFreeShipping || isCouponFreeShipping ? "text-red-500 font-bold" : ""}>
                         {isFreeShipping || isCouponFreeShipping ? '免運' : formatCurrency(shippingCost)}
@@ -364,7 +385,7 @@ export default function Cart({
                     appliedCoupon,
                     paymentMethod,
                 })}
-                disabled={!isValid || isSubmitting}
+                disabled={!isValid || isSubmitting || intersectionEmpty}
             >
                 {isSubmitting ? '處理中...' : (
                     <span className="flex items-center gap-2">

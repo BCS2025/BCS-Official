@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { uploadFile } from '../../lib/storageService';
 import { ConfigSchemaBuilder } from '../../components/admin/ConfigSchemaBuilder';
+import { fetchAllShippingMethods, DEFAULT_ALLOWED_SHIPPING_METHODS } from '../../lib/shippingService';
 
 export const AdminProducts = () => {
     const [products, setProducts] = useState([]);
@@ -17,6 +18,7 @@ export const AdminProducts = () => {
     // Data for dropdowns
     const [materials, setMaterials] = useState([]);
     const [recipes, setRecipes] = useState([]); // Array of { material_id, quantity, match_condition }
+    const [shippingMethodsList, setShippingMethodsList] = useState([]); // 用於物流 checkbox
 
     // Form State
     const [formData, setFormData] = useState(getInitialForm());
@@ -39,18 +41,29 @@ export const AdminProducts = () => {
             is_active: true,
             category: 'creative', // 'creative'（創作商品）| 'materials'（創客材料）
             needs_proof: false,
-            requires_file_upload: false
+            requires_file_upload: false,
+            allowed_shipping_methods: [...DEFAULT_ALLOWED_SHIPPING_METHODS]
         };
     }
 
     useEffect(() => {
         fetchProducts();
         fetchMaterials();
+        loadShippingMethods();
     }, []);
 
     async function fetchMaterials() {
         const { data } = await supabase.from('materials').select('*').order('name');
         if (data) setMaterials(data);
+    }
+
+    async function loadShippingMethods() {
+        try {
+            const list = await fetchAllShippingMethods();
+            setShippingMethodsList(list);
+        } catch (err) {
+            console.error('Failed to load shipping methods:', err);
+        }
     }
 
     async function fetchProducts() {
@@ -97,7 +110,10 @@ export const AdminProducts = () => {
             config_schema: JSON.stringify(product.config_schema, null, 2),
             pricing_logic: product.pricing_logic || {},
             images: initialImages,
-            category: product.category || 'creative'
+            category: product.category || 'creative',
+            allowed_shipping_methods: Array.isArray(product.allowed_shipping_methods) && product.allowed_shipping_methods.length > 0
+                ? product.allowed_shipping_methods
+                : [...DEFAULT_ALLOWED_SHIPPING_METHODS]
         });
         setJsonError(null);
         setIsModalOpen(true);
@@ -205,7 +221,10 @@ export const AdminProducts = () => {
                 pricing_logic: formData.pricing_logic,
                 category: formData.category || 'creative',
                 needs_proof: !!formData.needs_proof,
-                requires_file_upload: !!(formData.needs_proof && formData.requires_file_upload)
+                requires_file_upload: !!(formData.needs_proof && formData.requires_file_upload),
+                allowed_shipping_methods: Array.isArray(formData.allowed_shipping_methods) && formData.allowed_shipping_methods.length > 0
+                    ? formData.allowed_shipping_methods
+                    : [...DEFAULT_ALLOWED_SHIPPING_METHODS]
             };
 
             // A. Upsert Product
@@ -603,6 +622,49 @@ export const AdminProducts = () => {
                                     />
                                     商品頁提供「客製化檔案上傳」欄位（客戶可選擇稍後透過 LINE 補上）
                                 </label>
+                            </div>
+
+                            {/* 允許的物流方式（商品層級） */}
+                            <div className="space-y-3 border border-emerald-200 bg-emerald-50/50 p-5 rounded-xl">
+                                <div>
+                                    <label className="text-base font-bold text-emerald-900 block">允許的物流方式</label>
+                                    <span className="text-xs text-emerald-700">
+                                        勾選此商品可使用的運送方式。預設不含「黑貓宅配」（大件商品才需勾選）。
+                                        購物車會以所有商品的交集顯示給顧客。
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {(shippingMethodsList.length > 0 ? shippingMethodsList : [
+                                        { id: 'store', name: '超商店到店' },
+                                        { id: 'tcat', name: '黑貓宅配' },
+                                        { id: 'post', name: '中華郵政' },
+                                        { id: 'pickup', name: '自取' },
+                                    ]).map(m => {
+                                        const checked = (formData.allowed_shipping_methods || []).includes(m.id);
+                                        return (
+                                            <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-2 bg-white border border-emerald-100 rounded-md hover:bg-emerald-50">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={e => {
+                                                        setFormData(prev => {
+                                                            const current = new Set(prev.allowed_shipping_methods || []);
+                                                            if (e.target.checked) current.add(m.id);
+                                                            else current.delete(m.id);
+                                                            return { ...prev, allowed_shipping_methods: Array.from(current) };
+                                                        });
+                                                    }}
+                                                    className="w-4 h-4"
+                                                />
+                                                <span className="font-medium text-gray-800">{m.name}</span>
+                                                <span className="text-xs text-gray-400 font-mono ml-auto">{m.id}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                                {(!formData.allowed_shipping_methods || formData.allowed_shipping_methods.length === 0) && (
+                                    <p className="text-xs text-red-600 font-bold">⚠️ 至少需勾選 1 種物流方式（未勾選時系統會回填預設清單）</p>
+                                )}
                             </div>
 
                             {/* Config Editor (Moved up) */}

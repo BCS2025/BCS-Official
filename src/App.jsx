@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronUp } from 'lucide-react';
 import { fetchProducts } from './lib/productService';
+import {
+    fetchActiveShippingMethods,
+    getAllowedShippingMethodIds,
+    isMethodFreeShipping,
+} from './lib/shippingService';
 import { useCart } from './hooks/useCart';
 import { useOrderSubmit } from './hooks/useOrderSubmit';
 import { useGA4PageView } from './hooks/useAnalytics';
@@ -36,8 +41,7 @@ import { AdminRegistrations } from './pages/admin/AdminRegistrations';
 import { AdminForgePortfolio } from './pages/admin/AdminForgePortfolio';
 import { AdminNotificationFailures } from './pages/admin/AdminNotificationFailures';
 import { AdminPublish } from './pages/admin/AdminPublish';
-
-const FREE_SHIPPING_THRESHOLD = 599;
+import { AdminShippingSettings } from './pages/admin/AdminShippingSettings';
 
 function App() {
     const navigate = useNavigate();
@@ -68,6 +72,7 @@ function App() {
         // 不在此預設 needProof：由 CustomerInfo 依購物車內容動態決定
     });
     const [shippingCost, setShippingCost] = useState(60);
+    const [shippingMethods, setShippingMethods] = useState([]);
 
     const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -92,7 +97,21 @@ function App() {
                 if (!cancelled) setIsLoading(false);
             }
         }
+        async function loadShipping() {
+            try {
+                const methods = await fetchActiveShippingMethods();
+                if (!cancelled) {
+                    setShippingMethods(methods);
+                    // 預設第一筆若為 store 60，沿用；否則同步初始 shippingCost
+                    const initial = methods.find(m => m.id === 'store') || methods[0];
+                    if (initial) setShippingCost(initial.price);
+                }
+            } catch (error) {
+                console.error('Failed to load shipping methods:', error);
+            }
+        }
         loadProducts();
+        loadShipping();
         return () => { cancelled = true; };
     }, []);
 
@@ -109,8 +128,30 @@ function App() {
     }, [isLoading, location.pathname]);
 
     const itemsTotal = cart.reduce((sum, i) => sum + i.price, 0);
-    const isFreeShipping = itemsTotal >= FREE_SHIPPING_THRESHOLD;
+
+    // 依購物車內所有商品的 allowedShippingMethods 取交集；cart 為空回傳 null（不限制）
+    const allowedShippingIds = useMemo(
+        () => getAllowedShippingMethodIds(cart, products),
+        [cart, products]
+    );
+
+    // 當前選擇的物流物件 + 該物流的免運門檻
+    const currentMethod = shippingMethods.find(m => m.id === customer.shippingMethod) || null;
+    const freeShippingThreshold = currentMethod?.free_shipping_threshold ?? null;
+    const isFreeShipping = isMethodFreeShipping(currentMethod, itemsTotal);
     const finalShippingCost = isFreeShipping ? 0 : shippingCost;
+
+    // 若購物車交集導致目前選的物流被禁用，自動切到第一個允許的選項
+    useEffect(() => {
+        if (!shippingMethods.length) return;
+        if (!allowedShippingIds || allowedShippingIds.length === 0) return;
+        if (allowedShippingIds.includes(customer.shippingMethod)) return;
+        const fallback = shippingMethods.find(m => allowedShippingIds.includes(m.id));
+        if (fallback) {
+            setCustomer(prev => ({ ...prev, shippingMethod: fallback.id }));
+            setShippingCost(fallback.price);
+        }
+    }, [allowedShippingIds, shippingMethods, customer.shippingMethod]);
 
     const handleCustomerChange = (field, value) => {
         setCustomer(prev => ({ ...prev, [field]: value }));
@@ -124,7 +165,7 @@ function App() {
             finalShippingCost,
             isFreeShipping,
             shippingCost,
-            FREE_SHIPPING_THRESHOLD,
+            freeShippingThreshold,
             products,
             couponData,
             paymentMethod,
@@ -183,8 +224,10 @@ function App() {
                         onSubmit={handleSubmit}
                         isSubmitting={isSubmitting}
                         isFreeShipping={isFreeShipping}
-                        FREE_SHIPPING_THRESHOLD={FREE_SHIPPING_THRESHOLD}
+                        freeShippingThreshold={freeShippingThreshold}
                         itemsTotal={itemsTotal}
+                        shippingMethods={shippingMethods}
+                        allowedShippingIds={allowedShippingIds}
                     />
                 } />
                 <Route path="/store/thank-you" element={
@@ -248,6 +291,7 @@ function App() {
                     <Route path="registrations" element={<AdminRegistrations />} />
                     <Route path="forge-portfolio" element={<AdminForgePortfolio />} />
                     <Route path="notification-failures" element={<AdminNotificationFailures />} />
+                    <Route path="shipping" element={<AdminShippingSettings />} />
                     <Route path="publish" element={<AdminPublish />} />
                 </Route>
                 <Route path="/admin/login" element={<AdminLogin />} />
