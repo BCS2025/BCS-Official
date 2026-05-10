@@ -134,3 +134,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Claude Code worktrees（分身工作區，不該被主 repo 追蹤）
+.claude/worktrees/
