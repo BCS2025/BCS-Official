@@ -202,7 +202,7 @@ function App() {
 
                 {/* 販創所（/store/*） */}
                 <Route path="/store" element={<Store />} />
-                <Route path="/store/products" element={<ProductGallery products={products} isLoading={isLoading} />} />
+                <Route path="/store/products" element={<ProductGallery products={products} isLoading={isLoading} shippingMethods={shippingMethods} />} />
                 <Route path="/store/product/:id" element={
                     <ProductDetail
                         products={products}

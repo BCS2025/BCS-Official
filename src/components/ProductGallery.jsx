@@ -19,7 +19,7 @@ const TABS = [
 
 const VALID_TABS = new Set(TABS.map(t => t.key));
 
-export default function ProductGallery({ products = [], isLoading = false }) {
+export default function ProductGallery({ products = [], isLoading = false, shippingMethods = [] }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const initialCat = searchParams.get('cat');
     const [sortBy, setSortBy] = useState('featured');
@@ -59,6 +59,14 @@ export default function ProductGallery({ products = [], isLoading = false }) {
         });
     }, [activeTab, products, searchTerm]);
 
+    // 從啟用中的物流取最低免運門檻；無任何門檻時不顯示 banner
+    const minFreeShippingThreshold = useMemo(() => {
+        const thresholds = shippingMethods
+            .filter(m => m.is_active && m.price > 0 && typeof m.free_shipping_threshold === 'number')
+            .map(m => m.free_shipping_threshold);
+        return thresholds.length > 0 ? Math.min(...thresholds) : null;
+    }, [shippingMethods]);
+
     const sortedProducts = useMemo(() => {
         const sorted = [...filteredProducts];
         if (sortBy === 'price-asc') return sorted.sort((a, b) => a.price - b.price);
@@ -75,12 +83,14 @@ export default function ProductGallery({ products = [], isLoading = false }) {
                 <p className="text-bcs-muted max-w-2xl mx-auto">
                     文創商品、壓克力燈、創客材料——每一件都是獨一無二的專屬訂製。
                 </p>
-                <div className="inline-block mt-3 bg-store-50 border border-store-300 rounded-full px-4 py-1.5">
-                    <span className="flex items-center gap-2 text-store-700 font-bold text-sm">
-                        <span className="bg-store-500 text-white text-xs px-2 py-0.5 rounded-full">HOT</span>
-                        全館滿 $599 免運活動開跑中！
-                    </span>
-                </div>
+                {minFreeShippingThreshold != null && (
+                    <div className="inline-block mt-3 bg-store-50 border border-store-300 rounded-full px-4 py-1.5">
+                        <span className="flex items-center gap-2 text-store-700 font-bold text-sm">
+                            <span className="bg-store-500 text-white text-xs px-2 py-0.5 rounded-full">HOT</span>
+                            全館滿 ${minFreeShippingThreshold} 免運活動開跑中！
+                        </span>
+                    </div>
+                )}
             </section>
 
             {/* Search Bar */}
