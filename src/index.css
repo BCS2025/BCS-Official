@@ -31,11 +31,21 @@
       transform: translateY(0);
     }
   }
+
+  /* 輕度脈衝：用在小型徽章（如 HOT 標籤），週期長、幅度小，視覺上「呼吸」而非「跳動」 */
+  @keyframes softPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
 }
 
 @layer utilities {
   .animate-fade-up {
     animation: fadeUp 0.6s ease-out both;
+  }
+
+  .animate-soft-pulse {
+    animation: softPulse 2s ease-in-out infinite;
   }
 
   /* Scroll reveal */

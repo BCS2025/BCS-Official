@@ -84,9 +84,9 @@ export default function ProductGallery({ products = [], isLoading = false, shipp
                     文創商品、壓克力燈、創客材料——每一件都是獨一無二的專屬訂製。
                 </p>
                 {minFreeShippingThreshold != null && (
-                    <div className="inline-block mt-3 bg-store-50 border border-store-300 rounded-full px-4 py-1.5">
+                    <div className="inline-block mt-3 bg-store-50 border border-store-300 rounded-full px-4 py-1.5 animate-fade-up motion-reduce:animate-none">
                         <span className="flex items-center gap-2 text-store-700 font-bold text-sm">
-                            <span className="bg-store-500 text-white text-xs px-2 py-0.5 rounded-full">HOT</span>
+                            <span className="bg-store-500 text-white text-xs px-2 py-0.5 rounded-full animate-soft-pulse motion-reduce:animate-none">HOT</span>
                             全館滿 ${minFreeShippingThreshold} 免運活動開跑中！
                         </span>
                     </div>
