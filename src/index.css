@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;700&display=swap');
+/* 字型改於 index.html <head> 以 preconnect + <link> 提早載入（避免 CSS @import 晚發現造成 LCP/CLS 重排） */
 
 @tailwind base;
 @tailwind components;

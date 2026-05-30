@@ -14,8 +14,12 @@ export function getLinePayEnv() {
 
 export function getSupabaseAdmin() {
     const url = process.env.VITE_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    if (!url || !key) throw new Error('Supabase 環境變數未設定');
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // 不再 fallback 成 anon key：若沒設 service_role key，寧可明確報錯，
+    // 也不要默默用 anon 權限跑後端（RLS 開啟後 anon 會讀不到 orders）。
+    if (!url || !key) {
+        throw new Error('Supabase 後端環境變數未設定（需要 VITE_SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY）');
+    }
     return createClient(url, key, { auth: { persistSession: false } });
 }
 
@@ -60,6 +64,19 @@ export async function assertAdmin(req) {
     const authClient = createClient(url, anonKey, { auth: { persistSession: false } });
     const { data, error } = await authClient.auth.getUser(token);
     if (error || !data?.user) throw { status: 401, message: '登入狀態無效，請重新登入' };
+
+    // 第二道鎖：除了「是有效登入者」外，再確認是「管理員 Email」。
+    // 即使未來不慎開啟公開註冊，非白名單帳號也無法呼叫後台 API。
+    // 預設白名單可由 Vercel 環境變數 ADMIN_EMAILS（逗號分隔）覆寫。
+    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'admin@bcs.tw,stella@bcs.tw')
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(Boolean);
+    const userEmail = (data.user.email || '').toLowerCase();
+    if (!ADMIN_EMAILS.includes(userEmail)) {
+        throw { status: 403, message: '此帳號無管理員權限' };
+    }
+
     return data.user;
 }
 

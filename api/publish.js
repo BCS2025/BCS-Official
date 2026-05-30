@@ -29,6 +29,15 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: '登入狀態無效，請重新登入' })
   }
 
+  // 管理員白名單（與 api/_lib/linepay.js 的 assertAdmin 一致）
+  const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'admin@bcs.tw,stella@bcs.tw')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean)
+  if (!ADMIN_EMAILS.includes((data.user.email || '').toLowerCase())) {
+    return res.status(403).json({ error: '此帳號無管理員權限' })
+  }
+
   try {
     const hookRes = await fetch(deployHook, { method: 'POST' })
     const text = await hookRes.text()
