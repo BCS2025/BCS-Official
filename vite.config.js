@@ -113,6 +113,17 @@ export default defineConfig(async ({ mode, command }) => {
         : []),
     ],
     base: '/',
+    build: {
+      rollupOptions: {
+        output: {
+          // 把不常變動的第三方函式庫拆成獨立 chunk：縮小主程式 bundle、改善瀏覽器快取
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            supabase: ['@supabase/supabase-js'],
+          },
+        },
+      },
+    },
     test: {
       globals: true,
       environment: 'node',

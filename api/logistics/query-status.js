@@ -1,6 +1,10 @@
 import { getSupabaseAdmin } from '../_lib/linepay.js';
 import { postLogistics } from './_lib/ecpay-client.js';
 
+// refresh 節流：同一訂單在此秒數內重複 refresh，直接回 cache，不再呼叫綠界。
+// 設為 25s 與前端 30s polling 對齊（略小以容許時間誤差）。
+const THROTTLE_SECONDS = 25;
+
 export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'GET') {
         res.setHeader('Allow', 'GET, POST');
@@ -35,6 +39,18 @@ export default async function handler(req, res) {
             return res.status(200).json({ ok: true, hasLogisticsOrder: true, order, source: 'cache' });
         }
 
+        // 節流：同一訂單在 THROTTLE_SECONDS 內重複 refresh，直接回 cache，不再打綠界。
+        // logistics_checked_at 欄位若尚未建立（migration 未跑），此查詢會回 error → chk 為 null → 視為未節流。
+        const { data: chk } = await supabase
+            .from('orders')
+            .select('logistics_checked_at')
+            .eq('order_id', orderId)
+            .maybeSingle();
+        const lastCheckedMs = chk?.logistics_checked_at ? new Date(chk.logistics_checked_at).getTime() : 0;
+        if (lastCheckedMs && (Date.now() - lastCheckedMs) < THROTTLE_SECONDS * 1000) {
+            return res.status(200).json({ ok: true, hasLogisticsOrder: true, order, source: 'cache', throttled: true });
+        }
+
         const result = await postLogistics('/Helper/QueryLogisticsTradeInfo/V5', {
             AllPayLogisticsID: order.logistics_id,
             TimeStamp: Math.floor(Date.now() / 1000),
@@ -57,6 +73,13 @@ export default async function handler(req, res) {
             order.logistics_status_at = new Date().toISOString();
             order.logistics_message = newMsg;
         }
+
+        // 記錄本次成功查詢綠界的時間（節流用）。與狀態更新分開寫入，
+        // 即使 logistics_checked_at 欄位尚未建立而失敗，也不影響上面的狀態更新與本次回傳。
+        await supabase
+            .from('orders')
+            .update({ logistics_checked_at: new Date().toISOString() })
+            .eq('order_id', orderId);
 
         return res.status(200).json({
             ok: true,

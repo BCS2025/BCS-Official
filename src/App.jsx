@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronUp } from 'lucide-react';
 import { fetchProducts } from './lib/productService';
@@ -15,16 +15,7 @@ import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
 import Cart from './components/Cart';
 import ThankYouPage from './components/ThankYouPage';
-import PaymentConfirmPage from './pages/PaymentConfirmPage';
-import PaymentCancelPage from './pages/PaymentCancelPage';
-import TrackOrderPage from './pages/TrackOrderPage';
-import { AdminLayout } from './components/admin/AdminLayout';
-import { AdminOrders } from './pages/admin/AdminOrders';
-import { AdminProducts } from './pages/admin/AdminProducts';
-import { AdminCoupons } from './pages/admin/AdminCoupons';
-import { AdminInventory } from './pages/admin/AdminInventory';
-import { AdminQuoteMaterials } from './pages/admin/AdminQuoteMaterials';
-import { AdminLogin } from './pages/admin/AdminLogin';
+// 付款結果頁 / 物流追蹤 / 後台頁面改為動態載入（見下方 lazy 區塊）
 import Home from './pages/Home';
 import AboutUs from './pages/AboutUs';
 import Store from './pages/Store';
@@ -35,13 +26,28 @@ import Footer from './components/Footer';
 import MakerWorld from './pages/MakerWorld';
 import CourseDetail from './pages/CourseDetail';
 import InquiryWidget from './components/InquiryWidget';
-import { AdminCourses } from './pages/admin/AdminCourses';
-import { AdminLocations } from './pages/admin/AdminLocations';
-import { AdminRegistrations } from './pages/admin/AdminRegistrations';
-import { AdminForgePortfolio } from './pages/admin/AdminForgePortfolio';
-import { AdminNotificationFailures } from './pages/admin/AdminNotificationFailures';
-import { AdminPublish } from './pages/admin/AdminPublish';
-import { AdminShippingSettings } from './pages/admin/AdminShippingSettings';
+// （後台頁面 lazy 載入，見下方）
+
+// 非預渲染、訪客較少觸及的頁面 → 動態載入，縮小公開頁初始 bundle
+const PaymentConfirmPage = lazy(() => import('./pages/PaymentConfirmPage'));
+const PaymentCancelPage = lazy(() => import('./pages/PaymentCancelPage'));
+const TrackOrderPage = lazy(() => import('./pages/TrackOrderPage'));
+
+// 後台（/admin/*）：一般訪客永遠不會載入，獨立成 chunk
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders').then(m => ({ default: m.AdminOrders })));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts').then(m => ({ default: m.AdminProducts })));
+const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons').then(m => ({ default: m.AdminCoupons })));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory').then(m => ({ default: m.AdminInventory })));
+const AdminQuoteMaterials = lazy(() => import('./pages/admin/AdminQuoteMaterials').then(m => ({ default: m.AdminQuoteMaterials })));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
+const AdminCourses = lazy(() => import('./pages/admin/AdminCourses').then(m => ({ default: m.AdminCourses })));
+const AdminLocations = lazy(() => import('./pages/admin/AdminLocations').then(m => ({ default: m.AdminLocations })));
+const AdminRegistrations = lazy(() => import('./pages/admin/AdminRegistrations').then(m => ({ default: m.AdminRegistrations })));
+const AdminForgePortfolio = lazy(() => import('./pages/admin/AdminForgePortfolio').then(m => ({ default: m.AdminForgePortfolio })));
+const AdminNotificationFailures = lazy(() => import('./pages/admin/AdminNotificationFailures').then(m => ({ default: m.AdminNotificationFailures })));
+const AdminPublish = lazy(() => import('./pages/admin/AdminPublish').then(m => ({ default: m.AdminPublish })));
+const AdminShippingSettings = lazy(() => import('./pages/admin/AdminShippingSettings').then(m => ({ default: m.AdminShippingSettings })));
 
 function App() {
     const navigate = useNavigate();
@@ -196,6 +202,7 @@ function App() {
             <Navbar cartCount={cart.length} />
 
             <div className="flex-1">
+            <Suspense fallback={<div className="flex items-center justify-center py-32 text-bcs-muted">載入中…</div>}>
             <Routes>
                 {/* 品牌首頁 */}
                 <Route path="/" element={<Home />} />
@@ -296,6 +303,7 @@ function App() {
                 </Route>
                 <Route path="/admin/login" element={<AdminLogin />} />
             </Routes>
+            </Suspense>
             </div>
             {!isAdminPage && <Footer />}
 
