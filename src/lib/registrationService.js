@@ -3,8 +3,9 @@ import { notifyGAS } from './webhookService';
 
 /**
  * 提交課程報名
- * 注意：需在 Supabase 後台為 registrations 表加入 public INSERT policy：
- *   CREATE POLICY "public insert" ON registrations FOR INSERT WITH CHECK (true);
+ * 透過 SECURITY DEFINER RPC submit_course_registration 完成：
+ *   一次處理「寫入報名 + 累加課程人數」，訪客(anon)不需對 registrations / courses 有直接寫入權限。
+ * 對應 migration：supabase/migrations/20260531_registration_rpc.sql
  */
 export async function createRegistration({
     courseId,
@@ -16,40 +17,19 @@ export async function createRegistration({
     childAge,
     note,
 }) {
-    // 1. 寫入 registrations 表
-    const { data, error } = await supabase
-        .from('registrations')
-        .insert([{
-            course_id: courseId,
-            parent_name: parentName,
-            phone,
-            email: email || null,
-            child_age: childAge || null,
-            note: note || null,
-            status: 'confirmed',
-        }])
-        .select()
-        .single();
+    // 1. 透過 RPC 寫入報名 + 更新課程人數（以 definer 權限安全執行）
+    const { data, error } = await supabase.rpc('submit_course_registration', {
+        p_course_id: courseId,
+        p_parent_name: parentName,
+        p_phone: phone,
+        p_email: email || null,
+        p_child_age: childAge || null,
+        p_note: note || null,
+    });
 
     if (error) throw error;
 
-    // 2. 更新課程報名人數與狀態
-    const { data: course } = await supabase
-        .from('courses')
-        .select('enrolled, capacity')
-        .eq('id', courseId)
-        .single();
-
-    if (course) {
-        const newEnrolled = (course.enrolled || 0) + 1;
-        const newStatus = newEnrolled >= course.capacity ? 'full' : 'open';
-        await supabase
-            .from('courses')
-            .update({ enrolled: newEnrolled, status: newStatus })
-            .eq('id', courseId);
-    }
-
-    // 3. GAS Webhook 通知（Email + Line）
+    // 2. GAS Webhook 通知（Email + Line）。notifyGAS 內部已處理失敗，不會 throw。
     await notifyGAS({
         type: 'registration',
         courseTitle,
@@ -61,7 +41,7 @@ export async function createRegistration({
         note,
     }, 'registration_notify');
 
-    return data;
+    return data; // 新報名的 id
 }
 
 /** 取得報名紀錄（Admin），可選依課程篩選 */

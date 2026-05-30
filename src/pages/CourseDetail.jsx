@@ -83,12 +83,8 @@ function RegistrationForm({ course, onSuccess }) {
             });
             onSuccess();
         } catch (err) {
-            // RLS 錯誤提示
-            if (err.message?.includes('row-level security') || err.code === '42501') {
-                alert('報名功能設定中，請直接聯繫比創空間完成報名，造成不便請見諒。\n\n聯絡電話：請洽 IG @bcs.tw');
-            } else {
-                alert('報名失敗：' + err.message);
-            }
+            console.error('Registration failed:', err);
+            alert('報名送出失敗，請直接聯繫比創空間完成報名，造成不便請見諒。\n\nEmail：bc2024space@gmail.com\nLINE 官方：@430idexd');
         } finally {
             setIsSubmitting(false);
         }
