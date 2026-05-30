@@ -79,7 +79,7 @@ export default function Returns() {
                         <li>
                             <strong>提出申請</strong>：於可退換之期間內，透過下列任一方式聯絡本站客服：
                             <ul>
-                                <li>官方 LINE：<a href="https://lin.ee/NlEipWt" target="_blank" rel="noopener noreferrer">加入好友後私訊</a></li>
+                                <li>官方 LINE：<a href="https://lin.ee/ax9WURy" target="_blank" rel="noopener noreferrer">加入好友後私訊</a></li>
                                 <li>客服信箱：bc2024space@gmail.com</li>
                             </ul>
                             請提供：訂單編號、退換原因、商品照片（瑕疵品請含整體及瑕疵特寫）。
@@ -135,7 +135,7 @@ export default function Returns() {
                         <p className="text-sm text-white/70">我們將於 2 個工作天內回覆您的申請。</p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bcs-border">
-                        <a href="https://lin.ee/NlEipWt" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-5 hover:bg-bcs-gray transition-colors">
+                        <a href="https://lin.ee/ax9WURy" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-5 hover:bg-bcs-gray transition-colors">
                             <MessageCircle className="text-maker-500" size={22} />
                             <div>
                                 <div className="text-xs text-bcs-muted">官方 LINE</div>

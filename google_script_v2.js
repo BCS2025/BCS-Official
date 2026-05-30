@@ -145,7 +145,36 @@ function doPost(e) {
             }));
         }
 
-        // --- CASE 7: NEW ORDER (fallback，無 type 欄位) ---
+        // --- CASE 7: COURSE REGISTRATION (創客世界課程報名) ---
+        if (data.type === 'registration') {
+            // 1. Admin LINE Flex 通知（主要：與訂單/詢問同一個管理員通知管道）
+            try {
+                const regFlex = createRegistrationFlex(data);
+                sendLineMessagingApi(CHANNEL_TOKEN, USER_ID, [regFlex]);
+            } catch (err) {
+                console.error("Registration Line Error:", err);
+            }
+
+            // 2. Admin Email 通知（備援：LINE 沒看到也會有一封信）
+            try {
+                sendRegistrationAdminEmail(data);
+            } catch (err) {
+                console.error("Registration Admin Email Error:", err);
+            }
+
+            // 3. 家長報名確認信（若有留 email；不需要可刪除此區塊）
+            if (data.email) {
+                try {
+                    sendRegistrationConfirmEmail(data);
+                } catch (err) {
+                    console.error("Registration Confirm Email Error:", err);
+                }
+            }
+
+            return ContentService.createTextOutput(JSON.stringify({ status: 'success', type: 'registration' }));
+        }
+
+        // --- CASE 8: NEW ORDER (fallback，無 type 欄位) ---
         // 1. Send Beautiful Email to Customer
         if (data.customer && data.customer.email) {
             try {
@@ -366,7 +395,7 @@ function sendCustomerEmail(order) {
             <p style="margin: 5px 0; font-size: 14px;">2. 匯款後，請點擊下方按鈕加入官方 LINE，告知我們您的<b>「帳號末五碼」</b>以完成對帳。</p>
 
             <div style="text-align: center; margin-top: 20px;">
-              <a href="https://line.me/R/ti/p/@bcs_official" class="btn" style="color: white !important;">LINE 聯繫客服</a>
+              <a href="https://lin.ee/ax9WURy" class="btn" style="color: white !important;">LINE 聯繫客服</a>
             </div>
           </div>
 
@@ -662,7 +691,7 @@ function sendPaymentConfirmedEmail(data) {
         + '<a href="' + bcsTrackingUrl(data.orderId) + '" style="display:inline-block;background:#EA580C;color:white !important;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;">📦 查看物流追蹤</a>'
         + '<p style="font-size:12px;color:#888;margin-top:8px;">託運單建立後，狀態會自動更新到追蹤頁。</p>'
         + '</div>'
-        + '<p style="margin-top:30px;">我們將盡快為您準備商品。若有任何問題，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
+        + '<p style="margin-top:30px;">我們將盡快為您準備商品。若有任何問題，歡迎 <a href="https://lin.ee/ax9WURy">LINE 聯繫客服</a>。</p>'
         + '</div>'
         + '<div class="footer"><p>此信件為系統自動發送</p><p>Be Creative Space | 客製化工坊</p></div>'
         + '</div></body></html>';
@@ -764,7 +793,7 @@ function sendPaymentRefundedEmail(data) {
             ? '<p style="margin:5px 0;font-size:14px;">退款交易編號：<b style="font-family:monospace;">' + data.refundTransactionId + '</b></p>'
             : '')
         + '</div>'
-        + '<p style="margin-top:30px;">若有任何疑問，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
+        + '<p style="margin-top:30px;">若有任何疑問，歡迎 <a href="https://lin.ee/ax9WURy">LINE 聯繫客服</a>。</p>'
         + '</div>'
         + '<div class="footer"><p>此信件為系統自動發送</p><p>Be Creative Space | 客製化工坊</p></div>'
         + '</div></body></html>';
@@ -988,7 +1017,7 @@ function sendLogisticsStatusEmail(data, milestone) {
         + '<div style="text-align:center;margin-top:30px;">'
         + '<a href="' + trackingUrl + '" class="btn" style="color:white !important;">📦 查看物流追蹤頁</a>'
         + '</div>'
-        + '<p style="margin-top:30px;font-size:13px;color:#888;">如有任何問題，歡迎 <a href="https://line.me/R/ti/p/@bcs_official">LINE 聯繫客服</a>。</p>'
+        + '<p style="margin-top:30px;font-size:13px;color:#888;">如有任何問題，歡迎 <a href="https://lin.ee/ax9WURy">LINE 聯繫客服</a>。</p>'
         + '</div>'
         + '<div class="footer"><p>此信件為系統自動發送</p><p>比創空間 販創所</p></div>'
         + '</div></body></html>';
@@ -998,6 +1027,131 @@ function sendLogisticsStatusEmail(data, milestone) {
         subject: subject,
         htmlBody: body,
     });
+}
+
+// --- HELPER: 解析管理員 Email（優先讀 Script Property ADMIN_EMAIL，否則用腳本擁有者信箱）---
+function getAdminEmail() {
+    try {
+        var props = PropertiesService.getScriptProperties();
+        return props.getProperty('ADMIN_EMAIL') || Session.getEffectiveUser().getEmail();
+    } catch (_) {
+        return '';
+    }
+}
+
+// --- HELPER: 課程報名 Admin Flex（創客世界 綠色主題）---
+function createRegistrationFlex(data) {
+    const rows = [
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "課程", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.courseTitle || '-'), color: "#111111", size: "sm", weight: "bold", align: "end", flex: 3, wrap: true }
+        ]},
+        data.courseDate ? { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "日期", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.courseDate), color: "#111111", size: "sm", align: "end", flex: 3, wrap: true }
+        ]} : null,
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "家長", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.parentName || '-'), color: "#111111", size: "sm", align: "end", flex: 3, wrap: true }
+        ]},
+        { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "電話", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.phone || '-'), color: "#16A34A", size: "sm", weight: "bold", align: "end", flex: 3, wrap: true }
+        ]},
+        data.email ? { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "Email", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.email), color: "#111111", size: "xs", align: "end", flex: 3, wrap: true }
+        ]} : null,
+        data.childAge ? { type: "box", layout: "baseline", contents: [
+            { type: "text", text: "孩童年齡", color: "#555555", size: "sm", flex: 2 },
+            { type: "text", text: String(data.childAge) + ' 歲', color: "#111111", size: "sm", align: "end", flex: 3 }
+        ]} : null,
+        data.note ? { type: "box", layout: "vertical", margin: "md", contents: [
+            { type: "text", text: "備註", color: "#555555", size: "sm" },
+            { type: "text", text: String(data.note), color: "#111111", size: "sm", wrap: true, margin: "xs" }
+        ]} : null
+    ].filter(Boolean);
+
+    return {
+        type: "flex",
+        altText: '🎓 新課程報名：' + (data.courseTitle || '') + ' / ' + (data.parentName || ''),
+        contents: {
+            type: "bubble",
+            body: {
+                type: "box", layout: "vertical",
+                contents: [
+                    { type: "text", text: "NEW REGISTRATION", weight: "bold", color: "#16A34A", size: "sm" },
+                    { type: "text", text: "創客世界 課程報名", weight: "bold", size: "xl", margin: "md" },
+                    { type: "separator", margin: "xxl" },
+                    { type: "box", layout: "vertical", margin: "xxl", spacing: "sm", contents: rows }
+                ]
+            }
+        }
+    };
+}
+
+// --- HELPER: 課程報名 Admin Email（給管理員，備援通知）---
+function sendRegistrationAdminEmail(data) {
+    const to = getAdminEmail();
+    if (!to) return;
+
+    const subject = '【BCS 創客世界】新課程報名：' + (data.courseTitle || '') + ' - ' + (data.parentName || '');
+    const body = ''
+        + '<!DOCTYPE html><html><head><style>'
+        + '.container{max-width:600px;margin:0 auto;font-family:sans-serif;border:1px solid #eee;border-radius:8px;overflow:hidden;}'
+        + '.header{background:#16A34A;color:white;padding:20px;text-align:center;}'
+        + '.content{padding:20px;line-height:1.8;}'
+        + '.footer{background:#f9f9f9;padding:20px;text-align:center;font-size:12px;color:#999;}'
+        + '.label{color:#888;font-size:13px;}'
+        + '</style></head>'
+        + '<body style="margin:0;padding:20px;background:#f5f5f5;">'
+        + '<div class="container" style="background:white;">'
+        + '<div class="header"><h1 style="margin:0;font-size:20px;">🎓 新課程報名</h1></div>'
+        + '<div class="content">'
+        + '<p><span class="label">課程：</span><b>' + (data.courseTitle || '-') + '</b></p>'
+        + (data.courseDate ? '<p><span class="label">日期：</span>' + data.courseDate + '</p>' : '')
+        + '<p><span class="label">家長：</span>' + (data.parentName || '-') + '</p>'
+        + '<p><span class="label">電話：</span>' + (data.phone || '-') + '</p>'
+        + (data.email ? '<p><span class="label">Email：</span>' + data.email + '</p>' : '')
+        + (data.childAge ? '<p><span class="label">孩童年齡：</span>' + data.childAge + ' 歲</p>' : '')
+        + (data.note ? '<p><span class="label">備註：</span>' + data.note + '</p>' : '')
+        + '</div>'
+        + '<div class="footer"><p>此信件為系統自動發送</p><p>比創空間 創客世界</p></div>'
+        + '</div></body></html>';
+
+    MailApp.sendEmail({ to: to, subject: subject, htmlBody: body });
+}
+
+// --- HELPER: 課程報名 家長確認信（給留 email 的家長）---
+function sendRegistrationConfirmEmail(data) {
+    const subject = '【比創空間 創客世界】報名確認 - ' + (data.courseTitle || '');
+    const body = ''
+        + '<!DOCTYPE html><html><head><style>'
+        + '.container{max-width:600px;margin:0 auto;font-family:sans-serif;border:1px solid #eee;border-radius:8px;overflow:hidden;}'
+        + '.header{background:#16A34A;color:white;padding:20px;text-align:center;}'
+        + '.content{padding:30px 20px;line-height:1.6;color:#333;}'
+        + '.footer{background:#f9f9f9;padding:20px;text-align:center;font-size:12px;color:#999;}'
+        + '.box{background:#f0fdf4;border:1px solid #bbf7d0;padding:15px;border-radius:5px;margin-top:20px;}'
+        + '</style></head>'
+        + '<body style="margin:0;padding:20px;background:#f5f5f5;">'
+        + '<div class="container" style="background:white;">'
+        + '<div class="header"><h1 style="margin:0;font-size:20px;">創客世界 報名確認</h1></div>'
+        + '<div class="content">'
+        + '<p>親愛的 ' + (data.parentName || '家長') + ' 您好，</p>'
+        + '<p>我們已收到您的課程報名，詳細資訊如下：</p>'
+        + '<div class="box">'
+        + '<h4 style="margin:0 0 10px;color:#16a34a;">📚 報名資訊</h4>'
+        + '<p style="margin:5px 0;font-size:14px;">課程：<b>' + (data.courseTitle || '-') + '</b></p>'
+        + (data.courseDate ? '<p style="margin:5px 0;font-size:14px;">日期：<b>' + data.courseDate + '</b></p>' : '')
+        + (data.childAge ? '<p style="margin:5px 0;font-size:14px;">孩童年齡：<b>' + data.childAge + ' 歲</b></p>' : '')
+        + '</div>'
+        + '<p style="margin-top:30px;">我們會盡快與您聯繫確認課程細節。若有任何問題，歡迎 <a href="https://lin.ee/vt7kVvG">LINE 聯繫我們</a>。</p>'
+        + '<p>期待與您和孩子一起動手實作！</p>'
+        + '</div>'
+        + '<div class="footer"><p>此信件為系統自動發送</p><p>比創空間 創客世界</p></div>'
+        + '</div></body></html>';
+
+    MailApp.sendEmail({ to: data.email, subject: subject, htmlBody: body });
 }
 
 function testLine() {
