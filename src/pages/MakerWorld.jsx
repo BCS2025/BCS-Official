@@ -98,8 +98,12 @@ function CourseCard({ course }) {
 
 /**
  * 精選照片牆：從已結束課程的 gallery_urls 聚合，最新的在前。
+ * 每堂課最多取 2 張，總數上限 12 張（即最新上完的 6 堂課）。
  * 每張圖含 hover 浮層顯示課程名稱與日期。
  */
+const PHOTOS_PER_COURSE = 2;
+const GALLERY_MAX_PHOTOS = 12;
+
 function HighlightsGallery({ courses }) {
     const items = useMemo(() => {
         const out = [];
@@ -107,7 +111,7 @@ function HighlightsGallery({ courses }) {
             .filter(c => c.status === 'closed' || new Date(c.date) < new Date())
             .sort((a, b) => new Date(b.date) - new Date(a.date));
         for (const c of pastCourses) {
-            for (const url of c.gallery_urls || []) {
+            for (const url of (c.gallery_urls || []).slice(0, PHOTOS_PER_COURSE)) {
                 out.push({
                     url,
                     courseId: c.id,
@@ -115,8 +119,9 @@ function HighlightsGallery({ courses }) {
                     courseDate: c.date,
                 });
             }
+            if (out.length >= GALLERY_MAX_PHOTOS) break;
         }
-        return out;
+        return out.slice(0, GALLERY_MAX_PHOTOS);
     }, [courses]);
 
     const [expanded, setExpanded] = useState(false);
