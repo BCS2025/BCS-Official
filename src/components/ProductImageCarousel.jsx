@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getImageUrl } from '../lib/imageUtils';
+import ResponsiveImage from './ResponsiveImage';
 
 export default function ProductImageCarousel({ images, productName }) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,8 +33,11 @@ export default function ProductImageCarousel({ images, productName }) {
             {/* Main Image Stage */}
             <div className="relative group rounded-2xl overflow-hidden shadow-sm border border-bcs-border bg-white p-2">
                 <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
-                    <img
-                        src={getImageUrl(validImages[currentIndex])}
+                    <ResponsiveImage
+                        src={validImages[currentIndex]}
+                        sizes="(min-width: 1024px) 560px, (min-width: 768px) 50vw, 100vw"
+                        loading="eager"
+                        fetchPriority="high"
                         alt={`${productName} - ${currentIndex + 1}`}
                         className="w-full h-full object-cover transition-all duration-300"
                     />
@@ -84,8 +87,9 @@ export default function ProductImageCarousel({ images, productName }) {
                                     : 'border-transparent hover:border-bcs-border'
                                 }`}
                         >
-                            <img
-                                src={getImageUrl(img)}
+                            <ResponsiveImage
+                                src={img}
+                                sizes="80px"
                                 alt={`Thumbnail ${idx + 1}`}
                                 className="w-full h-full object-cover rounded-md"
                             />

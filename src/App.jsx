@@ -10,6 +10,7 @@ import {
 import { useCart } from './hooks/useCart';
 import { useOrderSubmit } from './hooks/useOrderSubmit';
 import { useGA4PageView } from './hooks/useAnalytics';
+import { usePrivateRouteRobots } from './hooks/usePageMeta';
 import Navbar from './components/Navbar';
 import ProductGallery from './components/ProductGallery';
 import ProductDetail from './components/ProductDetail';
@@ -53,9 +54,13 @@ function App() {
     const navigate = useNavigate();
     const location = useLocation();
     const isAdminPage = location.pathname.startsWith('/admin');
+    // Reserve space while public catalogue and course data load.
+    const stableContentFrame = /^\/(?:store\/products|store\/product\/[^/]+|makerworld\/[^/]+)\/?$/.test(location.pathname);
     useGA4PageView();
+    usePrivateRouteRobots();
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [productsError, setProductsError] = useState(false);
     const [customer, setCustomer] = useState({
         name: '',
         phone: '',
@@ -95,10 +100,11 @@ function App() {
         let cancelled = false;
         async function loadProducts() {
             try {
-                const data = await fetchProducts();
+                const data = await fetchProducts({ throwOnError: true });
                 if (!cancelled) setProducts(data);
             } catch (error) {
                 console.error('Failed to load products:', error);
+                if (!cancelled) setProductsError(true);
             } finally {
                 if (!cancelled) setIsLoading(false);
             }
@@ -120,18 +126,6 @@ function App() {
         loadShipping();
         return () => { cancelled = true; };
     }, []);
-
-    // 通知預渲染工具：首屏資料已就緒。
-    // 非 /store/* 的路由不需要 products，直接視為就緒。
-    // 等 1 秒讓 path-specific component（ProductDetail / CourseDetail）也完成自身 fetch。
-    useEffect(() => {
-        const needsProducts = location.pathname.startsWith('/store');
-        if (needsProducts && isLoading) return;
-        const t = setTimeout(() => {
-            document.dispatchEvent(new Event('render-complete'));
-        }, 1000);
-        return () => clearTimeout(t);
-    }, [isLoading, location.pathname]);
 
     const itemsTotal = cart.reduce((sum, i) => sum + i.price, 0);
 
@@ -201,7 +195,7 @@ function App() {
         <div className="min-h-screen bg-white font-sans flex flex-col">
             <Navbar cartCount={cart.length} />
 
-            <div className="flex-1">
+            <div className={stableContentFrame ? 'flex-1 min-h-screen' : 'flex-1'}>
             <Suspense fallback={<div className="flex items-center justify-center py-32 text-bcs-muted">載入中…</div>}>
             <Routes>
                 {/* 品牌首頁 */}
@@ -209,11 +203,12 @@ function App() {
 
                 {/* 販創所（/store/*） */}
                 <Route path="/store" element={<Store />} />
-                <Route path="/store/products" element={<ProductGallery products={products} isLoading={isLoading} shippingMethods={shippingMethods} />} />
+                <Route path="/store/products" element={<ProductGallery products={products} isLoading={isLoading} loadError={productsError} shippingMethods={shippingMethods} />} />
                 <Route path="/store/product/:id" element={
                     <ProductDetail
                         products={products}
                         isLoading={isLoading}
+                        loadError={productsError}
                         cart={cart}
                         onAddToCart={(item) => handleAddToCart(item, products)}
                     />

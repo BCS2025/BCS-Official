@@ -61,7 +61,7 @@ function CourseCard({ course }) {
                 <div className="space-y-2 text-sm text-bcs-muted mb-4">
                     <div className="flex items-center gap-2">
                         <Calendar size={14} className="text-maker-500 flex-shrink-0" />
-                        <span>{date}　{time}</span>
+                        <span>{date}{'\u3000'}{time}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Clock size={14} className="text-maker-500 flex-shrink-0" />
@@ -316,21 +316,26 @@ function ContactCta() {
 const STATUS_TABS = ['全部', '可報名', '報名截止', '已結束'];
 
 export default function MakerWorld() {
-    usePageMeta('創客世界', '比創空間・創客世界——STEAM 教育工作坊、Arduino、3D 列印、雷射切割，週末兒童實作課程，台南永康。');
     const [courses, setCourses] = useState([]);
     const [locations, setLocations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [activeFilter, setActiveFilter] = useState('全部');
     const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+    usePageMeta('創客世界', '比創空間・創客世界——STEAM 教育工作坊、Arduino、3D 列印、雷射切割，週末兒童實作課程，台南永康。', { ready: !isLoading, error: loadError });
 
     useEffect(() => {
+        let cancelled = false;
+        const failed = err => { console.error(err); if (!cancelled) setLoadError(true); return []; };
         Promise.all([
-            fetchCourses().catch(err => { console.error(err); return []; }),
-            fetchLocations({ onlyActive: true }).catch(err => { console.error(err); return []; }),
+            fetchCourses().catch(failed),
+            fetchLocations({ onlyActive: true }).catch(failed),
         ]).then(([c, l]) => {
+            if (cancelled) return;
             setCourses(c);
             setLocations(l);
-        }).finally(() => setIsLoading(false));
+        }).finally(() => { if (!cancelled) setIsLoading(false); });
+        return () => { cancelled = true; };
     }, []);
 
     // 即將開課（未過期、仍開放報名）取前 3 筆

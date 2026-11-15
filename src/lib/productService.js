@@ -153,7 +153,7 @@ async function runWithRetry(label, run) {
     return { data: null, error: lastError };
 }
 
-export async function fetchProducts() {
+export async function fetchProducts({ throwOnError = false } = {}) {
     const { data, error } = await runWithRetry('fetchProducts', (signal) =>
         supabase
             .from('products')
@@ -164,7 +164,10 @@ export async function fetchProducts() {
             .abortSignal(signal)
     );
 
-    if (error || !data) return [];
+    if (error || !data) {
+        if (throwOnError) throw error || new Error('Product catalogue response is missing');
+        return [];
+    }
     return data.map(transformProduct);
 }
 

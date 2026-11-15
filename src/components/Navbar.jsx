@@ -21,6 +21,8 @@ export default function Navbar({ cartCount }) {
                         <img
                             src={`${import.meta.env.BASE_URL}WebsiteTopLogoIcon.png`}
                             alt="比創空間 Logo"
+                            width="174"
+                            height="408"
                             className="h-10 sm:h-12 w-auto object-contain"
                         />
                         <span className="hidden sm:block font-black text-bcs-black text-base tracking-tight">比創空間</span>

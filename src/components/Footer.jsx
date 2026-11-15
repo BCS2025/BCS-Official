@@ -44,6 +44,8 @@ export default function Footer() {
                             <img
                                 src={`${import.meta.env.BASE_URL}WebsiteTopLogoIcon.png`}
                                 alt="比創空間"
+                                width="174"
+                                height="408"
                                 className="h-9 w-auto object-contain brightness-0 invert"
                             />
                         </div>

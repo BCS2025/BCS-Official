@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { getImageUrl } from '../../lib/imageUtils';
+import ResponsiveImage from '../ResponsiveImage';
 import { cn } from './Button';
 import { X, Check, ChevronRight } from 'lucide-react';
 
@@ -42,8 +42,10 @@ export function VisualOptionSelector({ label, options, value, onChange, id, erro
                 {/* Thumbnail */}
                 <div className="w-16 h-16 flex-shrink-0 bg-store-50 rounded-md overflow-hidden border border-bcs-border">
                     {selectedOption?.image ? (
-                        <img
-                            src={getImageUrl(selectedOption.image)}
+                        <ResponsiveImage
+                            src={selectedOption.image}
+                            sizes="64px"
+                            loading="eager"
                             alt={selectedOption.label}
                             className="w-full h-full object-contain p-1"
                         />
@@ -102,8 +104,9 @@ export function VisualOptionSelector({ label, options, value, onChange, id, erro
                                         {/* Image Container */}
                                         <div className="w-full aspect-square bg-white rounded-lg overflow-hidden flex items-center justify-center mb-1">
                                             {option.image ? (
-                                                <img
-                                                    src={getImageUrl(option.image)}
+                                                <ResponsiveImage
+                                                    src={option.image}
+                                                    sizes="(min-width: 768px) 128px, (min-width: 640px) 180px, 42vw"
                                                     alt={option.label}
                                                     className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                                                 />

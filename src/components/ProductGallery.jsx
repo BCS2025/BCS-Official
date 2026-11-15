@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '../lib/pricing';
-import { getImageUrl } from '../lib/imageUtils';
+import ResponsiveImage from './ResponsiveImage';
 import { ArrowUpDown, Search, X } from 'lucide-react';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -19,25 +19,18 @@ const TABS = [
 
 const VALID_TABS = new Set(TABS.map(t => t.key));
 
-export default function ProductGallery({ products = [], isLoading = false, shippingMethods = [] }) {
+export default function ProductGallery({ products = [], isLoading = false, loadError = false, shippingMethods = [] }) {
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialCat = searchParams.get('cat');
+    const category = searchParams.get('cat');
     const [sortBy, setSortBy] = useState('featured');
-    const [activeTab, setActiveTab] = useState(VALID_TABS.has(initialCat) ? initialCat : 'all');
+    const activeTab = VALID_TABS.has(category) ? category : 'all';
     const [searchTerm, setSearchTerm] = useState('');
 
     const meta = TAB_META[activeTab] || TAB_META.all;
-    usePageMeta(meta.title, meta.desc);
+    usePageMeta(meta.title, meta.desc, { ready: !isLoading, error: loadError });
 
-    // Sync activeTab ↔ ?cat= URL 參數（讓使用者分享連結能保留分類狀態）
-    useEffect(() => {
-        const cat = searchParams.get('cat');
-        const nextTab = VALID_TABS.has(cat) ? cat : 'all';
-        if (nextTab !== activeTab) setActiveTab(nextTab);
-    }, [searchParams]);
-
+    // URL is the single source for category tabs, including back/forward navigation.
     const handleTabChange = (key) => {
-        setActiveTab(key);
         const next = new URLSearchParams(searchParams);
         if (key === 'all') next.delete('cat');
         else next.set('cat', key);
@@ -77,6 +70,7 @@ export default function ProductGallery({ products = [], isLoading = false, shipp
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
+            {loadError && <p role="alert" className="p-4 text-red-700">商品暫時無法載入，請重新整理後再試。</p>}
             {/* Header */}
             <section className="text-center space-y-2 mb-10">
                 <h1 className="text-4xl font-serif font-bold text-bcs-black mb-3">販創所商品</h1>
@@ -144,7 +138,7 @@ export default function ProductGallery({ products = [], isLoading = false, shipp
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                 <p className="text-bcs-muted font-medium">
-                    {searchTerm ? (
+                    {loadError ? '商品數量暫時無法取得' : searchTerm ? (
                         <>符合「<span className="text-bcs-black font-bold">{searchTerm}</span>」的商品：<span className="text-bcs-black font-bold">{sortedProducts.length}</span> 項</>
                     ) : (
                         <>共 <span className="text-bcs-black font-bold">{sortedProducts.length}</span> 項商品</>
@@ -167,7 +161,7 @@ export default function ProductGallery({ products = [], isLoading = false, shipp
             </div>
 
             {/* Product Grid */}
-            {isLoading && products.length === 0 ? (
+            {loadError ? null : isLoading && products.length === 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="載入商品中">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="bg-white rounded-card border border-bcs-border overflow-hidden animate-pulse">
@@ -202,14 +196,17 @@ export default function ProductGallery({ products = [], isLoading = false, shipp
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sortedProducts.map((product) => (
+                    {sortedProducts.map((product, index) => (
                         <div key={product.id} className="bg-white rounded-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1 border border-bcs-border overflow-hidden group flex flex-col">
                             <div className="aspect-square w-full overflow-hidden bg-bcs-gray relative">
-                                <img
-                                    src={getImageUrl(product.image)}
+                                {product.image ? <ResponsiveImage
+                                    src={product.image}
+                                    sizes="(min-width: 1024px) 360px, (min-width: 640px) calc((100vw - 56px) / 2), calc(100vw - 32px)"
+                                    loading={index < 3 ? 'eager' : 'lazy'}
+                                    fetchPriority={index === 0 ? 'high' : 'auto'}
                                     alt={product.name}
                                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                                />
+                                /> : <div className="w-full h-full flex items-center justify-center text-bcs-muted" role="img" aria-label={`${product.name}：暫無商品圖片`}>暫無商品圖片</div>}
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
                             </div>
 

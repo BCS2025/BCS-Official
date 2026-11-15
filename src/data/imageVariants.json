@@ -1,0 +1,308 @@
+{
+  "/product-thumbnails/image thumbnail_客製化原木杯墊.png": {
+    "width": 1600,
+    "height": 1600,
+    "variants": [
+      {
+        "src": "/image-variants/5e3b35615091e8b3-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/2501907daeb6a171-640.webp",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/da17b1ff9b0ea4b3-960.webp",
+        "width": 960
+      }
+    ]
+  },
+  "/product-thumbnails/image thumbnail_客製化小夜燈.png": {
+    "width": 1600,
+    "height": 1600,
+    "variants": [
+      {
+        "src": "/image-variants/865ac361d0bf1c97-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/f82eddbb1f0b6c7d-640.webp",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/a070529ae9926c41-960.webp",
+        "width": 960
+      }
+    ]
+  },
+  "/product-thumbnails/image thumbnail_客製化鑰匙圈.png": {
+    "width": 1600,
+    "height": 1600,
+    "variants": [
+      {
+        "src": "/image-variants/1c1bdabbcd4db345-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/faea91ec5a3997f8-640.webp",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/25003c93037493be-960.webp",
+        "width": 960
+      }
+    ]
+  },
+  "/product-thumbnails/image thumbnail_立體春聯.png": {
+    "width": 1600,
+    "height": 1600,
+    "variants": [
+      {
+        "src": "/image-variants/280a784da4da6446-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/a0b3c1574288df17-640.webp",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/db22591c4a38d5a7-960.webp",
+        "width": 960
+      }
+    ]
+  },
+  "/product-thumbnails/image thumbnail_花磚小夜燈.png": {
+    "width": 1600,
+    "height": 1600,
+    "variants": [
+      {
+        "src": "/image-variants/c52655df743874b6-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/a430c47ca8ff113a-640.webp",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/ae8cbe1f92e1045c-960.webp",
+        "width": 960
+      }
+    ]
+  },
+  "/product-thumbnails/image thumbnail_花磚月曆.png": {
+    "width": 1600,
+    "height": 1600,
+    "variants": [
+      {
+        "src": "/image-variants/bc12fcbffe2fdc08-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/5dd804022da9c700-640.webp",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/8e9fc27229fd68c1-960.webp",
+        "width": 960
+      }
+    ],
+    "avif": [
+      {
+        "src": "/image-variants/eefd04f6f2a78c63-320.avif",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/0c38819195d068da-640.avif",
+        "width": 640
+      },
+      {
+        "src": "/image-variants/3ebb188250172d6e-768.avif",
+        "width": 768
+      },
+      {
+        "src": "/image-variants/22b002c9c26fad13-960.avif",
+        "width": 960
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈字體_仿宋體.png": {
+    "width": 1200,
+    "height": 2000,
+    "variants": [
+      {
+        "src": "/image-variants/2c378e0986d4dff6-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/29bedf4e8ef432e3-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/19c51db682bbdfcc-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈字體_楷體.png": {
+    "width": 1200,
+    "height": 2000,
+    "variants": [
+      {
+        "src": "/image-variants/43e260d29c67ba9c-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/0b8023d0eaee6743-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/57243f2f791ac521-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈字體_行草.png": {
+    "width": 1200,
+    "height": 2000,
+    "variants": [
+      {
+        "src": "/image-variants/d3a2842f9da54a1d-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/da6905b31d110ac5-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/274eef6d35f1cd2b-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈字體_逸彩體.png": {
+    "width": 1200,
+    "height": 2000,
+    "variants": [
+      {
+        "src": "/image-variants/b3094fd909855eff-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/e12a1c9f4271962d-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/aa785b68fdc1cfc9-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈字體_隸書體.png": {
+    "width": 1200,
+    "height": 2000,
+    "variants": [
+      {
+        "src": "/image-variants/ae8e59fbe9268390-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/ebeccac836ae2e70-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/cb3b506b50074a4c-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈版型_圓形.png": {
+    "width": 2268,
+    "height": 4535,
+    "variants": [
+      {
+        "src": "/image-variants/89b27e296ae46b64-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/d98c5454cfa0e40b-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/be2c9503b50c89f0-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈版型_心形.png": {
+    "width": 2268,
+    "height": 4535,
+    "variants": [
+      {
+        "src": "/image-variants/f03f0043e7a6dffd-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/516821b1c9118956-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/9bbf38b22356475b-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈版型_正方形.png": {
+    "width": 2268,
+    "height": 4535,
+    "variants": [
+      {
+        "src": "/image-variants/0d69c6c1986e8c63-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/7b57184dc273032c-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/3820f98fe2ac2451-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈版型_盾牌形.png": {
+    "width": 2268,
+    "height": 4535,
+    "variants": [
+      {
+        "src": "/image-variants/ac55131a6ebcebd3-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/89a65e5fc08fd2cd-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/0327fd599af2cea5-640.webp",
+        "width": 640
+      }
+    ]
+  },
+  "/wood-keychain-thumbnails/鑰匙圈版型_矩形.png": {
+    "width": 2268,
+    "height": 4535,
+    "variants": [
+      {
+        "src": "/image-variants/bdcce39282fe6a74-128.webp",
+        "width": 128
+      },
+      {
+        "src": "/image-variants/a8f8a239dae7c7e0-320.webp",
+        "width": 320
+      },
+      {
+        "src": "/image-variants/c65e9bd8b2c8c152-640.webp",
+        "width": 640
+      }
+    ]
+  }
+}

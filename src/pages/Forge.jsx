@@ -44,17 +44,19 @@ const MATERIAL_TAGS = ['全部', '雷射切割', '3D列印', '複合'];
 
 // ─── Portfolio Gallery ────────────────────────────────────────
 
-function PortfolioGallery() {
+function PortfolioGallery({ onStatus }) {
     const [items, setItems] = useState([]);
     const [activeTag, setActiveTag] = useState('全部');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let cancelled = false;
         fetchPortfolio()
-            .then(setItems)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
+            .then(data => { if (!cancelled) { setItems(data); onStatus('ready'); } })
+            .catch(error => { console.error(error); if (!cancelled) onStatus('error'); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
+    }, [onStatus]);
 
     const filtered = activeTag === '全部'
         ? items
@@ -117,7 +119,7 @@ function PortfolioGallery() {
 
 // ─── Quote Form (ported from CustomQuote.jsx) ─────────────────
 
-function QuoteForm() {
+function QuoteForm({ onStatus }) {
     const [step, setStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -138,12 +140,14 @@ function QuoteForm() {
     });
 
     useEffect(() => {
+        let cancelled = false;
         setIsLoadingMaterials(true);
         getQuoteMaterials()
-            .then(data => setMaterialsOptions(data.filter(m => m.is_active)))
-            .catch(console.error)
-            .finally(() => setIsLoadingMaterials(false));
-    }, []);
+            .then(data => { if (!cancelled) { setMaterialsOptions(data.filter(m => m.is_active)); onStatus('ready'); } })
+            .catch(error => { console.error(error); if (!cancelled) onStatus('error'); })
+            .finally(() => { if (!cancelled) setIsLoadingMaterials(false); });
+        return () => { cancelled = true; };
+    }, [onStatus]);
 
     const handleMethodSelect = (method) => {
         setFormData(prev => ({
@@ -515,7 +519,12 @@ function QuoteForm() {
 // ─── Main Page ────────────────────────────────────────────────
 
 export default function Forge() {
-    usePageMeta('鍛造工坊', '比創空間・鍛造工坊——雷射切割、FDM 3D 列印、機構顧問打樣，台南快速接單，3 工作天報價。');
+    const [portfolioStatus, setPortfolioStatus] = useState('pending');
+    const [materialsStatus, setMaterialsStatus] = useState('pending');
+    usePageMeta('鍛造工坊', '比創空間・鍛造工坊——雷射切割、FDM 3D 列印、機構顧問打樣，台南快速接單，3 工作天報價。', {
+        ready: portfolioStatus === 'ready' && materialsStatus === 'ready',
+        error: portfolioStatus === 'error' || materialsStatus === 'error',
+    });
     return (
         <div className="min-h-screen bg-white">
             {/* Hero */}
@@ -589,7 +598,7 @@ export default function Forge() {
             </section>
 
             {/* Portfolio Gallery */}
-            <PortfolioGallery />
+            <PortfolioGallery onStatus={setPortfolioStatus} />
 
             {/* Quote Form */}
             <section id="quote" className="bg-bcs-gray border-t border-bcs-border">
@@ -601,7 +610,7 @@ export default function Forge() {
                         <h2 className="text-3xl font-black text-bcs-black mb-3">填寫客製化評估表單</h2>
                         <p className="text-bcs-muted max-w-md mx-auto">3 個工作天內由工程師回覆報價，填表約 3 分鐘。</p>
                     </div>
-                    <QuoteForm />
+                    <QuoteForm onStatus={setMaterialsStatus} />
                 </div>
             </section>
         </div>

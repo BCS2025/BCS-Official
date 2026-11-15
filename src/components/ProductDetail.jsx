@@ -5,8 +5,7 @@ import { getImageUrl } from '../lib/imageUtils';
 import { ArrowLeft } from 'lucide-react';
 import ProductImageCarousel from './ProductImageCarousel';
 import { usePageMeta } from '../hooks/usePageMeta';
-
-const SITE_ORIGIN = 'https://bcs.tw';
+import { SITE_ORIGIN } from '../lib/seoPolicy';
 
 function buildProductDescription(product) {
     if (!product) return undefined;
@@ -24,14 +23,18 @@ function buildAbsoluteImage(path) {
     return `${SITE_ORIGIN}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
 }
 
-export default function ProductDetail({ products, cart, onAddToCart, isLoading = false }) {
+export default function ProductDetail({ products, cart, onAddToCart, isLoading = false, loadError = false }) {
     const { id } = useParams();
     const product = products.find(p => p.id === id);
 
     usePageMeta(
         product ? `${product.name}・販創所` : '商品詳情・販創所',
         product ? buildProductDescription(product) : undefined,
-        product ? { image: buildAbsoluteImage((product.images && product.images[0]) || product.image) } : undefined,
+        {
+            image: product ? buildAbsoluteImage((product.images && product.images[0]) || product.image) : undefined,
+            ready: !isLoading && !!product,
+            error: loadError || (!isLoading && !product),
+        },
     );
 
     if (!product) {
@@ -59,7 +62,7 @@ export default function ProductDetail({ products, cart, onAddToCart, isLoading =
         }
         return (
             <div className="text-center py-20">
-                <h2 className="text-2xl font-bold text-bcs-black">找不到此商品</h2>
+                <h2 className="text-2xl font-bold text-bcs-black">{loadError ? '商品暫時無法載入，請稍後再試' : '找不到此商品'}</h2>
                 <Link to="/store/products" className="text-store-500 hover:underline mt-4 inline-block">返回商品列表</Link>
             </div>
         );

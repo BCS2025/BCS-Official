@@ -1,69 +1,41 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import Sitemap from 'vite-plugin-sitemap'
 import prerender from '@prerenderer/rollup-plugin'
 import { createClient } from '@supabase/supabase-js'
-
-// 公開、且希望被索引的靜態路由。送 sitemap + 預渲染。
-const INDEXED_STATIC_ROUTES = [
-  '/',
-  '/about',
-  '/store',
-  '/store/products',
-  '/forge',
-  '/makerworld',
-  '/terms',
-  '/returns',
-]
-
-// 會被預渲染但不該被索引。寫 robots noindex，避免被當成首頁重複內容。
-// Why: Vercel 對找不到的靜態檔走 rewrite → /index.html（=首頁預渲染 HTML），
-// 結果 /store/cart 會被爬蟲誤當成首頁。替它產一份專屬 HTML 即可解決。
-const NOINDEX_PRERENDER_ROUTES = ['/store/cart']
+import { NOINDEX_PRERENDER_ROUTES } from './src/lib/seoPolicy.js'
+import { fetchPublicRoutes, sitemapPlugin, assertRenderedRoute } from './scripts/seo/build-seo.mjs'
+import { setupReadOnlyPrerender } from './scripts/seo/prerender-readonly.mjs'
 
 async function fetchDynamicRoutes(env) {
   const url = env.VITE_SUPABASE_URL
   const key = env.VITE_SUPABASE_ANON_KEY
   if (!url || !key) {
-    console.warn('[prerender] Supabase env vars missing; skipping dynamic routes.')
-    return []
+    throw new Error('Public catalogue credentials are required for a complete sitemap.')
   }
-  try {
-    const supabase = createClient(url, key)
-    const [productsRes, coursesRes] = await Promise.all([
-      supabase.from('products').select('id').eq('is_active', true),
-      supabase.from('courses').select('id'),
-    ])
-    const productRoutes = (productsRes.data || []).map((p) => `/store/product/${p.id}`)
-    const courseRoutes = (coursesRes.data || []).map((c) => `/makerworld/${c.id}`)
-    return [...productRoutes, ...courseRoutes]
-  } catch (err) {
-    console.warn('[prerender] Failed to fetch dynamic routes:', err.message)
-    return []
-  }
+  if (url.replace(/\/$/, '') !== 'https://qpdpsgmpqkxeqboyapwp.supabase.co') throw new Error('Production catalogue configuration required')
+  if (!key.startsWith('sb_publishable_') && JSON.parse(Buffer.from(key.split('.')[1], 'base64url')).role !== 'anon') throw new Error('Anonymous public catalogue key required')
+  return fetchPublicRoutes(createClient(url, key))
 }
 
 // https://vite.dev/config/
 export default defineConfig(async ({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const serverEnv = { ...env, ...process.env }
   const isBuild = command === 'build'
   const skipPrerender = process.env.SKIP_PRERENDER === 'true'
+  if (isBuild && skipPrerender) throw new Error('Release builds require complete prerendering')
+  if (isBuild && (serverEnv.BCS_ENV === 'staging' || serverEnv.VITE_BCS_ENV === 'staging')) throw new Error('Release build requires production configuration')
   const isServerlessBuild = !!process.env.VERCEL
 
-  const dynamicRoutes = isBuild && !skipPrerender ? await fetchDynamicRoutes(env) : []
-  const sitemapRoutes = [...INDEXED_STATIC_ROUTES, ...dynamicRoutes]
-  const prerenderRoutes = [...INDEXED_STATIC_ROUTES, ...NOINDEX_PRERENDER_ROUTES, ...dynamicRoutes]
-
-  // vite-plugin-sitemap 會自動掃描 build 輸出的 HTML 發現靜態路由。預渲染開啟時它已經能掃到
-  // INDEXED_STATIC_ROUTES，再把同一批傳進 dynamicRoutes 會造成重複條目 → 只補動態部分。
-  // 跳過預渲染時 build 輸出只剩 dist/index.html，靜態路由掃不到，才要傳完整清單。
-  const sitemapDynamicRoutes = skipPrerender ? sitemapRoutes : dynamicRoutes
+  const sitemapRoutes = isBuild ? await fetchDynamicRoutes(serverEnv) : []
+  // Cart gets its own noindex HTML instead of falling back to the prerendered homepage.
+  const prerenderRoutes = [...new Set([...sitemapRoutes, ...NOINDEX_PRERENDER_ROUTES])]
 
   // 在 Vercel 的 serverless Linux 容器（缺 libnspr4 等系統函式庫）改用 @sparticuz/chromium，
   // 它自帶一份完整的 Chromium binary + 必要 shared libs。本機 build 仍用 puppeteer 預設 Chrome。
   let serverlessLaunchOptions = null
-  if (isBuild && !skipPrerender && isServerlessBuild) {
+  if (isBuild && isServerlessBuild) {
     const { default: chromium } = await import('@sparticuz/chromium')
     serverlessLaunchOptions = {
       args: chromium.args,
@@ -80,20 +52,15 @@ export default defineConfig(async ({ mode, command }) => {
   return {
     plugins: [
       react(),
-      Sitemap({
-        hostname: 'https://bcs.tw',
-        dynamicRoutes: sitemapDynamicRoutes,
-        readable: true,
-        lastmod: new Date(),
-        generateRobotsTxt: false,
-        robots: [{ userAgent: '*', allow: '/' }],
-      }),
-      ...(isBuild && !skipPrerender
+      sitemapPlugin(sitemapRoutes),
+      ...(isBuild
         ? [
             prerender({
               routes: prerenderRoutes,
               renderer: '@prerenderer/renderer-puppeteer',
+              postProcess: route => assertRenderedRoute(route),
               rendererOptions: {
+                pageSetup: setupReadOnlyPrerender,
                 renderAfterDocumentEvent: 'render-complete',
                 maxConcurrentRoutes: 4,
                 timeout: 60000,

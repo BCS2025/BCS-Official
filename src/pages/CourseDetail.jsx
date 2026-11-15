@@ -192,20 +192,27 @@ export default function CourseDetail() {
     const [course, setCourse] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [loadedId, setLoadedId] = useState(null);
+    const pending = isLoading || loadedId !== courseId;
 
     usePageMeta(
-        course ? course.title : '課程詳情',
-        course ? `${course.title}——比創空間・創客世界課程報名，STEAM 兒童教育，台南永康。` : undefined
+        !pending && course ? course.title : '課程詳情',
+        !pending && course ? `${course.title}——比創空間・創客世界課程報名，STEAM 兒童教育，台南永康。` : undefined,
+        { ready: !pending && !!course, error: !pending && !course }
     );
 
     useEffect(() => {
+        let cancelled = false;
+        setIsLoading(true);
+        setIsSuccess(false);
         fetchCourseById(courseId)
-            .then(setCourse)
-            .catch(err => console.error(err))
-            .finally(() => setIsLoading(false));
+            .then(data => { if (!cancelled) setCourse(data); })
+            .catch(err => { console.error(err); if (!cancelled) setCourse(null); })
+            .finally(() => { if (!cancelled) { setLoadedId(courseId); setIsLoading(false); } });
+        return () => { cancelled = true; };
     }, [courseId]);
 
-    if (isLoading) {
+    if (pending) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
                 <div className="text-bcs-muted">載入中...</div>
