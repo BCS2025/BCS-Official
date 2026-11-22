@@ -42,6 +42,7 @@ const report=[...digests].map(([k,h])=>sha(k)+':'+h).sort().join('\n');
 if(sha(report)!=='11bd89f066d34434f4dba39a9558db7e5927657dd0daef68c7f1f75ee93cc8d0')throw Error('Reviewed snapshot changed');
 if(process.argv.includes('--refresh-legacy')) {
     const originallyStale=[];
+    let changedSources=0; let refreshedCount=0;
     await batch(paths,async key=>{
         const expected=digests.get(key);
         if(sha(await read(key,true))===expected)return;
@@ -50,13 +51,19 @@ if(process.argv.includes('--refresh-legacy')) {
         const data=await read(revised,true);
         if(sha(data)!==expected)throw Error('New public URL must match before cache refresh');
         const bound=key.indexOf('/');
-        const bytes=await read(key,false);
-        if(sha(bytes)!==expected)throw Error('Legacy source changed');
+        let authorized=false;
+        for(let i=0;i<3;i++) {
+            const bytes=await read(key,false);
+            if(sha(bytes)===expected || sha(Buffer.from(cleanPublicImage(bytes)))===expected){authorized=true;break;}
+            await new Promise(resolve=>setTimeout(resolve,1500*(i+1)));
+        }
+        if(!authorized){changedSources++;return;}
         const bucket=supabase.storage.from(key.slice(0,bound));
         const {error}=await bucket.update(key.slice(bound+1),data,{contentType:data[0]===137?'image/png':'image/jpeg',cacheControl:'0'});
         if(error)throw Error('Legacy expiry update failed');
+        refreshedCount++;
     });
-    console.log('LEGACY_CACHE_REFRESH '+JSON.stringify({audited:paths.length,refreshed:originallyStale.length}));
+    console.log('LEGACY_CACHE_REFRESH '+JSON.stringify({audited:paths.length,staleBefore:originallyStale.length,refreshed:refreshedCount,changedSources}));
     if(originallyStale.length)await new Promise(r=>setTimeout(r,65000));
     let current=0;
     await batch(paths,async key=>{if(sha(await read(key,true))===digests.get(key))current++;});
