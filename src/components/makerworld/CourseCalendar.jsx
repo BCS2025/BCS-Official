@@ -1,33 +1,35 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { courseDayKey } from '../../lib/courseDateTime';
 
 const WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
 
+// Grid dates are civil-date placeholders at UTC midnight, not course instants.
 function startOfMonth(d) {
-    return new Date(d.getFullYear(), d.getMonth(), 1);
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
 }
 
 function addMonths(d, n) {
-    return new Date(d.getFullYear(), d.getMonth() + n, 1);
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1));
 }
 
 function dateKey(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return d.toISOString().slice(0, 10);
 }
 
 function isSameDay(a, b) {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return a.getTime() === b.getTime();
 }
 
 /** 回傳 6×7 格月曆 Date 陣列（含前後月補齊） */
 function buildGrid(monthStart) {
-    const firstWeekday = monthStart.getDay();
+    const firstWeekday = monthStart.getUTCDay();
     const gridStart = new Date(monthStart);
-    gridStart.setDate(monthStart.getDate() - firstWeekday);
+    gridStart.setUTCDate(monthStart.getUTCDate() - firstWeekday);
     return Array.from({ length: 42 }, (_, i) => {
         const d = new Date(gridStart);
-        d.setDate(gridStart.getDate() + i);
+        d.setUTCDate(gridStart.getUTCDate() + i);
         return d;
     });
 }
@@ -49,20 +51,17 @@ const STATUS_STYLES = {
  * 若該月無任何課程，會顯示下一個有課程的月份引導。
  */
 export default function CourseCalendar({ courses }) {
-    const today = useMemo(() => {
-        const t = new Date();
-        t.setHours(0, 0, 0, 0);
-        return t;
-    }, []);
+    const todayKey = useMemo(() => courseDayKey(new Date()), []);
+    const today = useMemo(() => new Date(todayKey), [todayKey]);
 
-    // 以「有最近未來課程的月份」作為初始月份；若都過去，顯示本月
+    // Start in the month of the next course on or after today's Taiwan date.
     const initialMonth = useMemo(() => {
         const upcoming = courses
-            .map(c => new Date(c.date))
-            .filter(d => d >= today)
-            .sort((a, b) => a - b)[0];
-        return startOfMonth(upcoming || today);
-    }, [courses, today]);
+            .map(c => courseDayKey(c.date))
+            .filter(key => key >= todayKey)
+            .sort()[0];
+        return startOfMonth(upcoming ? new Date(upcoming) : today);
+    }, [courses, today, todayKey]);
 
     const [viewMonth, setViewMonth] = useState(initialMonth);
     const grid = useMemo(() => buildGrid(viewMonth), [viewMonth]);
@@ -70,14 +69,14 @@ export default function CourseCalendar({ courses }) {
     const coursesByDay = useMemo(() => {
         const map = {};
         for (const c of courses) {
-            const key = dateKey(new Date(c.date));
+            const key = courseDayKey(c.date);
             (map[key] ||= []).push(c);
         }
         for (const list of Object.values(map)) list.sort((a, b) => new Date(a.date) - new Date(b.date));
         return map;
     }, [courses]);
 
-    const monthLabel = viewMonth.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+    const monthLabel = viewMonth.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', timeZone: 'UTC' });
 
     return (
         <div className="card overflow-hidden">
@@ -124,12 +123,13 @@ export default function CourseCalendar({ courses }) {
             {/* 日期格 */}
             <div className="grid grid-cols-7">
                 {grid.map((day, i) => {
-                    const inMonth = day.getMonth() === viewMonth.getMonth();
+                    const inMonth = day.getUTCMonth() === viewMonth.getUTCMonth();
                     const isToday = isSameDay(day, today);
                     const dayCourses = coursesByDay[dateKey(day)] || [];
                     return (
                         <div
                             key={i}
+                            data-course-day={dateKey(day)}
                             className={`min-h-[72px] sm:min-h-[96px] border-r border-b border-bcs-border/60 last:border-r-0 p-1.5 sm:p-2 flex flex-col gap-1 ${
                                 inMonth ? 'bg-white' : 'bg-bcs-gray/30'
                             }`}
@@ -144,7 +144,7 @@ export default function CourseCalendar({ courses }) {
                                             : 'text-bcs-muted/50'
                                     }`}
                                 >
-                                    {day.getDate()}
+                                    {day.getUTCDate()}
                                 </span>
                             </div>
                             {dayCourses.slice(0, 2).map(c => {

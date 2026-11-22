@@ -5,6 +5,7 @@ import {
     MessageCircle, MapPin, ExternalLink, List, CalendarDays, ChevronLeft,
 } from 'lucide-react';
 import { fetchCourses } from '../lib/courseService';
+import { formatCourseDate, formatCourseGalleryDate } from '../lib/courseDateTime';
 import { fetchLocations, LOCATION_TYPE_META } from '../lib/locationService';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { SkeletonCourseCard } from '../components/ui/Skeleton';
@@ -20,14 +21,6 @@ function getStatus(course) {
     if (course.status === 'closed') return 'closed';
     if (course.status === 'full') return 'paused';
     return 'open';
-}
-
-function formatCourseDate(iso) {
-    const d = new Date(iso);
-    return {
-        date: d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }),
-        time: d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
-    };
 }
 
 function CourseCard({ course }) {
@@ -130,8 +123,6 @@ function HighlightsGallery({ courses }) {
 
     if (items.length === 0) return null;
 
-    const dateLabel = (iso) => new Date(iso).toLocaleDateString('zh-TW', { month: 'long', day: 'numeric' });
-
     return (
         <section className="py-14 sm:py-20 bg-maker-50/40 border-y border-maker-100">
             <div className="max-w-7xl mx-auto px-6">
@@ -156,7 +147,7 @@ function HighlightsGallery({ courses }) {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                                 <div className="text-white text-left">
-                                    <div className="text-xs opacity-80">{dateLabel(item.courseDate)}</div>
+                                    <div className="text-xs opacity-80">{formatCourseGalleryDate(item.courseDate)}</div>
                                     <div className="text-sm font-bold leading-tight line-clamp-2">{item.courseTitle}</div>
                                 </div>
                             </div>
@@ -192,7 +183,7 @@ function HighlightsGallery({ courses }) {
                     >
                         <img src={items[lightbox].url} alt="" className="max-w-full max-h-[75vh] object-contain rounded-lg" />
                         <div className="text-center text-white">
-                            <div className="text-sm opacity-70">{dateLabel(items[lightbox].courseDate)}</div>
+                            <div className="text-sm opacity-70">{formatCourseGalleryDate(items[lightbox].courseDate)}</div>
                             <div className="text-lg font-bold">{items[lightbox].courseTitle}</div>
                         </div>
                     </div>

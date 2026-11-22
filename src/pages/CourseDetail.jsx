@@ -5,6 +5,7 @@ import { LOCATION_TYPE_META } from '../lib/locationService';
 
 const LINE_URL = 'https://lin.ee/vt7kVvG';
 import { fetchCourseById } from '../lib/courseService';
+import { formatCourseConfirmation, formatCourseDate, formatCourseNotificationDate } from '../lib/courseDateTime';
 import { createRegistration } from '../lib/registrationService';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -74,7 +75,7 @@ function RegistrationForm({ course, onSuccess }) {
             await createRegistration({
                 courseId: course.id,
                 courseTitle: course.title,
-                courseDate: new Date(course.date).toLocaleDateString('zh-TW'),
+                courseDate: formatCourseNotificationDate(course.date),
                 parentName: form.parentName.trim(),
                 phone: form.phone.trim(),
                 email: form.email.trim() || null,
@@ -176,7 +177,7 @@ function SuccessScreen({ course, onBack }) {
             <div className="inline-block bg-maker-50 border border-maker-100 rounded-2xl p-4 text-left mb-8">
                 <div className="text-sm font-bold text-maker-700 mb-1">{course.title}</div>
                 <div className="text-sm text-bcs-muted">
-                    {new Date(course.date).toLocaleString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {formatCourseConfirmation(course.date)}
                 </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
@@ -230,7 +231,7 @@ export default function CourseDetail() {
         );
     }
 
-    const date = new Date(course.date);
+    const { date, time } = formatCourseDate(course.date);
     const isPaused = course.status === 'full';
     const isClosed = course.status === 'closed';
     const canRegister = !isPaused && !isClosed;
@@ -277,9 +278,9 @@ export default function CourseDetail() {
                                     <Calendar size={15} className="text-maker-500 mt-0.5 flex-shrink-0" />
                                     <div>
                                         <div className="font-semibold text-bcs-black">
-                                            {date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+                                            {date}
                                         </div>
-                                        <div>{date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</div>
+                                        <div>{time}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
