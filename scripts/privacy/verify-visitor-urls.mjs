@@ -20,7 +20,8 @@ const sitemap=await (await get(origin+'/sitemap.xml')).text();
 const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x=>x[1]);
 if(paths.length<8 || paths.some(p=>new URL(p).origin!==origin)) throw Error('Unexpected sitemap');
 paths.push(origin+'/store/cart');
-const js=new Set(); let forge=false;
+const js=new Set(); let forge=false; let renderedRevisions=0;
+const publicPattern=/https:\/\/qpdpsgmpqkxeqboyapwp\.supabase\.co\/storage\/v1\/object\/public\/(?:forge-portfolio\/portfolio|order-uploads\/uploads)\/[\w-]+\.(?:jpe?g|png)/gi;
 async function batch(items,fn) {
     const queue=[...items];
     await Promise.all(Array.from({length:4},async()=>{while(queue.length)await fn(queue.shift());}));
@@ -29,6 +30,10 @@ await batch(paths,async url=>{
     const html=await(await get(url)).text();
     if(!html.includes('<html')) throw Error('Incomplete visitor page');
     safe(html);
+    for (const m of html.matchAll(publicPattern)) {
+        if (!m[0].includes('--clean-20261122.')) throw Error('Stale image reference in rendered website');
+        renderedRevisions++;
+    }
     if(new URL(url).pathname==='/forge') forge=html.includes('比創空間工程團隊');
     for(const m of html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)) js.add(m[1]);
 });
@@ -80,20 +85,19 @@ for(const query of catalogueUrls) {
     if(!resp.ok)throw Error('Public catalogue returned '+resp.status);
     visit(await resp.json());
 }
-const counts={total:urls.size,match:0,canonicalClean:0,versionedClean:0,missing:0,errors:0};
+const counts={catalogue:urls.size,expected:0,verified:0,unversioned:0,errors:0,renderedRevisions};
 await batch([...urls],async raw=>{
-    try{
-        const url=new URL(raw);
-        const path=decodeURIComponent(url.pathname.slice('/storage/v1/object/public/'.length));
-        const good=expected[fingerprint(path)];
-        if(!good){counts.missing++;return;}
-        counts.match++;
-        const a=await(await get(url.href)).arrayBuffer();
-        if(fingerprint(Buffer.from(a))===good)counts.canonicalClean++;
-        url.searchParams.set('media-rev','20261122-clean');
-        const b=await(await get(url.href)).arrayBuffer();
-        if(fingerprint(Buffer.from(b))===good)counts.versionedClean++;
-    }catch{counts.errors++;}
+  try {
+    const url=new URL(raw);
+    const current=decodeURIComponent(url.pathname.slice('/storage/v1/object/public/'.length));
+    if (!/--clean-20261122\.[^.]+$/.test(current)){counts.unversioned++;return;}
+    const old=current.replace(/--clean-20261122(\.[^.]+)$/,'$1');
+    const reviewed=expected[fingerprint(old)];
+    if(!reviewed)return;
+    counts.expected++;
+    const bytes=await(await get(url.href)).arrayBuffer();
+    if(fingerprint(Buffer.from(bytes))===reviewed)counts.verified++;
+  }catch{counts.errors++;}
 });
-console.log('PUBLIC_CDN_CHECK '+JSON.stringify(counts));
-if(counts.errors||counts.match!==168||counts.versionedClean!==168)throw Error('Published catalogue verification incomplete');
+console.log('VISITOR_REVISIONS '+JSON.stringify(counts));
+if(!renderedRevisions || counts.errors || counts.unversioned || counts.catalogue<162 || counts.catalogue!==counts.verified)throw Error('Visitor image verification incomplete');
