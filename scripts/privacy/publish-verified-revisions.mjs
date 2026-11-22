@@ -1,3 +1,6 @@
+import {mkdtemp, readFile, writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {createHash, randomUUID} from 'node:crypto';
 import {createClient} from '@supabase/supabase-js';
 import {cleanPublicImage} from '../../src/lib/publicImagePrivacy.mjs';
@@ -20,10 +23,12 @@ async function batch(items,fn) {
     const queue=[...items];
     await Promise.all(Array.from({length:4},async()=>{while(queue.length){const k=queue.shift();await fn(k);}}));
 }
+const work=await mkdtemp(join(tmpdir(),'bcs-reviewed-images-'));
 const digests=new Map();
 await batch(paths,async k=>{
     const bytes=await read(k,false);
     if(!bytes.equals(Buffer.from(cleanPublicImage(bytes))))throw Error('Origin metadata changed');
+    await writeFile(join(work,sha(k)),bytes,{mode:0o600});
     digests.set(k,sha(bytes));
 });
 const report=[...digests].map(([k,h])=>sha(k)+':'+h).sort().join('\n');
@@ -33,8 +38,8 @@ await batch(paths,async key=>{
     const bound=key.indexOf('/'),bucket=supabase.storage.from(key.slice(0,bound));
     const revised=key.replace(/(\.[^.]+)$/,'--clean-20261122$1');
     const file=revised.slice(bound+1);
-    const bytes=await read(key,false);
-    if(sha(bytes)!==digests.get(key))throw Error('Source has changed');
+    const bytes=await readFile(join(work,sha(key)));
+    if(sha(bytes)!==digests.get(key))throw Error('Snapshot readback mismatch');
     const contentType=bytes[0]===137?'image/png':'image/jpeg';
     const {error}=await bucket.upload(file,bytes,{contentType,cacheControl:'3600',upsert:false});
     if(error&&!/already exists|duplicate|resource exists/i.test(error.message))throw Error('Versioned image write failed');
