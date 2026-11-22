@@ -15,9 +15,16 @@ const sha=b=>createHash('sha256').update(b).digest('hex');
 async function read(key,publicUrl) {
     const url=new URL('/storage/v1/object/'+(publicUrl?'public/':'authenticated/')+key,origin);
     if(!publicUrl)url.searchParams.set('r',randomUUID());
-    const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(50000),headers:publicUrl?{}:{apikey:token,Authorization:'Bearer '+token}});
-    if(!r.ok) throw Error('Storage returned '+r.status);
-    return Buffer.from(await r.arrayBuffer());
+    for(let attempt=0;attempt<4;attempt++) {
+        try {
+            const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(75000),headers:publicUrl?{}:{apikey:token,Authorization:'Bearer '+token}});
+            if(!r.ok)throw Error('Storage returned '+r.status);
+            return Buffer.from(await r.arrayBuffer());
+        } catch(error) {
+            if(attempt===3)throw error;
+            await new Promise(resolve=>setTimeout(resolve,1000*(attempt+1)));
+        }
+    }
 }
 async function batch(items,fn) {
     const queue=[...items];
