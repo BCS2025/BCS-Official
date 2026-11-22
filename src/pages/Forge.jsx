@@ -29,7 +29,7 @@ const SERVICES = [
     {
         icon: <Wrench size={32} className="text-forge-500" />,
         title: '機構顧問打樣',
-        desc: '黃詣工程師提供機構干涉檢查、公差建議，助你避免迭代成本。',
+        desc: '比創空間工程團隊提供機構干涉檢查與公差建議，幫你減少反覆打樣的成本。',
         specs: ['Solidworks / Fusion360', '公差分析', '組裝驗證建議'],
     },
 ];

@@ -1,3 +1,4 @@
+import { preparePublicImage } from './publicImagePrivacy.mjs';
 import { supabase } from './supabaseClient';
 
 // ─── Portfolio CRUD ───────────────────────────────────────────
@@ -45,7 +46,7 @@ export async function uploadPortfolioImage(file) {
     if (!file) return null;
     const ext = file.name.split('.').pop();
     const path = `portfolio/${Date.now()}_${Math.random().toString(36).slice(2, 9)}.${ext}`;
-    const { error } = await supabase.storage.from('forge-portfolio').upload(path, file);
+    const { error } = await supabase.storage.from('forge-portfolio').upload(path, await preparePublicImage(file));
     if (error) throw error;
     const { data } = supabase.storage.from('forge-portfolio').getPublicUrl(path);
     return data.publicUrl;

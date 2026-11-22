@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { uploadFile } from './storageService';
+import { uploadPublicImage } from './storageService';
 
 /** 前台/後台共用：取得所有地點（依排序） */
 export async function fetchLocations({ onlyActive = false } = {}) {
@@ -57,7 +57,7 @@ export async function deleteLocation(id) {
 
 /** 上傳地點代表圖 */
 export async function uploadLocationImage(file) {
-    return uploadFile(file);
+    return uploadPublicImage(file);
 }
 
 /** 地點類別中文標籤與顏色 class（供前後台共用） */

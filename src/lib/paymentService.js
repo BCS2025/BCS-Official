@@ -11,12 +11,16 @@ export const PAYMENT_METHODS = {
     LINE_PAY: 'line_pay',
 };
 
-export function getBankTransferInfo() {
-    return {
-        bank: import.meta.env.VITE_PAYMENT_BANK_NAME || '中華郵政 (700)',
-        account: import.meta.env.VITE_PAYMENT_ACCOUNT || '0031421-0318644',
-        accountName: import.meta.env.VITE_PAYMENT_ACCOUNT_NAME || '黃詣',
-    };
+export async function getBankTransferInfo(orderId, receipt, signal) {
+    const res = await fetch('/api/payment/bank-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, receipt }), cache: 'no-store', signal,
+    });
+    if (!res.ok) throw new Error('匯款資訊暫時無法讀取');
+    const info = await res.json();
+    if (!info.bank || !info.account) throw new Error('匯款資料不完整');
+    return { bank: info.bank, account: info.account };
 }
 
 /**
@@ -48,7 +52,6 @@ export async function initiatePayment({ orderId, paymentMethod }) {
 
     return {
         method: PAYMENT_METHODS.BANK_TRANSFER,
-        bankInfo: getBankTransferInfo(),
     };
 }
 

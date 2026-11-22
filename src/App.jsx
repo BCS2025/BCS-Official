@@ -236,6 +236,7 @@ function App() {
                     successData ? (
                         <ThankYouPage
                             orderId={successData.orderId}
+                            receipt={successData.receipt}
                             needProof={successData.needProof}
                             estimatedDate={successData.estimatedDate}
                             totalAmount={successData.totalAmount}

@@ -22,7 +22,9 @@ export async function submitOrder(orderData) {
 
     // 2. SUBMIT ORDER
     const cvsStore = orderData.cvsStore || null;
+    const receipt = (orderData.paymentMethod || 'bank_transfer') === 'bank_transfer' ? crypto.randomUUID() : null;
     const insertRow = {
+        ...(receipt ? { id: receipt } : {}),
         order_id: orderData.orderId,
         user_info: orderData.customer,
         items: orderData.items,
@@ -53,5 +55,5 @@ export async function submitOrder(orderData) {
         throw error;
     }
 
-    return { id: 'submitted', ...orderData }; // Mock return since we can't read back the ID
+    return { id: 'submitted', ...orderData, receipt };
 }
