@@ -49,11 +49,20 @@ async function readPublic(key, fresh) {
     if(!response.ok) throw Error('Public image HTTP '+response.status);
     return Buffer.from(await response.arrayBuffer());
 }
+async function readOrigin(key) {
+    const url=new URL('/storage/v1/object/authenticated/'+key,origin);
+    url.searchParams.set('revision',crypto.randomUUID());
+    const secret=process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const response=await fetch(url,{headers:{apikey:secret,Authorization:'Bearer '+secret,'Cache-Control':'no-cache'},redirect:'error',signal:AbortSignal.timeout(45000)});
+    if(!response.ok) throw Error('Origin image HTTP '+response.status);
+    return Buffer.from(await response.arrayBuffer());
+}
+const proofs=[];
 const stats={catalogue:paths.size,checked:0,changed:0,alreadyClean:0,needsCleaning:0,canonicalStale:0};
 const queue=[...paths];
 async function processOne(key) {
     const slash=key.indexOf('/'), folder=admin.storage.from(key.slice(0,slash)), file=key.slice(slash+1);
-    const before=await readPublic(key,true);
+    const before=await readOrigin(key);
     const cleaned=Buffer.from(cleanPublicImage(before));
     if(!cleaned.equals(Buffer.from(cleanPublicImage(cleaned)))) throw Error('Non-idempotent conversion');
     const dirty=!before.equals(cleaned);
@@ -66,19 +75,20 @@ async function processOne(key) {
         if(upload.error && !/already exists|duplicate/i.test(upload.error.message)) throw Error('Private backup failed');
         const backed=await result(recovery.download(copy));
         if(digest(Buffer.from(await backed.arrayBuffer()))!==digest(before)) throw Error('Backup verification failed');
-        if(!before.equals(await readPublic(key,true))) throw Error('Published image changed while preparing');
+        if(!before.equals(await readOrigin(key))) throw Error('Published image changed while preparing');
         await result(folder.update(file,cleaned,{contentType:type,cacheControl:'60'}));
         let good=false;
         for(let i=0;i<4;i++) {
-            if(cleaned.equals(await readPublic(key,true))) {good=true;break;}
+            if(cleaned.equals(await readOrigin(key))) {good=true;break;}
             await new Promise(r=>setTimeout(r,1800*(i+1)));
         }
         if(!good) throw Error('Updated image does not match on readback');
         stats.changed++;
     }
     if (mode==='--verify') {
-        const canonical=await readPublic(key,false);
-        if(!canonical.equals(cleaned)) stats.canonicalStale++;
+        const [canonical,fresh]=await Promise.all([readPublic(key,false),readPublic(key,true)]);
+        if(!fresh.equals(cleaned) || !canonical.equals(cleaned)) stats.canonicalStale++;
+        proofs.push(digest(key)+':'+digest(cleaned));
     }
     stats.checked++;
 }
@@ -92,6 +102,10 @@ async function worker() {
 }
 await Promise.all(Array.from({length:4},worker));
 console.log('MEDIA_PRIVACY_RESULT '+JSON.stringify({...stats,errors:errors.length,mode}));
+if(mode==='--verify') {
+    proofs.sort();
+    for(let i=0;i<proofs.length;i+=6) console.log('MEDIA_DIGEST '+proofs.slice(i,i+6).join(' '));
+}
 if(errors.length) { console.error(errors.slice(0,5).map(x=>[digest(x.key).slice(0,10),x.error])); throw Error('Public media check incomplete'); }
 if(mode==='--verify' && stats.canonicalStale) console.warn('Some original CDN URLs still return a prior version.');
 
