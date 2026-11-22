@@ -1,0 +1,14 @@
+name: Verify public website privacy
+on:
+  push:
+    branches: [privacy/live-check-20261122]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: node scripts/privacy/verify-visitor-urls.mjs
