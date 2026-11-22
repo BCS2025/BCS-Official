@@ -71,10 +71,24 @@ async function processOne(key) {
     if (mode==='--apply' && dirty) {
         const copy=digest(before)+'/'+key;
         const type=before[0]===137?'image/png':'image/jpeg';
-        const upload=await recovery.upload(copy,before,{contentType:type,upsert:false});
-        if(upload.error && !/already exists|duplicate/i.test(upload.error.message)) throw Error('Private backup failed');
-        const backed=await result(recovery.download(copy));
-        if(digest(Buffer.from(await backed.arrayBuffer()))!==digest(before)) throw Error('Backup verification failed');
+        let backedUp=false;
+        for (let attempt=0;attempt<3;attempt++) {
+            // An interrupted upload can leave a correct object even when the API
+            // reports a conflict. Only byte-for-byte readback authorizes replacement.
+            const existing=await recovery.download(copy);
+            if (existing.data) {
+                if (digest(Buffer.from(await existing.data.arrayBuffer()))!==digest(before)) throw Error('Private backup hash mismatch');
+                backedUp=true; break;
+            }
+            await recovery.upload(copy,before,{contentType:type,upsert:false});
+            const saved=await recovery.download(copy);
+            if (saved.data) {
+                if (digest(Buffer.from(await saved.data.arrayBuffer()))!==digest(before)) throw Error('Private backup hash mismatch');
+                backedUp=true; break;
+            }
+            await new Promise(r=>setTimeout(r,1500*(attempt+1)));
+        }
+        if(!backedUp) throw Error('Private backup could not be verified');
         if(!before.equals(await readOrigin(key))) throw Error('Published image changed while preparing');
         await result(folder.update(file,cleaned,{contentType:type,cacheControl:'60'}));
         let good=false;
