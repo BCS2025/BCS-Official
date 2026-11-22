@@ -1,0 +1,50 @@
+import {createHash, randomUUID} from 'node:crypto';
+import {createClient} from '@supabase/supabase-js';
+import {cleanPublicImage} from '../../src/lib/publicImagePrivacy.mjs';
+const origin = 'https://qpdpsgmpqkxeqboyapwp.supabase.co';
+if(process.env.VITE_SUPABASE_URL?.replace(/\/$/,'')!==origin) throw Error('Incorrect production catalogue');
+const token=process.env.SUPABASE_SERVICE_ROLE_KEY;
+const paths=JSON.parse(process.env.BCS_PUBLISHED_MEDIA_REVISION_LIST ?? '[]');
+const checked=new Set(paths);
+if(!token||paths.length!==168||checked.size!==168||paths.some(k=>! /^(order-uploads\/uploads|forge-portfolio\/portfolio)\/[\w-]+\.(png|jpe?g)$/i.test(k))) throw Error('Incomplete approved catalogue');
+const supabase=createClient(origin,token,{auth:{persistSession:false}});
+const sha=b=>createHash('sha256').update(b).digest('hex');
+async function read(key,publicUrl) {
+    const url=new URL('/storage/v1/object/'+(publicUrl?'public/':'authenticated/')+key,origin);
+    if(!publicUrl)url.searchParams.set('r',randomUUID());
+    const r=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(50000),headers:publicUrl?{}:{apikey:token,Authorization:'Bearer '+token}});
+    if(!r.ok) throw Error('Storage returned '+r.status);
+    return Buffer.from(await r.arrayBuffer());
+}
+async function batch(items,fn) {
+    const queue=[...items];
+    await Promise.all(Array.from({length:4},async()=>{while(queue.length){const k=queue.shift();await fn(k);}}));
+}
+const digests=new Map();
+await batch(paths,async k=>{
+    const bytes=await read(k,false);
+    if(!bytes.equals(Buffer.from(cleanPublicImage(bytes))))throw Error('Origin metadata changed');
+    digests.set(k,sha(bytes));
+});
+const report=[...digests].map(([k,h])=>sha(k)+':'+h).sort().join('\n');
+if(sha(report)!=='11bd89f066d34434f4dba39a9558db7e5927657dd0daef68c7f1f75ee93cc8d0')throw Error('Reviewed snapshot changed');
+let success=0;
+await batch(paths,async key=>{
+    const bound=key.indexOf('/'),bucket=supabase.storage.from(key.slice(0,bound));
+    const revised=key.replace(/(\.[^.]+)$/,'--clean-20261122$1');
+    const file=revised.slice(bound+1);
+    const bytes=await read(key,false);
+    if(sha(bytes)!==digests.get(key))throw Error('Source has changed');
+    const contentType=bytes[0]===137?'image/png':'image/jpeg';
+    const {error}=await bucket.upload(file,bytes,{contentType,cacheControl:'3600',upsert:false});
+    if(error&&!/already exists|duplicate|resource exists/i.test(error.message))throw Error('Versioned image write failed');
+    if(sha(await read(revised,false))!==digests.get(key))throw Error('Versioned origin mismatch');
+    let matched=false;
+    for(let i=0;i<3;i++){
+        if(sha(await read(revised,true))===digests.get(key)){matched=true;break;}
+        await new Promise(r=>setTimeout(r,2000));
+    }
+    if(!matched)throw Error('Revised public URL did not match');
+    success++;
+});
+console.log('VERIFIED_MEDIA_REVISIONS '+JSON.stringify({originals:digests.size,publicCopies:success,snapshot:sha(report)}));
