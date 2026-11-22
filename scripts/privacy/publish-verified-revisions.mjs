@@ -42,8 +42,10 @@ const report=[...digests].map(([k,h])=>sha(k)+':'+h).sort().join('\n');
 if(sha(report)!=='11bd89f066d34434f4dba39a9558db7e5927657dd0daef68c7f1f75ee93cc8d0')throw Error('Reviewed snapshot changed');
 if(process.argv.includes('--refresh-legacy')) {
     const originallyStale=[];
-    let changedSources=0; let refreshedCount=0;
+    let changedSources=0; let refreshedCount=0; const errors={};
+    const note=e=>{const code=String(e?.statusCode??e?.status??e?.name??"StorageError").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,32);errors[code]=(errors[code]??0)+1;};
     await batch(paths,async key=>{
+        try {
         const expected=digests.get(key);
         if(sha(await read(key,true))===expected)return;
         originallyStale.push(key);
@@ -59,15 +61,22 @@ if(process.argv.includes('--refresh-legacy')) {
         }
         if(!authorized){changedSources++;return;}
         const bucket=supabase.storage.from(key.slice(0,bound));
-        const {error}=await bucket.update(key.slice(bound+1),data,{contentType:data[0]===137?'image/png':'image/jpeg',cacheControl:'0'});
-        if(error)throw Error('Legacy expiry update failed');
-        refreshedCount++;
+        let last;
+        for(let retry=0;retry<3;retry++){
+            const result=await bucket.update(key.slice(bound+1),data,{contentType:data[0]===137?'image/png':'image/jpeg',cacheControl:'0'});
+            if(!result.error){refreshedCount++;return;}
+            last=result.error;
+            if(sha(await read(key,true))===expected){refreshedCount++;return;}
+            await new Promise(resolve=>setTimeout(resolve,1200*(retry+1)));
+        }
+        note(last);
+        }catch(error){note(error);}
     });
-    console.log('LEGACY_CACHE_REFRESH '+JSON.stringify({audited:paths.length,staleBefore:originallyStale.length,refreshed:refreshedCount,changedSources}));
+    console.log('LEGACY_CACHE_REFRESH '+JSON.stringify({audited:paths.length,staleBefore:originallyStale.length,refreshed:refreshedCount,changedSources,errors}));
     if(originallyStale.length)await new Promise(r=>setTimeout(r,65000));
-    let current=0;
-    await batch(paths,async key=>{if(sha(await read(key,true))===digests.get(key))current++;});
-    console.log('LEGACY_PUBLIC_READBACK '+JSON.stringify({total:paths.length,clean:current,stale:paths.length-current}));
+    let current=0; let unreadable=0;
+    await batch(paths,async key=>{try{if(sha(await read(key,true))===digests.get(key))current++;}catch{unreadable++;}});
+    console.log('LEGACY_PUBLIC_READBACK '+JSON.stringify({total:paths.length,clean:current,stale:paths.length-current-unreadable,unreadable}));
     process.exit(0);
 }
 let success=0;
