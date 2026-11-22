@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Plus, Edit, Trash2, X, Save, Upload, AlertCircle, RefreshCw, Search, ChevronsUp, ChevronsDown } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { uploadFile } from '../../lib/storageService';
+import { uploadPublicImage } from '../../lib/storageService';
 import { ConfigSchemaBuilder } from '../../components/admin/ConfigSchemaBuilder';
 import { fetchAllShippingMethods, DEFAULT_ALLOWED_SHIPPING_METHODS } from '../../lib/shippingService';
 
@@ -275,7 +275,7 @@ export const AdminProducts = () => {
         if (!file) return;
 
         try {
-            const url = await uploadFile(file);
+            const url = await uploadPublicImage(file);
             setFormData(prev => ({
                 ...prev,
                 images: [...(prev.images || []), url]

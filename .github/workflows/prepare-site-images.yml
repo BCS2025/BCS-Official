@@ -1,0 +1,23 @@
+name: Prepare release images
+on:
+  push:
+    branches: [privacy/site-media-20261122]
+permissions:
+  contents: write
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove metadata and verify reviewed image hashes
+        run: node scripts/privacy/prepare-static.mjs
+      - name: Commit the reviewed site images
+        run: |
+          git config user.name "BCS website maintenance"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- public/
+          if ! git diff --cached --quiet; then
+            git commit -m "Remove identifying metadata from public site images"
+            git push origin HEAD:refs/heads/privacy/site-media-20261122
+          fi
+

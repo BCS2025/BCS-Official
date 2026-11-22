@@ -143,7 +143,7 @@ export function useOrderSubmit() {
             });
 
             // 3. Submit to Supabase
-            await submitOrderService(orderData);
+            const { receipt } = await submitOrderService(orderData);
 
             // 4. GAS webhook — order notification（訂單建立時先發一次）
             notifyGAS({ ...orderData, items: readableItems }, 'order_notify');
@@ -176,7 +176,7 @@ export function useOrderSubmit() {
             }
 
             // 6. Success
-            setSuccessData({ orderId, needProof, estimatedDate, totalAmount: finalTotal, paymentMethod, hasProofItems, hasLateUpload });
+            setSuccessData({ orderId, receipt, needProof, estimatedDate, totalAmount: finalTotal, paymentMethod, hasProofItems, hasLateUpload });
             onSuccess?.();
 
             if (paymentMethod === PAYMENT_METHODS.LINE_PAY) {

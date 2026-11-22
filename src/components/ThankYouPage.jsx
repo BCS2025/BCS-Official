@@ -2,12 +2,12 @@
 import { CheckCircle, Home, FileText, Mail, Smartphone, AlertTriangle, Truck } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../lib/pricing';
-import { getBankTransferInfo, PAYMENT_METHODS } from '../lib/paymentService';
+import { PAYMENT_METHODS } from '../lib/paymentService';
+import BankTransferDetails from './BankTransferDetails';
 import LogisticsTracking from './LogisticsTracking';
 
-export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate, totalAmount, paymentMethod, hasLateUpload = false }) {
+export default function ThankYouPage({ orderId, receipt, needProof, onHome, estimatedDate, totalAmount, paymentMethod, hasLateUpload = false }) {
     const isLinePay = paymentMethod === PAYMENT_METHODS.LINE_PAY;
-    const bankInfo = getBankTransferInfo();
 
     return (
         <div className="min-h-screen bg-store-50 flex flex-col items-center justify-center p-4">
@@ -98,12 +98,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                             </p>
 
                             {/* Bank Info Block */}
-                            <div className="bg-store-50 p-4 rounded-lg border border-bcs-border ml-7 space-y-1">
-                                <p className="font-bold text-bcs-black border-b border-bcs-border pb-1 mb-1">匯款資訊</p>
-                                <p>銀行：<span className="font-mono font-bold">{bankInfo.bank}</span></p>
-                                <p>銀行帳號：<span className="font-mono font-bold">{bankInfo.account}</span></p>
-                                <p>戶名：<span className="font-bold">{bankInfo.accountName}</span></p>
-                            </div>
+                            <BankTransferDetails orderId={orderId} receipt={receipt} />
 
                             <p className="flex gap-2">
                                 <span className="bg-store-100 text-bcs-black w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
@@ -122,12 +117,7 @@ export default function ThankYouPage({ orderId, needProof, onHome, estimatedDate
                             </p>
 
                             {/* Bank Info Block */}
-                            <div className="bg-store-50 p-4 rounded-lg border border-bcs-border ml-7 space-y-1">
-                                <p className="font-bold text-bcs-black border-b border-bcs-border pb-1 mb-1">匯款資訊</p>
-                                <p>銀行：<span className="font-mono font-bold">{bankInfo.bank}</span></p>
-                                <p>銀行帳號：<span className="font-mono font-bold">{bankInfo.account}</span></p>
-                                <p>戶名：<span className="font-bold">{bankInfo.accountName}</span></p>
-                            </div>
+                            <BankTransferDetails orderId={orderId} receipt={receipt} />
 
                             <p className="flex gap-2">
                                 <span className="bg-store-100 text-bcs-black w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>

@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { uploadFile } from './storageService';
+import { uploadPublicImage } from './storageService';
 
 const COURSE_SELECT = '*, location:class_locations(id,name,type,address,map_url)';
 
@@ -58,5 +58,5 @@ export async function deleteCourse(id) {
 
 /** 上傳課程圖片（封面或課堂照），回傳公開 URL */
 export async function uploadCourseImage(file) {
-    return uploadFile(file);
+    return uploadPublicImage(file);
 }

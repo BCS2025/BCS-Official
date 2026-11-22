@@ -1,3 +1,4 @@
+import { preparePublicImage } from './publicImagePrivacy.mjs';
 import { supabase } from './supabaseClient';
 
 /**
@@ -33,4 +34,8 @@ export async function uploadFile(file) {
         .getPublicUrl(filePath);
 
     return publicUrlData.publicUrl;
+}
+
+export async function uploadPublicImage(file) {
+    return uploadFile(await preparePublicImage(file));
 }

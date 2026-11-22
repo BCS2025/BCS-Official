@@ -50,6 +50,7 @@ export default defineConfig(async ({ mode, command }) => {
   }
 
   return {
+    envPrefix: ['VITE_SUPABASE_', 'VITE_SITE_', 'VITE_GAS_', 'VITE_LOGISTICS_', 'VITE_GA', 'VITE_BCS_', 'VITE_SEO_'],
     plugins: [
       react(),
       sitemapPlugin(sitemapRoutes),
